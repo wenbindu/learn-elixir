@@ -4,26 +4,21 @@ set -Eeuo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 app_dir="$(cd -- "${script_dir}/.." && pwd)"
-
-beam_path_host="${BEAM_PATH_HOST:-127.0.0.1}"
-beam_path_port="${BEAM_PATH_PORT:-3000}"
-force_build=0
+beam_path_config="${BEAM_PATH_CONFIG:-${app_dir}/config/local.env}"
 
 usage() {
-  echo "Usage: ./scripts/start-prod.sh [--build]"
+  echo "Usage: ./scripts/start-local.sh"
   echo
-  echo "  --build  Reinstall dependencies and rebuild before starting."
+  echo "Starts the Next.js development server with hot reload."
   echo
-  echo "Environment:"
-  echo "  BEAM_PATH_HOST  Bind address (default: 127.0.0.1)"
-  echo "  BEAM_PATH_PORT  Listen port (default: 3000)"
+  echo "Configuration:"
+  echo "  BEAM_PATH_CONFIG  Config file (default: config/local.env)"
+  echo "  BEAM_PATH_HOST    Bind address (default: 127.0.0.1)"
+  echo "  BEAM_PATH_PORT    Listen port (default: 3000)"
 }
 
 case "${1:-}" in
   "")
-    ;;
-  --build)
-    force_build=1
     ;;
   --help|-h)
     usage
@@ -53,6 +48,16 @@ node -e '
   }
 '
 
+if [[ -f "${beam_path_config}" ]]; then
+  set -a
+  # shellcheck source=/dev/null
+  source "${beam_path_config}"
+  set +a
+fi
+
+beam_path_host="${BEAM_PATH_HOST:-127.0.0.1}"
+beam_path_port="${BEAM_PATH_PORT:-3000}"
+
 if [[ ! "${beam_path_port}" =~ ^[0-9]+$ ]] ||
   ((beam_path_port < 1 || beam_path_port > 65535)); then
   echo "BEAM_PATH_PORT must be an integer from 1 to 65535." >&2
@@ -61,14 +66,11 @@ fi
 
 cd "${app_dir}"
 
-if ((force_build == 1)) || [[ ! -d dist ]]; then
+if [[ ! -x node_modules/.bin/next ]]; then
+  echo "Dependencies are missing; installing from package-lock.json..."
   npm ci
-  npm run build
 fi
 
-export NODE_ENV=production
-export VINEXT_TRUST_PROXY="${VINEXT_TRUST_PROXY:-1}"
-
-exec npm run start -- \
+exec npm run dev -- \
   --hostname "${beam_path_host}" \
   --port "${beam_path_port}"

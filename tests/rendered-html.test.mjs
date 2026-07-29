@@ -1,31 +1,54 @@
 import assert from "node:assert/strict";
+import { once } from "node:events";
 import { access, readFile } from "node:fs/promises";
-import test from "node:test";
+import { createServer } from "node:http";
+import { after, before, test } from "node:test";
+import { fileURLToPath } from "node:url";
+import next from "next";
 
 const projectRoot = new URL("../", import.meta.url);
+const projectDirectory = fileURLToPath(projectRoot);
+let app;
+let server;
+let origin;
+
+before(async () => {
+  app = next({
+    dev: false,
+    dir: projectDirectory,
+    hostname: "127.0.0.1",
+  });
+  await app.prepare();
+
+  const requestHandler = app.getRequestHandler();
+  server = createServer((request, response) => {
+    void requestHandler(request, response);
+  });
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+
+  const address = server.address();
+  assert.ok(address && typeof address !== "string");
+  origin = `http://127.0.0.1:${address.port}`;
+});
+
+after(async () => {
+  if (server) {
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) reject(error);
+        else resolve();
+      });
+      server.closeAllConnections();
+    });
+  }
+  if (app) await app.close();
+});
 
 async function render(pathname = "/") {
-  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
-  workerUrl.searchParams.set(
-    "test",
-    `${process.pid}-${Date.now()}-${pathname.replaceAll("/", "-")}`,
-  );
-  const { default: worker } = await import(workerUrl.href);
-
-  return worker.fetch(
-    new Request(`http://localhost${pathname}`, {
-      headers: { accept: "text/html" },
-    }),
-    {
-      ASSETS: {
-        fetch: async () => new Response("Not found", { status: 404 }),
-      },
-    },
-    {
-      waitUntil() {},
-      passThroughOnException() {},
-    },
-  );
+  return fetch(new URL(pathname, origin), {
+    headers: { accept: "text/html" },
+  });
 }
 
 test("server-renders the complete Chinese tutorial homepage", async () => {
@@ -46,7 +69,7 @@ test("server-renders the complete Chinese tutorial homepage", async () => {
   assert.match(html, /可靠任务调度器/);
   assert.match(
     html,
-    /<meta(?=[^>]*property="og:image")(?=[^>]*content="http:\/\/localhost(?::3000)?\/og\.png")[^>]*>/i,
+    /<meta(?=[^>]*property="og:image")(?=[^>]*content="https?:\/\/[^"]+\/og\.png")[^>]*>/i,
   );
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
   assert.doesNotMatch(html, /Your site is taking shape|Starter Project/i);
@@ -88,12 +111,15 @@ test("renders a shareable lesson route with the full teaching template", async (
   assert.match(html, /href="\/learn\/otp-behaviours"/);
 });
 
-test("ships branded favicon assets and removes disposable starter code", async () => {
-  const [layout, packageJson, courseData] = await Promise.all([
-    readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../package.json", import.meta.url), "utf8"),
-    readFile(new URL("../app/course-data.ts", import.meta.url), "utf8"),
-  ]);
+test("ships branded assets and keeps a native Next.js-only project", async () => {
+  const [layout, packageJson, courseData, localScript, localConfig] =
+    await Promise.all([
+      readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../package.json", import.meta.url), "utf8"),
+      readFile(new URL("../app/course-data.ts", import.meta.url), "utf8"),
+      readFile(new URL("../scripts/start-local.sh", import.meta.url), "utf8"),
+      readFile(new URL("../config/local.env", import.meta.url), "utf8"),
+    ]);
 
   for (const path of [
     "../public/brand-icon.png",
@@ -111,10 +137,19 @@ test("ships branded favicon assets and removes disposable starter code", async (
   assert.match(layout, /themeColor:\s*"#07182d"/);
   assert.match(courseData, /https:\/\/elixir-lang\.org\/install\//);
   assert.match(courseData, /https:\/\/www\.erlang\.org\/downloads/);
+  assert.match(packageJson, /"dev": "next dev"/);
+  assert.doesNotMatch(packageJson, /vite|vinext|wrangler/i);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
+  assert.match(localScript, /exec npm run dev/);
+  assert.match(localConfig, /BEAM_PATH_PORT=3000/);
 
-  await assert.rejects(
-    access(new URL("../app/_sites-preview/SkeletonPreview.tsx", import.meta.url)),
-  );
+  for (const path of [
+    "../app/_sites-preview/SkeletonPreview.tsx",
+    "../vite.config.ts",
+    "../worker/index.ts",
+    "../drizzle.config.ts",
+  ]) {
+    await assert.rejects(access(new URL(path, import.meta.url)));
+  }
   await access(projectRoot);
 });

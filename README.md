@@ -19,96 +19,84 @@
 
 ## 本地运行
 
-需要 Node.js `>=22.13.0`。
+需要 Node.js `22.x`。直接运行本地开发脚本：
 
 ```bash
-npm install
-npm run dev
+./scripts/start-local.sh
 ```
 
-打开终端输出的本地地址。
+脚本会在依赖缺失时自动执行 `npm ci`，随后启动带热更新的 Next.js 开发服务器。
+默认地址是 <http://127.0.0.1:3000>。监听地址和端口保存在
+[`config/local.env`](config/local.env)，修改后重新运行脚本即可。
 
-## 部署到自己的域名
+## 部署到 Vercel
 
-推荐链路：
+项目已经适配为 Vercel 原生 Next.js，无需 `vercel.json` 或自定义构建输出。
+
+1. 将最新提交推送到 GitHub：
+
+   ```bash
+   git push -u origin main
+   ```
+
+2. 在 Vercel 控制台选择 **Add New → Project**，导入 GitHub 仓库。
+3. 保持以下设置：
+
+   ```text
+   Framework Preset: Next.js
+   Root Directory: ./
+   Node.js Version: 22.x
+   Build Command: 默认
+   Output Directory: 默认
+   ```
+
+4. 当前站点没有必需的环境变量，直接点击 **Deploy** 即可。
+5. 先使用 Vercel 自动分配的 `*.vercel.app` 地址验收；确认正常后，再到
+   **Project → Settings → Domains** 添加正式域名。
+
+Vercel 会为分支和 Pull Request 创建 Preview Deployment，`main` 分支用于生产部署。
+如果希望 Open Graph 链接始终使用指定域名，可选地配置：
 
 ```text
-浏览器 → Nginx（80 / 443）→ BEAM Path（127.0.0.1:3000）
+NEXT_PUBLIC_SITE_URL=https://你的域名
 ```
 
-生产环境使用 `npm run build` 和 `npm run start`，不要使用带热更新的
-`npm run dev`。项目是服务端渲染应用，不是把 `out/` 目录交给 Nginx 的纯静态站点。
+### 使用 Vercel CLI
 
-### 1. 提交到 GitHub
-
-先在 GitHub 创建一个空仓库，再在本项目目录执行：
+不必通过网页控制台完成所有操作。当前机器未全局安装 Vercel CLI，可以直接使用
+`npx` 调用最新版：
 
 ```bash
-git add .
-git commit -m "Prepare BEAM Path for production"
-git remote add origin git@github.com:YOUR_ACCOUNT/beam-path.git
-git push -u origin main
+# 登录 Vercel
+npx vercel@latest login
+
+# 创建或关联当前目录与一个 Vercel Project
+npx vercel@latest link
+
+# 创建 Preview Deployment
+npx vercel@latest deploy
+
+# 确认 Preview 正常后再发布 Production
+npx vercel@latest deploy --prod
 ```
 
-把 `YOUR_ACCOUNT` 替换为你的 GitHub 用户名或组织名。当前仓库没有配置
-`origin`，因此不会自动推送到任何 GitHub 仓库。
-
-### 2. 在 Linux 服务器构建并启动
-
-服务器需要 Node.js `>=22.13.0`、Git 和 npm：
+常用管理命令：
 
 ```bash
-git clone git@github.com:YOUR_ACCOUNT/beam-path.git /opt/beam-path
-cd /opt/beam-path
-./scripts/start-prod.sh --build
+# 查看并同步环境变量
+npx vercel@latest env ls
+npx vercel@latest env pull .env.local
+
+# 添加环境变量
+npx vercel@latest env add NEXT_PUBLIC_SITE_URL production
+
+# 添加或检查域名
+npx vercel@latest domains add example.com YOUR_PROJECT_NAME
+npx vercel@latest domains inspect example.com
 ```
 
-脚本会在首次运行或指定 `--build` 时安装依赖并构建，然后以前台进程启动
-生产服务。默认只监听 `127.0.0.1:3000`，避免绕过 Nginx 直接暴露应用。
-
-可通过环境变量修改监听地址和端口：
-
-```bash
-BEAM_PATH_HOST=127.0.0.1 BEAM_PATH_PORT=3000 ./scripts/start-prod.sh
-```
-
-### 3. 使用 systemd 常驻
-
-仓库提供了
-[`deploy/systemd/beam-path.service.example`](deploy/systemd/beam-path.service.example)。
-先按服务器实际情况修改其中的用户和 `/opt/beam-path` 路径，然后安装：
-
-```bash
-sudo cp deploy/systemd/beam-path.service.example /etc/systemd/system/beam-path.service
-sudo systemctl daemon-reload
-sudo systemctl enable --now beam-path
-sudo systemctl status beam-path
-```
-
-以后更新版本：
-
-```bash
-git pull --ff-only
-npm ci
-npm run build
-sudo systemctl restart beam-path
-```
-
-### 4. 配置 Nginx
-
-仓库提供了
-[`deploy/nginx/beam-path.conf.example`](deploy/nginx/beam-path.conf.example)。
-将其中的 `example.com` 替换为真实域名，再启用配置：
-
-```bash
-sudo cp deploy/nginx/beam-path.conf.example /etc/nginx/sites-available/beam-path
-sudo ln -s /etc/nginx/sites-available/beam-path /etc/nginx/sites-enabled/beam-path
-sudo nginx -t
-sudo systemctl reload nginx
-```
-
-域名的 DNS A / AAAA 记录需要先指向服务器。确认 HTTP 可访问后，再使用服务器上的
-证书工具配置 HTTPS。
+`vercel link` 创建的 `.vercel/` 目录仅保存本机与 Project 的关联信息，已经加入
+`.gitignore`，不会提交到 GitHub。
 
 ## 校验
 
@@ -132,6 +120,10 @@ app/
 public/
   brand-icon.png           原始品牌图标
   favicon.ico              Chrome favicon
+config/
+  local.env                本地监听地址与端口
+scripts/
+  start-local.sh           本地开发启动脚本
 tests/
   rendered-html.test.mjs   SSR 与需求回归测试
 ```
