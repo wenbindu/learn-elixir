@@ -29,6 +29,8 @@ export const metadata: Metadata = {
     "OTP",
     "GenServer",
     "Supervisor",
+    "Elixir 关键字",
+    "Erlang 关键字",
   ],
   icons: {
     icon: [

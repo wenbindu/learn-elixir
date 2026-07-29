@@ -143,6 +143,81 @@ test("renders an embedded Elixir playground with safe fallback guidance", async 
   assert.match(html, /在新窗口打开/);
 });
 
+test("renders a complete Elixir and Erlang keyword dictionary", async () => {
+  const response = await render("/keywords");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /Elixir \+ Erlang 关键字字典/);
+  assert.match(html, /<strong>15<\/strong>.*Elixir 严格保留字/s);
+  assert.match(html, /<strong>29<\/strong>.*Erlang 严格保留字/s);
+  assert.match(html, /<b>44<\/b>.*个词法保留字/s);
+  assert.match(html, /严格保留字/);
+  assert.match(html, /Elixir 特殊形式/);
+  assert.match(html, /常用宏与声明/);
+  assert.match(html, /搜索 when、receive、模式匹配/);
+  assert.match(html, />when</);
+  assert.match(html, />receive</);
+  assert.match(html, />maybe</);
+  assert.match(html, /cond.*let.*已保留但未使用/s);
+  assert.match(html, /keyword list 是另一件事/);
+
+  const reservedWords = [
+    "true",
+    "false",
+    "nil",
+    "when",
+    "and",
+    "or",
+    "not",
+    "in",
+    "fn",
+    "do",
+    "end",
+    "catch",
+    "rescue",
+    "after",
+    "else",
+    "andalso",
+    "band",
+    "begin",
+    "bnot",
+    "bor",
+    "bsl",
+    "bsr",
+    "bxor",
+    "case",
+    "cond",
+    "div",
+    "fun",
+    "if",
+    "let",
+    "maybe",
+    "of",
+    "orelse",
+    "receive",
+    "rem",
+    "try",
+    "xor",
+  ];
+  for (const word of reservedWords) {
+    assert.match(html, new RegExp(`>${word}<\\/code>`));
+  }
+
+  assert.equal(
+    (html.match(/keyword-entry keyword-entry--reserved/g) ?? []).length,
+    44,
+  );
+  assert.match(
+    html,
+    /https:\/\/hexdocs\.pm\/elixir\/syntax-reference\.html#reserved-words/,
+  );
+  assert.match(
+    html,
+    /https:\/\/www\.erlang\.org\/doc\/system\/reference_manual\.html/,
+  );
+});
+
 test("ships branded assets and keeps a native Next.js-only project", async () => {
   const [layout, packageJson, courseData, localScript, localConfig] =
     await Promise.all([

@@ -29,6 +29,7 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
           <Link href="/#roadmap">学习路径</Link>
           <Link href="/#lab">并发实验</Link>
           <Link href="/playground">在线练习</Link>
+          <Link href="/keywords">关键字字典</Link>
           <Link href="/#resources">常用资源</Link>
         </nav>
 

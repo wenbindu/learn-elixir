@@ -9,6 +9,7 @@
 - 首页三条学习入口，以及可搜索、可筛选的完整课程地图
 - Elixir / Erlang 双栏代码与每章一组可复制到 IEx / erl 的真实实验
 - 独立的 Elixir 在线 Playground，内置管道、模式匹配与进程消息练习
+- 可搜索的 Elixir + Erlang 关键字字典，区分严格保留字、特殊形式、宏与声明
 - “故意弄坏”、实验能证明 / 不能证明什么、快速自测、四级提示和验收标准
 - 浏览器端进度记录，以及带 schema 版本的 JSON 导入 / 导出
 - Hex、HexDocs、Elixir Forum、Erlang Forums、官方安装 / 下载页等资源导航
@@ -129,7 +130,8 @@ npm test
 npm run lint
 ```
 
-测试会验证首页服务端渲染、用户要求的资源链接、课程深链接、完整章节模板与品牌图标资产。
+测试会验证首页服务端渲染、用户要求的资源链接、关键字完整清单、课程深链接、
+完整章节模板与品牌图标资产。
 
 ## 主要目录
 
@@ -137,6 +139,7 @@ npm run lint
 app/
   components/              课程地图、进度、自测、代码复制、并发模拟器
   learn/[slug]/page.tsx    课程模块路由
+  keywords/page.tsx        Elixir + Erlang 可搜索关键字字典
   playground/page.tsx      第三方沙箱驱动的 Elixir 在线练习
   course-data.ts           12 个模块与资源导航数据
   page.tsx                 首页
