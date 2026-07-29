@@ -219,13 +219,21 @@ test("renders a complete Elixir and Erlang keyword dictionary", async () => {
 });
 
 test("ships branded assets and keeps a native Next.js-only project", async () => {
-  const [layout, packageJson, courseData, localScript, localConfig] =
+  const [
+    layout,
+    packageJson,
+    courseData,
+    localScript,
+    localConfig,
+    globalStyles,
+  ] =
     await Promise.all([
       readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
       readFile(new URL("../package.json", import.meta.url), "utf8"),
       readFile(new URL("../app/course-data.ts", import.meta.url), "utf8"),
       readFile(new URL("../scripts/start-local.sh", import.meta.url), "utf8"),
       readFile(new URL("../config/local.env", import.meta.url), "utf8"),
+      readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     ]);
 
   for (const path of [
@@ -242,9 +250,15 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
   assert.match(layout, /\/favicon\.ico/);
   assert.match(layout, /\/apple-touch-icon\.png/);
   assert.match(layout, /themeColor:\s*"#07182d"/);
+  assert.match(layout, /@vercel\/analytics\/next/);
+  assert.match(layout, /@vercel\/speed-insights\/next/);
+  assert.match(layout, /<Analytics\s*\/>/);
+  assert.match(layout, /<SpeedInsights\s*\/>/);
   assert.match(courseData, /https:\/\/elixir-lang\.org\/install\//);
   assert.match(courseData, /https:\/\/www\.erlang\.org\/downloads/);
   assert.match(packageJson, /"dev": "next dev"/);
+  assert.match(packageJson, /"@vercel\/analytics"/);
+  assert.match(packageJson, /"@vercel\/speed-insights"/);
   assert.doesNotMatch(packageJson, /vite|vinext|wrangler/i);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
   assert.match(localScript, /exec npm run dev/);
@@ -253,6 +267,17 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
   assert.match(localScript, /restart\).*stop_server.*start_server/s);
   assert.match(localScript, /status\).*show_status/s);
   assert.match(localConfig, /BEAM_PATH_PORT=3000/);
+  assert.match(globalStyles, /--text-micro:\s*11px/);
+  assert.match(globalStyles, /--text-code:\s*14px/);
+  assert.doesNotMatch(globalStyles, /font-size:\s*(?:[7-9]|10)px/);
+  assert.match(
+    globalStyles,
+    /\.keyword-entry-copy p\s*\{[^}]*font-size:\s*var\(--text-control\)/s,
+  );
+  assert.match(
+    globalStyles,
+    /\.keyword-entry > pre code\s*\{[^}]*font-size:\s*var\(--text-code\)/s,
+  );
 
   for (const path of [
     "../app/_sites-preview/SkeletonPreview.tsx",

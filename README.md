@@ -10,6 +10,7 @@
 - Elixir / Erlang 双栏代码与每章一组可复制到 IEx / erl 的真实实验
 - 独立的 Elixir 在线 Playground，内置管道、模式匹配与进程消息练习
 - 可搜索的 Elixir + Erlang 关键字字典，区分严格保留字、特殊形式、宏与声明
+- 全站统一可读字号层级，并接入 Vercel Analytics 与 Speed Insights
 - “故意弄坏”、实验能证明 / 不能证明什么、快速自测、四级提示和验收标准
 - 浏览器端进度记录，以及带 schema 版本的 JSON 导入 / 导出
 - Hex、HexDocs、Elixir Forum、Erlang Forums、官方安装 / 下载页等资源导航
@@ -79,6 +80,8 @@
    **Project → Settings → Domains** 添加正式域名。
 
 Vercel 会为分支和 Pull Request 创建 Preview Deployment，`main` 分支用于生产部署。
+根布局已经挂载 `@vercel/analytics` 和 `@vercel/speed-insights`；部署完成后可在
+Vercel Project 的 Analytics 与 Speed Insights 页面查看数据。
 如果希望 Open Graph 链接始终使用指定域名，可选地配置：
 
 ```text
