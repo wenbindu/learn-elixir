@@ -19,15 +19,37 @@
 
 ## 本地运行
 
-需要 Node.js `22.x`。直接运行本地开发脚本：
+需要 Node.js `22.x`。开发服务器默认在后台运行：
 
 ```bash
-./scripts/start-local.sh
+# 启动
+./scripts/start-local.sh start
+
+# 查看状态
+./scripts/start-local.sh status
+
+# 重启
+./scripts/start-local.sh restart
+
+# 停止
+./scripts/start-local.sh stop
+```
+
+不带参数运行等同于 `start`。查看实时日志：
+
+```bash
+./scripts/start-local.sh logs
+```
+
+如果希望在当前终端运行并通过 `Ctrl+C` 停止：
+
+```bash
+./scripts/start-local.sh foreground
 ```
 
 脚本会在依赖缺失时自动执行 `npm ci`，随后启动带热更新的 Next.js 开发服务器。
 默认地址是 <http://127.0.0.1:3000>。监听地址和端口保存在
-[`config/local.env`](config/local.env)，修改后重新运行脚本即可。
+[`config/local.env`](config/local.env)，修改后执行 `restart` 即可。
 
 ## 部署到 Vercel
 

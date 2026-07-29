@@ -141,6 +141,10 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
   assert.doesNotMatch(packageJson, /vite|vinext|wrangler/i);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
   assert.match(localScript, /exec npm run dev/);
+  assert.match(localScript, /start\).*start_server/s);
+  assert.match(localScript, /stop\).*stop_server/s);
+  assert.match(localScript, /restart\).*stop_server.*start_server/s);
+  assert.match(localScript, /status\).*show_status/s);
   assert.match(localConfig, /BEAM_PATH_PORT=3000/);
 
   for (const path of [

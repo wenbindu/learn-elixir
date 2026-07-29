@@ -21,6 +21,7 @@
 # local caches and editor files
 /.cache/
 /.eslintcache
+/.run/
 *.tsbuildinfo
 .DS_Store
 Thumbs.db
