@@ -103,19 +103,20 @@ export const courseModules: CourseModule[] = [
     stage: "foundation",
     stageLabel: "地基",
     title: "起跑线：两门语言，一台机器",
-    subtitle: "先把 Erlang、Elixir、BEAM、OTP 的关系说清楚。",
+    subtitle: "先把 Erlang、Elixir、BEAM、OTP 与 Mix 的关系说清楚。",
     summary:
-      "完成环境检查，在 erl 与 iex 中运行同一段思想等价的代码，并知道遇到问题该查哪一层。",
+      "完成运行时与 Mix 工具链检查，在 erl 与 iex 中运行等价代码，再创建、测试一个最小 Elixir 项目。",
     duration: "2 小时",
     lessons: 2,
     level: "零基础",
     languages: ["BEAM", "Elixir", "Erlang"],
     why:
-      "很多初学者把 Elixir 当作“换了语法的 Ruby”，或者把 OTP 当成一个可以随时补学的库。这样会在并发、错误处理和项目结构上不断用错心智模型。本章先固定地图：Erlang 与 Elixir 是语言，BEAM 是运行时，OTP 是构建可靠系统的一组设计原则与组件。",
+      "很多初学者把 Elixir 当作“换了语法的 Ruby”，把 OTP 当成一个可以随时补学的库，又把 Mix、Hex 和 BEAM 混成同一层。这样会在并发、错误处理、依赖和项目结构上不断用错心智模型。本章先固定地图：Erlang 与 Elixir 是语言，BEAM 是运行时，OTP 是构建可靠系统的一组设计原则与组件；Mix 是随 Elixir 提供、负责创建、编译、测试和组织项目的构建工具。",
     outcomes: [
       "能画出“源码 → BEAM 字节码 → BEAM VM → OTP 应用”的关系",
       "能分别启动 erl、iex，并解释两者提示符的差异",
       "能用版本输出定位安装层、语言层与 OTP 层的问题",
+      "能解释 Mix 与 IEx、OTP、Hex 的职责边界，并运行最小 Mix 项目",
     ],
     prerequisites: ["会使用终端执行命令", "知道函数和变量的基本含义"],
     concepts: [
@@ -130,9 +131,9 @@ export const courseModules: CourseModule[] = [
           "不是另一门语言，而是一套库、behaviour 与系统设计原则；Supervisor、GenServer 都属于它。",
       },
       {
-        term: "term",
+        term: "Mix",
         definition:
-          "BEAM 世界里可被消息发送和模式匹配的数据统称。两门语言共享大部分底层 term。",
+          "随 Elixir 安装的构建工具。它通过任务创建、编译、格式化、测试项目并管理依赖；`mix.exs` 是项目配置入口。Mix 不是 BEAM、OTP，也不等于 Hex 包仓库。",
       },
     ],
     elixirCode: `# 在 IEx 中
@@ -158,24 +159,34 @@ end.`,
     codeCaption:
       "两段语法不同，但都在创建一个 BEAM 进程、发送一个 tuple，再用模式匹配接收它。",
     experiment: {
-      title: "确认你真的运行在同一套 VM 上",
+      title: "确认版本，并让 Mix 跑起第一个项目",
       intro:
-        "不要从安装成功的提示猜结论。直接让两种 shell 报告 OTP release，并观察它们都能看到同一个版本。",
+        "不要从安装成功的提示猜结论。先比较 Erlang、Elixir 与 Mix 报告的工具链，再让 Mix 生成项目、运行测试，并从项目上下文读取 OTP release。",
       steps: [
         "运行 `erl`，输入 `erlang:system_info(otp_release).`",
-        "运行 `iex`，输入 `:erlang.system_info(:otp_release)`",
-        "比较结果，并用自己的话解释 `:erlang` 前缀意味着什么",
+        "运行 `elixir --version` 与 `mix --version`，标出 Erlang/OTP、Elixir、Mix 三类版本",
+        "执行 `mix new beam_probe`，观察 `mix.exs`、`lib/` 与 `test/` 分别承担什么职责",
+        "进入项目运行 `mix test`，再用 `mix run -e` 从同一项目读取 OTP release",
       ],
-      command: `erl -noshell -eval 'io:format("OTP ~s~n", [erlang:system_info(otp_release)]), halt().'`,
+      command: `erl -noshell -eval 'io:format("OTP ~s~n", [erlang:system_info(otp_release)]), halt().'
+elixir --version
+mix --version
+
+mix new beam_probe
+cd beam_probe
+mix test
+mix run -e 'IO.puts("OTP #{:erlang.system_info(:otp_release)}")'`,
       expected: [
-        "两种入口报告同一个 OTP release",
-        "Elixir 可以直接调用 Erlang 的 `erlang` 模块",
+        "Erlang、Elixir 与 Mix 的输出指向同一套 OTP 工具链",
+        "Mix 生成 `mix.exs`、源码目录和测试目录，而不是另一台 VM",
+        "生成的示例测试通过，`mix run` 能直接调用 Erlang 的 `erlang` 模块",
       ],
       breakIt:
-        "删掉 Erlang 表达式末尾的句点，或把 Elixir atom `:otp_release` 写成字符串。记录错误发生在哪一层。",
-      canProve: "你安装的 Erlang 与 Elixir 当前共享同一套 OTP 运行时。",
+        "退出 `beam_probe` 目录后运行 `mix test`。观察 Mix 如何通过缺少 `mix.exs` 判断“这里不是 Mix 项目”，并把它与编译错误区分开。",
+      canProve:
+        "Mix 已随当前 Elixir 安装，可在这套 OTP 上创建、编译和测试一个最小项目。",
       cannotProve:
-        "版本一致不代表所有第三方包兼容，也不代表你已经理解了 BEAM 的进程模型。",
+        "示例测试通过不代表所有第三方依赖兼容，也不代表该项目已经具备生产级 OTP 结构。",
     },
     quiz: {
       question: "下面哪一项最准确地描述 OTP？",
@@ -187,27 +198,28 @@ end.`,
       ],
       answer: 1,
       explanation:
-        "OTP 横跨 Erlang 与 Elixir。Hex 是包生态，编译器只是工具链的一部分，Mnesia 才是 OTP 中的数据库组件之一。",
+        "OTP 横跨 Erlang 与 Elixir。Mix 是随 Elixir 提供的构建工具，Hex 是包管理生态；编译器只是工具链的一部分，Mnesia 才是 OTP 中的数据库组件之一。",
     },
     challenge: {
       title: "环境诊断卡",
       brief:
-        "写一份不超过 12 行的诊断输出，包含 Erlang/OTP、Elixir、Mix 版本，并为“命令不存在”和“版本不兼容”各写一个排查动作。",
+        "写一份不超过 12 行的诊断输出，包含 Erlang/OTP、Elixir、Mix 版本与当前 Mix 项目状态，并为“命令不存在”“缺少 mix.exs”和“版本不兼容”各写一个排查动作。",
       hints: [
-        "先运行 `elixir --version` 和 `mix --version`。",
-        "区分 shell 找不到命令与 VM 能启动但版本不满足。",
+        "先运行 `elixir --version`、`mix --version` 和 `mix help`。",
+        "区分 shell 找不到命令、Mix 找不到 `mix.exs`，以及 VM 能启动但版本不满足。",
         "把输出保存下来，它会成为后续提问时最有价值的上下文。",
       ],
       acceptance: [
         "能看到 OTP、Elixir、Mix 三类版本信息",
-        "两种故障分别对应不同排查路径",
+        "能说明 `mix.exs` 是项目配置入口，并区分 Mix 与 Hex",
+        "三种故障分别对应不同排查路径",
         "没有把操作系统线程称作 BEAM 进程",
       ],
     },
     takeaways: [
       "语言是入口，BEAM 是运行的地方，OTP 是构建可靠系统的方法。",
       "Elixir 调 Erlang 不是跨语言 RPC，而是同一 VM 内的普通模块调用。",
-      "从第一天起就把版本、运行时和工具链分层诊断。",
+      "Mix 负责项目与构建任务，Hex 提供包生态；从第一天起就把它们与运行时分层诊断。",
     ],
     references: [
       {
@@ -217,6 +229,10 @@ end.`,
       {
         label: "Erlang Getting Started",
         href: "https://www.erlang.org/doc/system/getting_started.html",
+      },
+      {
+        label: "Introduction to Mix",
+        href: "https://elixir-lang.org/getting-started/mix-otp/introduction-to-mix.html",
       },
     ],
   },

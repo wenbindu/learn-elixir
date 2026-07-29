@@ -111,6 +111,22 @@ test("renders a shareable lesson route with the full teaching template", async (
   assert.match(html, /href="\/learn\/otp-behaviours"/);
 });
 
+test("start line introduces Mix as a project build tool", async () => {
+  const response = await render("/learn/start-line");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /随 Elixir 安装的构建工具/);
+  assert.match(html, /mix\.exs/);
+  assert.match(html, /mix new beam_probe/);
+  assert.match(html, /mix test/);
+  assert.match(html, /Mix 与 IEx、OTP、Hex 的职责边界/);
+  assert.match(
+    html,
+    /https:\/\/elixir-lang\.org\/getting-started\/mix-otp\/introduction-to-mix\.html/,
+  );
+});
+
 test("ships branded assets and keeps a native Next.js-only project", async () => {
   const [layout, packageJson, courseData, localScript, localConfig] =
     await Promise.all([
