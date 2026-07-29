@@ -25,6 +25,7 @@ export function SiteFooter() {
             <span>继续学习</span>
             <Link href="/learn/start-line">从零开始</Link>
             <Link href="/learn/processes-and-mailboxes">直接学并发</Link>
+            <Link href="/playground">在线 Playground</Link>
           </div>
           <div>
             <span>官方入口</span>

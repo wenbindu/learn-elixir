@@ -8,6 +8,7 @@
 - 12 个模块、46 个学习检查点，覆盖零基础、语言基础、并发、OTP、监督树、容量、分布式与互操作
 - 首页三条学习入口，以及可搜索、可筛选的完整课程地图
 - Elixir / Erlang 双栏代码与每章一组可复制到 IEx / erl 的真实实验
+- 独立的 Elixir 在线 Playground，内置管道、模式匹配与进程消息练习
 - “故意弄坏”、实验能证明 / 不能证明什么、快速自测、四级提示和验收标准
 - 浏览器端进度记录，以及带 schema 版本的 JSON 导入 / 导出
 - Hex、HexDocs、Elixir Forum、Erlang Forums、官方安装 / 下载页等资源导航
@@ -136,6 +137,7 @@ npm run lint
 app/
   components/              课程地图、进度、自测、代码复制、并发模拟器
   learn/[slug]/page.tsx    课程模块路由
+  playground/page.tsx      第三方沙箱驱动的 Elixir 在线练习
   course-data.ts           12 个模块与资源导航数据
   page.tsx                 首页
   globals.css              响应式设计系统
@@ -152,5 +154,7 @@ tests/
 
 ## 关于浏览器实验
 
-首页的 mailbox 组件明确是语义模拟器，并不声称在浏览器中运行 Erlang VM。课程页面同时提供可复制到
-真实 IEx / erl 环境的命令、预期观察、故障开关与结论边界。
+首页的 mailbox 组件明确是语义模拟器，并不声称在浏览器中运行 Erlang VM。在线
+Playground 通过 Codapi 第三方隔离沙箱执行 Elixir 小片段，不能替代完整 Mix 项目，
+也不应提交密码、API Key 或未公开代码。课程页面同时提供可复制到真实 IEx / erl
+环境的命令、预期观察、故障开关与结论边界。

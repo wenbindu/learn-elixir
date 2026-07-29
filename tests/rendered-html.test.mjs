@@ -127,6 +127,22 @@ test("start line introduces Mix as a project build tool", async () => {
   );
 });
 
+test("renders an embedded Elixir playground with safe fallback guidance", async () => {
+  const response = await render("/playground");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /Elixir 在线 Playground/);
+  assert.match(html, /codapi\.org\/embed/);
+  assert.match(html, /sandbox="allow-scripts allow-same-origin"/);
+  assert.match(html, /管道与 Enum/);
+  assert.match(html, /模式匹配/);
+  assert.match(html, /进程与消息/);
+  assert.match(html, /这是第三方运行环境/);
+  assert.match(html, /不要粘贴密码/);
+  assert.match(html, /在新窗口打开/);
+});
+
 test("ships branded assets and keeps a native Next.js-only project", async () => {
   const [layout, packageJson, courseData, localScript, localConfig] =
     await Promise.all([

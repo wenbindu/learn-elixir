@@ -376,10 +376,21 @@ export default function Home() {
                   mailbox 是容量边界，不是无限缓冲
                 </li>
               </ul>
-              <Link className="button button--light" href="/learn/processes-and-mailboxes">
-                进入裸进程模块
-                <span aria-hidden="true">→</span>
-              </Link>
+              <div className="lab-actions">
+                <Link
+                  className="button button--light"
+                  href="/learn/processes-and-mailboxes"
+                >
+                  进入裸进程模块
+                  <span aria-hidden="true">→</span>
+                </Link>
+                <Link
+                  className="button button--outline-light"
+                  href="/playground"
+                >
+                  打开在线 Playground
+                </Link>
+              </div>
             </div>
             <MessageLab />
           </div>
