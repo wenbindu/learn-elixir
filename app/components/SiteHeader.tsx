@@ -17,6 +17,7 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
             width={42}
             height={42}
             priority
+            unoptimized
           />
           <span className="brand-copy">
             <strong>BEAM Path</strong>
@@ -38,4 +39,3 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
     </header>
   );
 }
-

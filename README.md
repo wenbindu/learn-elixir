@@ -28,6 +28,88 @@ npm run dev
 
 打开终端输出的本地地址。
 
+## 部署到自己的域名
+
+推荐链路：
+
+```text
+浏览器 → Nginx（80 / 443）→ BEAM Path（127.0.0.1:3000）
+```
+
+生产环境使用 `npm run build` 和 `npm run start`，不要使用带热更新的
+`npm run dev`。项目是服务端渲染应用，不是把 `out/` 目录交给 Nginx 的纯静态站点。
+
+### 1. 提交到 GitHub
+
+先在 GitHub 创建一个空仓库，再在本项目目录执行：
+
+```bash
+git add .
+git commit -m "Prepare BEAM Path for production"
+git remote add origin git@github.com:YOUR_ACCOUNT/beam-path.git
+git push -u origin main
+```
+
+把 `YOUR_ACCOUNT` 替换为你的 GitHub 用户名或组织名。当前仓库没有配置
+`origin`，因此不会自动推送到任何 GitHub 仓库。
+
+### 2. 在 Linux 服务器构建并启动
+
+服务器需要 Node.js `>=22.13.0`、Git 和 npm：
+
+```bash
+git clone git@github.com:YOUR_ACCOUNT/beam-path.git /opt/beam-path
+cd /opt/beam-path
+./scripts/start-prod.sh --build
+```
+
+脚本会在首次运行或指定 `--build` 时安装依赖并构建，然后以前台进程启动
+生产服务。默认只监听 `127.0.0.1:3000`，避免绕过 Nginx 直接暴露应用。
+
+可通过环境变量修改监听地址和端口：
+
+```bash
+BEAM_PATH_HOST=127.0.0.1 BEAM_PATH_PORT=3000 ./scripts/start-prod.sh
+```
+
+### 3. 使用 systemd 常驻
+
+仓库提供了
+[`deploy/systemd/beam-path.service.example`](deploy/systemd/beam-path.service.example)。
+先按服务器实际情况修改其中的用户和 `/opt/beam-path` 路径，然后安装：
+
+```bash
+sudo cp deploy/systemd/beam-path.service.example /etc/systemd/system/beam-path.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now beam-path
+sudo systemctl status beam-path
+```
+
+以后更新版本：
+
+```bash
+git pull --ff-only
+npm ci
+npm run build
+sudo systemctl restart beam-path
+```
+
+### 4. 配置 Nginx
+
+仓库提供了
+[`deploy/nginx/beam-path.conf.example`](deploy/nginx/beam-path.conf.example)。
+将其中的 `example.com` 替换为真实域名，再启用配置：
+
+```bash
+sudo cp deploy/nginx/beam-path.conf.example /etc/nginx/sites-available/beam-path
+sudo ln -s /etc/nginx/sites-available/beam-path /etc/nginx/sites-enabled/beam-path
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+域名的 DNS A / AAAA 记录需要先指向服务器。确认 HTTP 可访问后，再使用服务器上的
+证书工具配置 HTTPS。
+
 ## 校验
 
 ```bash

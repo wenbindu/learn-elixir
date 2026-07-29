@@ -12,6 +12,7 @@ export function SiteFooter() {
             width={48}
             height={48}
             className="footer-icon"
+            unoptimized
           />
           <div>
             <strong>BEAM Path</strong>
@@ -50,4 +51,3 @@ export function SiteFooter() {
     </footer>
   );
 }
-
