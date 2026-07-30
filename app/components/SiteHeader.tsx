@@ -30,7 +30,7 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
           <Link href="/#lab">并发实验</Link>
           <Link href="/playground">在线练习</Link>
           <Link href="/keywords">关键字字典</Link>
-          <Link href="/#resources">常用资源</Link>
+          <Link href="/resources">关联资源</Link>
         </nav>
 
         <Link className="header-cta" href="/learn/start-line">

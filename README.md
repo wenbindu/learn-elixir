@@ -10,6 +10,7 @@
 - Elixir / Erlang 双栏代码与每章一组可复制到 IEx / erl 的真实实验
 - 独立的 Elixir 在线 Playground，内置管道、模式匹配与进程消息练习
 - 可搜索的 Elixir + Erlang 关键字字典，区分严格保留字、特殊形式、宏与声明
+- 独立的关联资源目录，资源从一份易维护的 Markdown 配置自动生成
 - 全站统一可读字号层级，并接入 Vercel Analytics 与 Speed Insights
 - “故意弄坏”、实验能证明 / 不能证明什么、快速自测、四级提示和验收标准
 - 浏览器端进度记录，以及带 schema 版本的 JSON 导入 / 导出
@@ -53,6 +54,41 @@
 脚本会在依赖缺失时自动执行 `npm ci`，随后启动带热更新的 Next.js 开发服务器。
 默认地址是 <http://127.0.0.1:3000>。监听地址和端口保存在
 [`config/local.env`](config/local.env)，修改后执行 `restart` 即可。
+
+## 添加关联资源
+
+资源的唯一配置文件是 [`content/resources.md`](content/resources.md)。站点的
+[`/resources`](http://127.0.0.1:3000/resources) 页面与首页常用入口都从这里读取，
+不需要再修改 React 代码。
+
+最常用的操作，是在对应的 `## 分类` 下增加一行：
+
+```md
+- [资源名称](https://example.com/) — 一句简短的中文用途说明。
+```
+
+例如本项目中的 Elixir School 中文站：
+
+```md
+- [Elixir School 中文](https://elixirschool.com/zh-hans/) — 适合补充中文语法解释与专题阅读。
+```
+
+需要调整卡片短名称、色彩或将资源放到首页时，可以紧跟在资源下增加可选元数据：
+
+```md
+- [资源名称](https://example.com/) — 一句简短的中文用途说明。
+  - short: 卡片短名称
+  - accent: elixir
+  - featured: true
+```
+
+- `short`：首页卡片的短名称；省略时使用完整资源名。
+- `accent`：可选 `elixir`、`erlang`、`beam`、`tool`；省略时自动推断。
+- `featured`：设为 `true` 才显示在首页“常用入口”；普通资源无需填写。
+
+分类顺序就是页面顺序。构建时会检查 URL、重复链接、空描述和未知元数据，并给出具体
+行号；保存后刷新本地页面即可看到更新。提交到 GitHub 后，Vercel 会随下一次部署读取
+新配置。
 
 ## 部署到 Vercel
 
@@ -133,7 +169,7 @@ npm test
 npm run lint
 ```
 
-测试会验证首页服务端渲染、用户要求的资源链接、关键字完整清单、课程深链接、
+测试会验证首页服务端渲染、独立资源目录、关键字完整清单、课程深链接、
 完整章节模板与品牌图标资产。
 
 ## 主要目录
@@ -144,9 +180,13 @@ app/
   learn/[slug]/page.tsx    课程模块路由
   keywords/page.tsx        Elixir + Erlang 可搜索关键字字典
   playground/page.tsx      第三方沙箱驱动的 Elixir 在线练习
-  course-data.ts           12 个模块与资源导航数据
+  resources/page.tsx       Markdown 驱动的关联资源目录
+  course-data.ts           12 个课程模块数据
+  resource-data.ts         资源配置解析与构建时校验
   page.tsx                 首页
   globals.css              响应式设计系统
+content/
+  resources.md             关联资源的唯一维护入口
 public/
   brand-icon.png           原始品牌图标
   favicon.ico              Chrome favicon

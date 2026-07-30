@@ -75,7 +75,7 @@ test("server-renders the complete Chinese tutorial homepage", async () => {
   assert.doesNotMatch(html, /Your site is taking shape|Starter Project/i);
 });
 
-test("homepage includes every explicitly requested resource link", async () => {
+test("homepage previews requested resources and links to the full directory", async () => {
   const response = await render("/");
   const html = await response.text();
 
@@ -91,6 +91,49 @@ test("homepage includes every explicitly requested resource link", async () => {
   assert.match(html, /HexDocs/);
   assert.match(html, /Erlang Forums/);
   assert.match(html, /Exercism/);
+  assert.match(html, /href="\/resources"/);
+  assert.match(html, /打开完整资源目录/);
+});
+
+test("renders the Markdown-driven resource directory", async () => {
+  const response = await render("/resources");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /Elixir \+ Erlang 关联资源/);
+  assert.match(html, /BEAM 关联资源/);
+  assert.match(html, /可搜索目录/);
+  assert.match(html, /搜索 Elixir School、安装、练习/);
+
+  for (const category of [
+    "官方文档",
+    "教程与课程",
+    "包与工具",
+    "社区",
+    "在线练习",
+  ]) {
+    assert.match(html, new RegExp(`>${category}<`));
+  }
+
+  for (const href of [
+    "https://elixirschool.com/zh-hans/",
+    "https://elixir-lang.org/install/",
+    "https://www.erlang.org/downloads",
+    "https://hex.pm/",
+    "https://elixirforum.com/",
+    "https://exercism.org/tracks/elixir",
+  ]) {
+    assert.match(html, new RegExp(`href="${href.replaceAll("/", "\\/")}"`));
+  }
+
+  assert.equal(
+    (
+      html.match(
+        /resource-directory-card resource-directory-card--(?:elixir|erlang|beam|tool)/g,
+      ) ?? []
+    ).length,
+    14,
+  );
 });
 
 test("renders a shareable lesson route with the full teaching template", async () => {
@@ -223,6 +266,8 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
     layout,
     packageJson,
     courseData,
+    resourceData,
+    resourceMarkdown,
     localScript,
     localConfig,
     globalStyles,
@@ -231,6 +276,8 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
       readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
       readFile(new URL("../package.json", import.meta.url), "utf8"),
       readFile(new URL("../app/course-data.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/resource-data.ts", import.meta.url), "utf8"),
+      readFile(new URL("../content/resources.md", import.meta.url), "utf8"),
       readFile(new URL("../scripts/start-local.sh", import.meta.url), "utf8"),
       readFile(new URL("../config/local.env", import.meta.url), "utf8"),
       readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
@@ -254,8 +301,17 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
   assert.match(layout, /@vercel\/speed-insights\/next/);
   assert.match(layout, /<Analytics\s*\/>/);
   assert.match(layout, /<SpeedInsights\s*\/>/);
-  assert.match(courseData, /https:\/\/elixir-lang\.org\/install\//);
-  assert.match(courseData, /https:\/\/www\.erlang\.org\/downloads/);
+  assert.doesNotMatch(courseData, /export const resources/);
+  assert.match(resourceData, /import "server-only"/);
+  assert.match(resourceData, /content", "resources\.md"/);
+  assert.match(resourceData, /parseResourceMarkdown/);
+  assert.match(resourceMarkdown, /https:\/\/elixir-lang\.org\/install\//);
+  assert.match(resourceMarkdown, /https:\/\/www\.erlang\.org\/downloads/);
+  assert.match(
+    resourceMarkdown,
+    /- \[Elixir School 中文\]\(https:\/\/elixirschool\.com\/zh-hans\/\) — 适合补充中文语法解释与专题阅读。/,
+  );
+  assert.match(resourceMarkdown, /- featured: true/);
   assert.match(packageJson, /"dev": "next dev"/);
   assert.match(packageJson, /"@vercel\/analytics"/);
   assert.match(packageJson, /"@vercel\/speed-insights"/);

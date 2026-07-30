@@ -4,7 +4,8 @@ import { CourseMap } from "./components/CourseMap";
 import { MessageLab } from "./components/MessageLab";
 import { SiteFooter } from "./components/SiteFooter";
 import { SiteHeader } from "./components/SiteHeader";
-import { courseModules, resources, stages } from "./course-data";
+import { courseModules, stages } from "./course-data";
+import { getResourceDirectory } from "./resource-data";
 
 export const metadata: Metadata = {
   title: {
@@ -13,19 +14,6 @@ export const metadata: Metadata = {
   description:
     "从零开始理解 Erlang、Elixir、BEAM 与 OTP。通过双语代码、并发实验、故障注入和综合项目，建立真正可用于生产的心智模型。",
 };
-
-const featuredResourceLabels = new Set([
-  "Elixir Docs",
-  "Elixir Install",
-  "Erlang Docs",
-  "OTP Downloads",
-  "hex.pm",
-  "Elixir Forum",
-]);
-
-const featuredResources = resources.filter((resource) =>
-  featuredResourceLabels.has(resource.shortLabel),
-);
 
 const pillars = [
   {
@@ -70,7 +58,12 @@ const mappingRows = [
   ["GenServer", "gen_server", "同一个 OTP behaviour"],
 ];
 
-export default function Home() {
+export default async function Home() {
+  const resourceDirectory = await getResourceDirectory();
+  const featuredResources = resourceDirectory.resources.filter(
+    (resource) => resource.featured,
+  );
+
   return (
     <>
       <SiteHeader />
@@ -203,10 +196,10 @@ export default function Home() {
                 <span className="section-kicker">常用入口</span>
                 <h2 id="quick-resources-title">学习时，少绕一次远路</h2>
               </div>
-              <a href="#resources">
+              <Link href="/resources">
                 查看全部资源
-                <span aria-hidden="true">↓</span>
-              </a>
+                <span aria-hidden="true">→</span>
+              </Link>
             </div>
             <div className="resource-strip">
               {featuredResources.map((resource) => (
@@ -457,47 +450,46 @@ export default function Home() {
             </div>
 
             <div className="resource-groups">
-              {(["官方文档", "包与工具", "社区", "练习"] as const).map(
-                (category) => (
-                  <div className="resource-group" key={category}>
-                    <div className="resource-group-heading">
-                      <span>{category}</span>
-                      <small>
-                        {
-                          resources.filter(
-                            (resource) => resource.category === category,
-                          ).length
-                        }{" "}
-                        个入口
-                      </small>
-                    </div>
-                    <div className="resource-list">
-                      {resources
-                        .filter((resource) => resource.category === category)
-                        .map((resource) => (
-                          <a
-                            href={resource.href}
-                            target="_blank"
-                            rel="noreferrer"
-                            key={resource.href}
-                          >
-                            <span
-                              className={`resource-mark resource-mark--${resource.accent}`}
-                              aria-hidden="true"
-                            >
-                              {resource.shortLabel.slice(0, 2)}
-                            </span>
-                            <span>
-                              <strong>{resource.label}</strong>
-                              <small>{resource.description}</small>
-                            </span>
-                            <b aria-hidden="true">↗</b>
-                          </a>
-                        ))}
-                    </div>
+              {resourceDirectory.groups.map((group) => (
+                <div className="resource-group" key={group.title}>
+                  <div className="resource-group-heading">
+                    <span>{group.title}</span>
+                    <small>{group.resources.length} 个入口</small>
                   </div>
-                ),
-              )}
+                  <div className="resource-list">
+                    {group.resources.slice(0, 2).map((resource) => (
+                      <a
+                        href={resource.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        key={resource.href}
+                      >
+                        <span
+                          className={`resource-mark resource-mark--${resource.accent}`}
+                          aria-hidden="true"
+                        >
+                          {resource.shortLabel.slice(0, 2)}
+                        </span>
+                        <span>
+                          <strong>{resource.label}</strong>
+                          <small>{resource.description}</small>
+                        </span>
+                        <b aria-hidden="true">↗</b>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="resources-preview-cta">
+              <p>
+                这里只展示每类前两个入口；完整目录支持按名称、域名和用途搜索。
+              </p>
+              <Link className="button button--dark" href="/resources">
+                打开完整资源目录
+                <span aria-hidden="true">→</span>
+              </Link>
             </div>
           </div>
         </section>

@@ -55,15 +55,6 @@ export type CourseModule = {
   }>;
 };
 
-export type ResourceLink = {
-  label: string;
-  shortLabel: string;
-  href: string;
-  category: "官方文档" | "包与工具" | "社区" | "练习";
-  description: string;
-  accent: "elixir" | "erlang" | "beam" | "tool";
-};
-
 export const stages: Array<{
   id: CourseStage;
   number: string;
@@ -1619,121 +1610,6 @@ end`,
         href: "https://hexdocs.pm/mix/Mix.Tasks.Release.html",
       },
     ],
-  },
-];
-
-export const resources: ResourceLink[] = [
-  {
-    label: "Elixir 官方文档",
-    shortLabel: "Elixir Docs",
-    href: "https://elixir-lang.org/docs/",
-    category: "官方文档",
-    description: "查语言指南、标准库与当前版本入口。",
-    accent: "elixir",
-  },
-  {
-    label: "安装 Elixir",
-    shortLabel: "Elixir Install",
-    href: "https://elixir-lang.org/install/",
-    category: "官方文档",
-    description: "按操作系统选择安装方式并核对版本要求。",
-    accent: "elixir",
-  },
-  {
-    label: "Erlang/OTP 系统文档",
-    shortLabel: "Erlang Docs",
-    href: "https://www.erlang.org/doc/system/readme.html",
-    category: "官方文档",
-    description: "查 OTP 设计原则、参考手册与效率指南。",
-    accent: "erlang",
-  },
-  {
-    label: "下载 Erlang/OTP",
-    shortLabel: "OTP Downloads",
-    href: "https://www.erlang.org/downloads",
-    category: "官方文档",
-    description: "获取 Erlang/OTP，并查看当前与历史发布版本。",
-    accent: "erlang",
-  },
-  {
-    label: "Hex",
-    shortLabel: "hex.pm",
-    href: "https://hex.pm/",
-    category: "包与工具",
-    description: "寻找 Erlang/Elixir 包、版本与依赖信息。",
-    accent: "tool",
-  },
-  {
-    label: "HexDocs",
-    shortLabel: "hexdocs.pm",
-    href: "https://hexdocs.pm/",
-    category: "包与工具",
-    description: "直接进入包文档与模块 API。",
-    accent: "tool",
-  },
-  {
-    label: "Elixir Forum",
-    shortLabel: "Elixir Forum",
-    href: "https://elixirforum.com/",
-    category: "社区",
-    description: "遇到真实工程问题时，先搜索社区讨论与案例。",
-    accent: "elixir",
-  },
-  {
-    label: "Erlang Forums",
-    shortLabel: "Erlang Forums",
-    href: "https://erlangforums.com/",
-    category: "社区",
-    description: "跟进 OTP、虚拟机、库与生产经验。",
-    accent: "erlang",
-  },
-  {
-    label: "Exercism · Elixir",
-    shortLabel: "Elixir 练习",
-    href: "https://exercism.org/tracks/elixir",
-    category: "练习",
-    description: "用小题练模式匹配、递归与惯用写法。",
-    accent: "elixir",
-  },
-  {
-    label: "Exercism · Erlang",
-    shortLabel: "Erlang 练习",
-    href: "https://exercism.org/tracks/erlang",
-    category: "练习",
-    description: "把相同概念换成 Erlang 再做一遍。",
-    accent: "erlang",
-  },
-  {
-    label: "Elixir School 中文",
-    shortLabel: "Elixir School",
-    href: "https://elixirschool.com/zh-hans/",
-    category: "练习",
-    description: "适合补充中文语法解释与专题阅读。",
-    accent: "beam",
-  },
-  {
-    label: "Learn You Some Erlang",
-    shortLabel: "LYSE",
-    href: "https://learnyousomeerlang.com/",
-    category: "练习",
-    description: "用经典长文深入 Erlang、并发与 OTP。",
-    accent: "beam",
-  },
-  {
-    label: "Livebook",
-    shortLabel: "Livebook",
-    href: "https://livebook.dev/",
-    category: "包与工具",
-    description: "把 Elixir 代码、讲解与可运行实验放在一起。",
-    accent: "tool",
-  },
-  {
-    label: "Phoenix",
-    shortLabel: "Phoenix",
-    href: "https://www.phoenixframework.org/",
-    category: "包与工具",
-    description: "完成 BEAM/OTP 地基后，再进入实时 Web 开发。",
-    accent: "tool",
   },
 ];
 

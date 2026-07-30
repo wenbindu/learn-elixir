@@ -27,6 +27,7 @@ export function SiteFooter() {
             <Link href="/learn/processes-and-mailboxes">直接学并发</Link>
             <Link href="/playground">在线 Playground</Link>
             <Link href="/keywords">关键字字典</Link>
+            <Link href="/resources">关联资源</Link>
           </div>
           <div>
             <span>官方入口</span>
