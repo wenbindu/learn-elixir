@@ -149,7 +149,7 @@ https://beam-path.vercel.app
 绑定正式域名前，先检查：
 
 - 首页能够打开。
-- `/learn/start-line` 等课程深链接能够直接访问。
+- `/learn/install-toolchain`、`/learn/start-line` 等课程深链接能够直接访问。
 - 左上角品牌图标和 Chrome favicon 正常。
 - Elixir Install 与 Erlang/OTP Downloads 等外部资源链接正确。
 - 手机和桌面尺寸下没有明显布局问题。

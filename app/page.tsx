@@ -4,7 +4,7 @@ import { CourseMap } from "./components/CourseMap";
 import { MessageLab } from "./components/MessageLab";
 import { SiteFooter } from "./components/SiteFooter";
 import { SiteHeader } from "./components/SiteHeader";
-import { courseModules, stages } from "./course-data";
+import { courseModules, courseStats, stages } from "./course-data";
 import { getResourceDirectory } from "./resource-data";
 
 export const metadata: Metadata = {
@@ -19,7 +19,7 @@ const pillars = [
   {
     number: "01",
     title: "先跑代码",
-    metric: "12 次跑代码",
+    metric: `${courseStats.stations} 次跑代码`,
     description:
       "每个新概念都有一小段代码，可以放进 IEx 或 erl 运行。页面动画会把消息传递画出来。",
     accent: "blue",
@@ -35,7 +35,7 @@ const pillars = [
   {
     number: "03",
     title: "改一处，再运行",
-    metric: "46 次小挑战",
+    metric: `${courseStats.checkpoints} 次小挑战`,
     description:
       "做一道小题，翻译一段代码，再改一个条件。答错没关系，结果会告诉你下一步该试什么。",
     accent: "green",
@@ -97,30 +97,33 @@ export default async function Home() {
               </p>
 
               <div className="route-picker" aria-label="选择学习入口">
-                <Link className="route-card route-card--primary" href="/learn/start-line">
+                <Link
+                  className="route-card route-card--primary"
+                  href="/learn/install-toolchain"
+                >
                   <span>零基础</span>
-                  <strong>让第一段代码跑起来</strong>
-                  <small>第 00 站 · 认识 BEAM 运行环境</small>
+                  <strong>先把本地工具装好</strong>
+                  <small>第 00 站 · Erlang、Elixir 与 Mix</small>
                 </Link>
                 <Link className="route-card" href="/learn/elixir-foundations">
                   <span>已有编程基础</span>
                   <strong>先用 Elixir 动手</strong>
-                  <small>第 02 站 · 几分钟看到输出</small>
+                  <small>第 03 站 · 几分钟看到输出</small>
                 </Link>
                 <Link className="route-card" href="/learn/otp-behaviours">
                   <span>已有 Elixir 基础</span>
                   <strong>看进程怎样合作</strong>
-                  <small>第 06 站 · 认识 OTP 和 behaviour</small>
+                  <small>第 07 站 · 认识 OTP 和 behaviour</small>
                 </Link>
               </div>
 
               <div className="hero-metrics">
                 <div>
-                  <strong>12</strong>
+                  <strong>{courseStats.stations}</strong>
                   <span>学习小站</span>
                 </div>
                 <div>
-                  <strong>46</strong>
+                  <strong>{courseStats.checkpoints}</strong>
                   <span>次练习与自查</span>
                 </div>
                 <div>
@@ -344,7 +347,7 @@ export default async function Home() {
                 <h2>从第一段代码，到可靠系统</h2>
               </div>
               <p>
-                这里有 12 站。可以按顺序走，也可以先找眼下想学的内容。
+                这里有 {courseStats.stations} 站。可以按顺序走，也可以先找眼下想学的内容。
                 每站都有代码、实验和自查。
               </p>
             </div>
@@ -400,7 +403,7 @@ export default async function Home() {
             <div className="capstone-copy">
               <div className="eyebrow">
                 <span />
-                第 11 站 · 综合练习
+                第 12 站 · 综合练习
               </div>
               <h2>做一个任务调度器</h2>
               <p>

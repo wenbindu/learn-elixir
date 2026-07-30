@@ -52,6 +52,7 @@ async function render(pathname = "/") {
 }
 
 const lessonSlugs = [
+  "install-toolchain",
   "start-line",
   "beam-mental-model",
   "elixir-foundations",
@@ -77,14 +78,15 @@ test("server-renders the complete Chinese tutorial homepage", async () => {
   assert.match(html, /动手学/);
   assert.match(html, /Erlang/);
   assert.match(html, /Elixir/);
-  assert.match(html, /12<\/strong><span>学习小站/);
-  assert.match(html, /46<\/strong><span>次练习与自查/);
+  assert.match(html, /13<\/strong><span>学习小站/);
+  assert.match(html, /49<\/strong><span>次练习与自查/);
   assert.match(html, /先猜，再运行/);
   assert.match(html, />怎么学</);
   assert.match(html, />消息实验</);
   assert.match(html, /做一个任务调度器/);
   assert.match(html, /process · mailbox<br\/>scheduler · isolation/);
   for (const title of [
+    "装好工具",
     "起跑线",
     "进程与信箱",
     "Elixir 数据流水线",
@@ -104,6 +106,7 @@ test("server-renders the complete Chinese tutorial homepage", async () => {
     html,
     /<meta(?=[^>]*property="og:image")(?=[^>]*content="https?:\/\/[^"]+\/og\.png")[^>]*>/i,
   );
+  assert.match(html, /href="\/learn\/install-toolchain"/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
   assert.doesNotMatch(html, /Your site is taking shape|Starter Project/i);
 });
@@ -167,6 +170,8 @@ test("renders the Markdown-driven resource directory", async () => {
     ).length,
     14,
   );
+  assert.match(html, /href="\/learn\/install-toolchain"/);
+  assert.match(html, /打开安装准备/);
 });
 
 test("renders a shareable lesson route with the full teaching template", async () => {
@@ -238,10 +243,46 @@ test("start line introduces Mix as a project build tool", async () => {
   assert.match(html, /mix new beam_probe/);
   assert.match(html, /mix test/);
   assert.match(html, /Mix 不等于 BEAM、OTP 或 Hex/);
+  assert.match(html, /href="\/learn\/install-toolchain"/);
   assert.match(
     html,
-    /https:\/\/elixir-lang\.org\/getting-started\/mix-otp\/introduction-to-mix\.html/,
+    /https:\/\/hexdocs\.pm\/elixir\/introduction-to-mix\.html/,
   );
+});
+
+test("puts a three-platform installation guide before the start line", async () => {
+  const response = await render("/learn/install-toolchain");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /装好工具/);
+  assert.match(html, /Mix 已包含在 Elixir 里/);
+  assert.match(html, /只走你电脑这一条路/);
+  assert.match(
+    html,
+    /13(?:<!-- -->)? 站 · (?:<!-- -->)?49(?:<!-- -->)? 个小关卡/,
+  );
+  assert.match(html, />macOS</);
+  assert.match(html, />Linux</);
+  assert.match(html, />Windows</);
+  assert.match(html, /brew install elixir/);
+  assert.match(html, /install\.sh elixir@1\.20\.2 otp@28\.4/);
+  assert.match(html, /64-bit Windows Installer/);
+  assert.match(html, /iex\.bat/);
+  assert.match(html, /erl -s erlang halt/);
+  assert.match(html, /elixir --version/);
+  assert.match(html, /mix --version/);
+  assert.equal(
+    (
+      html.match(
+        /<article class="installation-guide-card installation-guide-card--/g,
+      ) ?? []
+    ).length,
+    3,
+  );
+  assert.match(html, /href="https:\/\/elixir-lang\.org\/install\/"/);
+  assert.match(html, /href="https:\/\/www\.erlang\.org\/downloads"/);
+  assert.match(html, /href="\/learn\/start-line"/);
 });
 
 test("renders an embedded Elixir playground with safe fallback guidance", async () => {
@@ -259,6 +300,8 @@ test("renders an embedded Elixir playground with safe fallback guidance", async 
   assert.match(html, /不要放密码/);
   assert.match(html, /输出和报错都在下方/);
   assert.match(html, /在新窗口打开/);
+  assert.match(html, /href="\/learn\/install-toolchain"/);
+  assert.match(html, /安装本地工具/);
 });
 
 test("renders a complete Elixir and Erlang keyword dictionary", async () => {
@@ -419,7 +462,7 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
   assert.match(resourceMarkdown, /- featured: true/);
   assert.equal(
     (courseData.match(/storyBridge:\s*\{/g) ?? []).length,
-    13,
+    14,
   );
   assert.equal((keywordData.match(/\n\s+analogy:/g) ?? []).length, 13);
   assert.ok(
@@ -429,9 +472,10 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
   assert.match(contentStyleGuide, /比喻只用于引出概念，不能代替技术定义/);
   assert.match(contentStyleGuide, /把报错写成可以观察和处理的结果/);
   assert.match(contentStyleGuide, /注释只解释意图、数据流、消息去向和失败边界/);
-  assert.equal(elixirLessonBlocks.length, 12);
-  assert.equal(erlangLessonBlocks.length, 12);
-  assert.equal(experimentCommands.length, 12);
+  assert.match(courseData, /stations:\s*courseModules\.length/);
+  assert.equal(elixirLessonBlocks.length, 13);
+  assert.equal(erlangLessonBlocks.length, 13);
+  assert.equal(experimentCommands.length, 13);
   assert.equal(playgroundBlocks.length, 3);
   for (const [index, block] of elixirLessonBlocks.entries()) {
     assert.ok(
@@ -497,6 +541,18 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
   assert.match(
     globalStyles,
     /\.keyword-entry > pre code\s*\{[^}]*font-size:\s*var\(--text-code\)/s,
+  );
+  assert.match(
+    globalStyles,
+    /\.acceptance-card ul\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/s,
+  );
+  assert.match(
+    globalStyles,
+    /\.acceptance-card \.inline-code-text\s*\{[^}]*white-space:\s*nowrap/s,
+  );
+  assert.match(
+    globalStyles,
+    /@media \(max-width:\s*1120px\)[\s\S]*?\.installation-heading,\s*\.installation-guide-card\s*\{[^}]*grid-template-columns:\s*1fr/s,
   );
 
   for (const path of [

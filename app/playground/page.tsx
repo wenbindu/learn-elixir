@@ -130,8 +130,11 @@ export default function PlaygroundPage() {
                 <span>想在自己电脑上继续吗？</span>
                 <strong>用 Mix 建项目，把这段代码带回去。</strong>
               </div>
-              <Link className="button button--dark" href="/learn/start-line">
-                返回起跑线
+              <Link
+                className="button button--dark"
+                href="/learn/install-toolchain"
+              >
+                安装本地工具
                 <span aria-hidden="true">→</span>
               </Link>
             </div>

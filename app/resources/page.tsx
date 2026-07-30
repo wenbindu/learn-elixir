@@ -122,10 +122,13 @@ export default async function ResourcesPage() {
             <div className="resource-usage-cta">
               <div>
                 <strong>还没安装 Elixir？</strong>
-                <p>从起跑线检查 Erlang、Elixir、IEx、erl 和 Mix。</p>
+                <p>按电脑系统装好 Erlang 与 Elixir，再检查 IEx、erl 和 Mix。</p>
               </div>
-              <Link className="button button--dark" href="/learn/start-line">
-                打开起跑线
+              <Link
+                className="button button--dark"
+                href="/learn/install-toolchain"
+              >
+                打开安装准备
                 <span aria-hidden="true">→</span>
               </Link>
             </div>

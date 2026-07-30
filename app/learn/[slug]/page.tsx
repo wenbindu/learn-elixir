@@ -9,6 +9,7 @@ import { SiteFooter } from "../../components/SiteFooter";
 import { SiteHeader } from "../../components/SiteHeader";
 import {
   courseModules,
+  courseStats,
   getAdjacentModules,
   getModule,
   stages,
@@ -51,7 +52,9 @@ export default async function LessonPage({ params }: LessonPageProps) {
             <div className="lesson-sidebar-intro">
               <span>BEAM PATH</span>
               <strong>BEAM 探险地图</strong>
-              <small>12 站 · 46 个小关卡</small>
+              <small>
+                {courseStats.stations} 站 · {courseStats.checkpoints} 个小关卡
+              </small>
             </div>
 
             <nav>
@@ -220,6 +223,82 @@ export default async function LessonPage({ params }: LessonPageProps) {
               </div>
             </section>
 
+            {courseModule.installation ? (
+              <section
+                className="lesson-block installation-block"
+                aria-labelledby="installation-guides-title"
+              >
+                <div className="installation-heading">
+                  <div>
+                    <div className="section-kicker">按系统安装</div>
+                    <h2 id="installation-guides-title">只走你电脑这一条路</h2>
+                  </div>
+                  <p>
+                    <InlineCodeText text={courseModule.installation.intro} />
+                  </p>
+                </div>
+
+                <aside className="installation-mix-note">
+                  <span aria-hidden="true">✓</span>
+                  <div>
+                    <strong>Mix 已包含在 Elixir 里</strong>
+                    <p>
+                      <InlineCodeText
+                        text={courseModule.installation.mixNote}
+                      />
+                    </p>
+                  </div>
+                </aside>
+
+                <div className="installation-guide-list">
+                  {courseModule.installation.guides.map((guide) => (
+                    <article
+                      className={`installation-guide-card installation-guide-card--${guide.id}`}
+                      key={guide.id}
+                    >
+                      <div className="installation-guide-copy">
+                        <span>{guide.label}</span>
+                        <h3>{guide.title}</h3>
+                        <p>
+                          <InlineCodeText text={guide.description} />
+                        </p>
+                        <ol>
+                          {guide.steps.map((step) => (
+                            <li key={step}>
+                              <InlineCodeText text={step} />
+                            </li>
+                          ))}
+                        </ol>
+                        <div className="installation-guide-links">
+                          {guide.links.map((link) => (
+                            <a
+                              href={link.href}
+                              target="_blank"
+                              rel="noreferrer"
+                              key={link.href}
+                            >
+                              {link.label}
+                              <span aria-hidden="true">↗</span>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="installation-guide-command">
+                        <CopyBlock
+                          code={guide.command}
+                          language="shell"
+                          label={guide.commandLabel}
+                        />
+                        <p>
+                          <InlineCodeText text={guide.note} />
+                        </p>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
             <section className="lesson-block">
               <div className="section-heading-inline">
                 <div>
@@ -363,10 +442,14 @@ export default async function LessonPage({ params }: LessonPageProps) {
               <div className="acceptance-card">
                 <span>过关条件</span>
                 <ul>
-                  {courseModule.challenge.acceptance.map((item) => (
+                  {courseModule.challenge.acceptance.map((item, index) => (
                     <li key={item}>
-                      <span aria-hidden="true" />
-                      <InlineCodeText text={item} />
+                      <span aria-hidden="true">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <p>
+                        <InlineCodeText text={item} />
+                      </p>
                     </li>
                   ))}
                 </ul>

@@ -30,6 +30,24 @@ export type CourseModule = {
     term: string;
     definition: string;
   }>;
+  installation?: {
+    intro: string;
+    mixNote: string;
+    guides: Array<{
+      id: "macos" | "linux" | "windows";
+      label: string;
+      title: string;
+      description: string;
+      steps: string[];
+      command: string;
+      commandLabel: string;
+      note: string;
+      links: Array<{
+        label: string;
+        href: string;
+      }>;
+    }>;
+  };
   elixirCode: string;
   erlangCode: string;
   codeCaption: string;
@@ -72,7 +90,7 @@ export const stages: Array<{
     id: "foundation",
     number: "01",
     title: "先让代码跑起来",
-    description: "认识 Erlang、Elixir、BEAM、OTP 和 Mix 分别在忙什么。",
+    description: "先装好工具，再认识 Erlang、Elixir、BEAM、OTP 和 Mix。",
   },
   {
     id: "languages",
@@ -97,6 +115,271 @@ export const stages: Array<{
 export const courseModules: CourseModule[] = [
   {
     number: "00",
+    slug: "install-toolchain",
+    stage: "foundation",
+    stageLabel: "准备",
+    title: "装好工具",
+    subtitle: "选你的电脑。装好 Erlang 和 Elixir。Mix 会跟着 Elixir 一起来。",
+    summary:
+      "按 macOS、Linux 或 Windows 的步骤装好 Erlang、Elixir 和 Mix，再检查三个命令。",
+    duration: "约 20–40 分钟",
+    lessons: 3,
+    level: "零基础",
+    languages: ["Erlang", "Elixir", "Mix"],
+    why:
+      "后面的代码要靠这些工具运行。若终端找不到命令，问题还没走到代码那里。先把工具放稳，再去起跑线。",
+    storyBridge: {
+      label: "木匠开工",
+      title: "工具先摆上案",
+      story:
+        "木匠动手前，先摆好锯、尺和刨。工具不是木柜，却决定第一刀能不能落下。",
+      connection:
+        "Erlang 提供运行环境，Elixir 提供另一种写法，Mix 帮你创建、编译和测试项目。",
+      boundary:
+        "命令能运行，只说明工具已经到位。代码为什么这样写，要到后面的实验里慢慢看。",
+    },
+    outcomes: [
+      "能找到自己电脑对应的安装步骤",
+      "能分别检查 Erlang、Elixir 和 Mix",
+      "知道 Mix 随 Elixir 安装，不去另找下载包",
+      "遇到命令不存在时，先重开终端并检查 PATH",
+    ],
+    prerequisites: [
+      "知道自己的电脑使用 macOS、Linux 还是 Windows",
+      "保持网络连接，并留出下载安装的时间",
+      "若系统要求管理员密码，先请家长、老师或电脑管理员确认",
+    ],
+    concepts: [
+      {
+        term: "PATH",
+        definition:
+          "终端寻找命令时会查看的一串目录。工具已经安装却提示找不到，常常要检查这里。",
+      },
+      {
+        term: "版本配对",
+        definition:
+          "Elixir 需要能够配合的 Erlang/OTP 版本。不要只挑最大的数字，要看官方安装页的兼容说明。",
+      },
+      {
+        term: "Mix",
+        definition:
+          "Elixir 自带的项目工具。安装 Elixir 后就会得到 mix，不需要第三份安装包。",
+      },
+    ],
+    installation: {
+      intro:
+        "只选与你电脑相同的一栏。不要把三套命令全跑一遍。安装器或包管理器装完后，可以重开终端检查；Ubuntu 官方脚本要先在当前终端检查，再保存两条 PATH。",
+      mixNote:
+        "Mix 不用另装。Elixir 官方说明：安装 Elixir 时，会一起得到 mix 命令。",
+      guides: [
+        {
+          id: "macos",
+          label: "macOS",
+          title: "用 Homebrew 安装",
+          description:
+            "先在终端运行 brew --version。若找不到 brew，先去 Homebrew 官网按说明安装，再回来继续。",
+          steps: [
+            "打开“终端”应用。",
+            "安装 Elixir；Homebrew 会把 Erlang 作为依赖一起安装。",
+            "关闭终端，重新打开一个窗口。",
+            "运行三个版本命令，确认 Mix 也已到位。",
+          ],
+          command: `# 只在 macOS 终端运行
+brew install elixir
+
+# Erlang 会作为依赖安装，Mix 随 Elixir 安装
+erl -s erlang halt
+elixir --version
+mix --version`,
+          commandLabel: "macOS 安装与检查",
+          note:
+            "Homebrew 会处理依赖。若它提示已有版本，先读完提示，不要急着删除旧目录。",
+          links: [
+            {
+              label: "Homebrew 官网",
+              href: "https://brew.sh/",
+            },
+            {
+              label: "Elixir 官方安装页",
+              href: "https://elixir-lang.org/install/",
+            },
+            {
+              label: "Erlang 官方下载页",
+              href: "https://www.erlang.org/downloads",
+            },
+          ],
+        },
+        {
+          id: "linux",
+          label: "Linux",
+          title: "Ubuntu 用官方脚本",
+          description:
+            "Linux 有许多发行版。下面是 Elixir 官网当前给 Ubuntu 的配对示例。版本号若与官网不同，以官网新组合为准。",
+          steps: [
+            "打开终端，先确认自己使用 Ubuntu。",
+            "下载官方脚本，并安装一组彼此兼容的 Erlang 与 Elixir。",
+            "在当前终端加入两个命令目录，再检查版本。",
+            "Debian 先核对官方仓库版本；Fedora、Arch 等系统按 Elixir 官方页选择对应命令。",
+          ],
+          command: `# 只在 Ubuntu 终端运行；先和官网核对版本组合
+curl -fsSO https://elixir-lang.org/install.sh
+sh install.sh elixir@1.20.2 otp@28.4
+
+# 这两行 PATH 先让当前终端找到新工具
+installs_dir=$HOME/.elixir-install/installs
+export PATH=$installs_dir/otp/28.4/bin:$PATH
+export PATH=$installs_dir/elixir/1.20.2-otp-28/bin:$PATH
+
+# Erlang、Elixir 和 Mix 都应能回答
+erl -s erlang halt
+elixir --version
+mix --version`,
+          commandLabel: "Ubuntu 安装与检查",
+          note:
+            "两条 `export` 都只对当前终端生效，确认成功后要把两条都写进自己的 shell 配置。按当前官方入门指南，至少核对到 Elixir 1.18 与 OTP 27；Debian 12 默认包通常不足。Debian 13 可用 `sudo apt install erlang elixir`；Fedora 用 `sudo dnf install elixir erlang`；Arch 用 `sudo pacman -S erlang elixir`。不要混用几套路线。",
+          links: [
+            {
+              label: "Elixir 官方 Linux 说明",
+              href: "https://elixir-lang.org/install/",
+            },
+            {
+              label: "Erlang 官方下载页",
+              href: "https://www.erlang.org/downloads",
+            },
+          ],
+        },
+        {
+          id: "windows",
+          label: "Windows",
+          title: "用两个官方安装程序",
+          description:
+            "先装 Erlang/OTP，再从 Elixir 官方页面选择与这个 OTP 大版本相配的 Elixir 安装程序。",
+          steps: [
+            "在 Erlang 下载页选择 64-bit Windows Installer，下载后运行。",
+            "打开新 PowerShell，运行 `erl -s erlang halt`，记下 OTP 大版本。",
+            "在 Elixir 安装页选择与该 OTP 大版本相配的 Windows Installer。",
+            "装完后关闭 PowerShell，再打开一个新窗口检查。",
+          ],
+          command: `# 安装完成后，在新打开的 PowerShell 中运行
+erl -s erlang halt
+elixir --version
+mix --version
+
+# PowerShell 里的 iex 是另一个命令；这样打开 Elixir 的 IEx
+iex.bat`,
+          commandLabel: "Windows 安装后检查",
+          note:
+            "不要只看版本数字最大。Windows 安装页会列出当前兼容组合。若已使用 Scoop，也可按官方页面分别安装 erlang 和 elixir。",
+          links: [
+            {
+              label: "下载 Erlang Windows Installer",
+              href: "https://www.erlang.org/downloads",
+            },
+            {
+              label: "选择匹配的 Elixir Installer",
+              href: "https://elixir-lang.org/install/",
+            },
+          ],
+        },
+      ],
+    },
+    elixirCode: `# 安装完成后，在 IEx 中运行
+# 请 Elixir 打印一句话
+IO.puts("Elixir 可以运行")
+
+# 查看 Elixir 自己的版本
+System.version()
+
+# Elixir 也能直接询问底下的 Erlang/OTP
+:erlang.system_info(:otp_release)`,
+    erlangCode: `%% 安装完成后，在 erl 中运行
+%% 请 Erlang 打印一句话
+io:format("Erlang 可以运行~n").
+
+%% 查看当前 Erlang/OTP 的大版本
+erlang:system_info(otp_release).
+
+%% 用 q/0 退出 shell
+q().`,
+    codeCaption:
+      "两个 shell 都能回应，说明运行环境已经醒了。Windows PowerShell 请用 iex.bat 打开 Elixir 的 IEx。",
+    experiment: {
+      title: "给工具做一次体检",
+      intro:
+        "三个系统都做同一件事：查看 Erlang、Elixir 和 Mix，再让 Mix 列出它能做的任务。",
+      steps: [
+        "新开一个终端或 PowerShell，避免继续使用安装前的旧 PATH",
+        "运行 Erlang 检查命令，记下 OTP 大版本",
+        "运行 `elixir --version` 和 `mix --version`",
+        "运行 `mix help`，确认能看到一串 Mix 任务",
+      ],
+      command: `# macOS、Linux 和 Windows PowerShell 都可运行
+erl -s erlang halt
+elixir --version
+mix --version
+mix help`,
+      expected: [
+        "Erlang 命令会打印 OTP 大版本",
+        "Elixir 版本信息中也会出现它正在使用的 Erlang/OTP",
+        "Mix 会显示自己的版本，并列出可以运行的任务",
+      ],
+      breakIt:
+        "先在安装前一直没有关闭的旧终端里检查，再换到新开的终端。若结果不同，问题多半在 PATH 没有重新载入。",
+      canProve:
+        "这台电脑能找到 Erlang、Elixir 和 Mix，三个工具已经可以开始本地练习。",
+      cannotProve:
+        "版本命令不能证明所有第三方依赖都兼容，也不能证明以后每个项目都能直接编译。",
+    },
+    quiz: {
+      question: "安装 Elixir 后，怎样安装 Mix？",
+      options: [
+        "从搜索结果里另找一个 Mix 安装包",
+        "不用另装；Mix 随 Elixir 一起提供",
+        "进入 erl 后输入 install_mix",
+        "只有部署服务器才需要 Mix",
+      ],
+      answer: 1,
+      explanation:
+        "Mix 是随 Elixir 提供的项目工具。安装完成后，用 `mix --version` 检查即可。",
+    },
+    challenge: {
+      title: "留一张安装体检单",
+      brief:
+        "记下操作系统、OTP、Elixir 和 Mix 版本，再写下命令找不到时先做哪两步。",
+      hints: [
+        "先把三个版本命令的输出放在一起，不用抄下每一个括号。",
+        "第一步可以是关闭终端，再打开一个新窗口。",
+        "第二步检查 PATH 或回到官方安装页，不要随便下载同名工具。",
+      ],
+      acceptance: [
+        "写明电脑使用 macOS、Linux 还是 Windows",
+        "记录 OTP、Elixir 和 Mix 三类版本",
+        "能说明 Mix 为什么不用单独安装",
+        "遇到权限问题时知道找家长、老师或电脑管理员",
+      ],
+    },
+    takeaways: [
+      "只执行自己操作系统对应的一套步骤。",
+      "先确保有兼容的 Erlang/OTP；安装器、脚本或包管理器可以代办。Mix 会随 Elixir 到来。",
+      "命令找不到时，先重开终端，再检查 PATH 和官方说明。",
+    ],
+    references: [
+      {
+        label: "Elixir 官方安装页",
+        href: "https://elixir-lang.org/install/",
+      },
+      {
+        label: "Erlang/OTP 官方下载页",
+        href: "https://www.erlang.org/downloads",
+      },
+      {
+        label: "Mix 官方介绍",
+        href: "https://hexdocs.pm/elixir/introduction-to-mix.html",
+      },
+    ],
+  },
+  {
+    number: "01",
     slug: "start-line",
     stage: "foundation",
     stageLabel: "地基",
@@ -127,7 +410,7 @@ export const courseModules: CourseModule[] = [
       "能用 Mix 创建项目、运行代码并跑通第一项测试",
     ],
     prerequisites: [
-      "会打开终端并输入命令；暂时不熟练也没关系",
+      "已走完安装准备，终端能找到 `erl`、`elixir` 和 `mix`",
       "知道变量和函数大致是什么；说不清楚也可以边做边认识",
     ],
     concepts: [
@@ -246,7 +529,7 @@ mix run -e 'IO.puts("OTP #{:erlang.system_info(:otp_release)}")'`,
     references: [
       {
         label: "Elixir Getting Started",
-        href: "https://elixir-lang.org/getting-started/introduction.html",
+        href: "https://hexdocs.pm/elixir/introduction.html",
       },
       {
         label: "Erlang Getting Started",
@@ -254,12 +537,12 @@ mix run -e 'IO.puts("OTP #{:erlang.system_info(:otp_release)}")'`,
       },
       {
         label: "Introduction to Mix",
-        href: "https://elixir-lang.org/getting-started/mix-otp/introduction-to-mix.html",
+        href: "https://hexdocs.pm/elixir/introduction-to-mix.html",
       },
     ],
   },
   {
-    number: "01",
+    number: "02",
     slug: "beam-mental-model",
     stage: "foundation",
     stageLabel: "地基",
@@ -402,7 +685,7 @@ send(pid, {:add, 1}); send(pid, {:add, 2}); send(pid, {:add, 3})`,
     ],
   },
   {
-    number: "02",
+    number: "03",
     slug: "elixir-foundations",
     stage: "languages",
     stageLabel: "语言",
@@ -552,7 +835,7 @@ mix test --trace`,
     ],
   },
   {
-    number: "03",
+    number: "04",
     slug: "erlang-foundations",
     stage: "languages",
     stageLabel: "语言",
@@ -689,7 +972,7 @@ rebar3 eunit`,
     ],
   },
   {
-    number: "04",
+    number: "05",
     slug: "shared-semantics",
     stage: "languages",
     stageLabel: "桥接",
@@ -827,7 +1110,7 @@ iex -S mix`,
     ],
   },
   {
-    number: "05",
+    number: "06",
     slug: "processes-and-mailboxes",
     stage: "concurrency",
     stageLabel: "并发",
@@ -968,7 +1251,7 @@ Process.info(self(), :messages)`,
     ],
   },
   {
-    number: "06",
+    number: "07",
     slug: "otp-behaviours",
     stage: "concurrency",
     stageLabel: "OTP",
@@ -1120,7 +1403,7 @@ handle_call({put, Key, Value}, _From, State) ->
     ],
   },
   {
-    number: "07",
+    number: "08",
     slug: "supervision-trees",
     stage: "concurrency",
     stageLabel: "OTP",
@@ -1272,7 +1555,7 @@ Supervisor.which_children(Jobs.Supervisor)`,
     ],
   },
   {
-    number: "08",
+    number: "09",
     slug: "state-and-backpressure",
     stage: "concurrency",
     stageLabel: "容量",
@@ -1412,7 +1695,7 @@ collect(Running, Pending, Limit) ->
     ],
   },
   {
-    number: "09",
+    number: "10",
     slug: "distributed-operations",
     stage: "production",
     stageLabel: "联网",
@@ -1557,7 +1840,7 @@ Node.ping(:"b@127.0.0.1")`,
     ],
   },
   {
-    number: "10",
+    number: "11",
     slug: "interoperability",
     stage: "production",
     stageLabel: "桥接",
@@ -1701,7 +1984,7 @@ mix test test/interoperability_test.exs`,
     ],
   },
   {
-    number: "11",
+    number: "12",
     slug: "reliable-scheduler",
     stage: "production",
     stageLabel: "作品",
@@ -1730,7 +2013,7 @@ mix test test/interoperability_test.exs`,
       "能主动制造小故障（故障注入），检查系统怎样恢复、拒绝或留下线索",
     ],
     prerequisites: [
-      "完成 00–10 模块，并保留前面做过的队列和监督树练习",
+      "完成 00–11 模块，并保留前面做过的队列和监督树练习",
       "能在参考资料帮助下编写 GenServer、gen_server 和 Supervisor",
     ],
     concepts: [
@@ -1838,7 +2121,7 @@ mix test --only fault_injection --trace`,
     references: [
       {
         label: "Mix and OTP",
-        href: "https://elixir-lang.org/getting-started/mix-otp/introduction-to-mix.html",
+        href: "https://hexdocs.pm/elixir/introduction-to-mix.html",
       },
       {
         label: "Erlang Applications",
@@ -1851,6 +2134,14 @@ mix test --only fault_injection --trace`,
     ],
   },
 ];
+
+export const courseStats = {
+  stations: courseModules.length,
+  checkpoints: courseModules.reduce(
+    (total, courseModule) => total + courseModule.lessons,
+    0,
+  ),
+};
 
 export function getModule(slug: string) {
   return courseModules.find((module) => module.slug === slug);

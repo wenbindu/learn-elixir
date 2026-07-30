@@ -33,7 +33,7 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
           <Link href="/resources">学习工具箱</Link>
         </nav>
 
-        <Link className="header-cta" href="/learn/start-line">
+        <Link className="header-cta" href="/learn/install-toolchain">
           开始学习
           <span aria-hidden="true">→</span>
         </Link>
