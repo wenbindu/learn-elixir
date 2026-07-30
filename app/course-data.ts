@@ -148,22 +148,28 @@ export const courseModules: CourseModule[] = [
       },
     ],
     elixirCode: `# 在 IEx 中
+# 记住当前进程，子进程稍后要把消息发回来
 parent = self()
 
+# 新建一个轻量进程，并向 parent 发送 tuple
 spawn(fn ->
   send(parent, {:hello, :from_elixir})
 end)
 
+# 等待并拆开符合形状的消息
 receive do
   {:hello, source} -> {:received, source}
 end`,
     erlangCode: `%% 在 erl 中
+%% 记住当前进程，子进程稍后要把消息发回来
 Parent = self(),
 
+%% 新建轻量进程，并用 ! 发送 tuple
 spawn(fun() ->
   Parent ! {hello, from_erlang}
 end),
 
+%% 等待并拆开符合形状的消息
 receive
   {hello, Source} -> {received, Source}
 end.`,
@@ -178,13 +184,19 @@ end.`,
         "执行 `mix new beam_probe`，看看 `mix.exs`、`lib/` 和 `test/` 分别装着什么",
         "进入项目运行 `mix test`，再用 `mix run -e` 从同一项目读取 OTP release",
       ],
-      command: `erl -noshell -eval 'io:format("OTP ~s~n", [erlang:system_info(otp_release)]), halt().'
+      command: `# 直接打印 Erlang/OTP 版本，然后退出
+erl -noshell -eval 'io:format("OTP ~s~n", [erlang:system_info(otp_release)]), halt().'
+
+# 查看 Elixir 与 Mix 版本
 elixir --version
 mix --version
 
+# 创建项目，进入目录并运行测试
 mix new beam_probe
 cd beam_probe
 mix test
+
+# 在项目环境中再次读取 OTP 版本
 mix run -e 'IO.puts("OTP #{:erlang.system_info(:otp_release)}")'`,
       expected: [
         "三个命令会报出彼此能够配合工作的 Erlang/OTP、Elixir 和 Mix 版本",
@@ -296,8 +308,10 @@ mix run -e 'IO.puts("OTP #{:erlang.system_info(:otp_release)}")'`,
           "BEAM 估算工作量的单位。一个进程做了一段工作后，调度器会让其他进程获得机会。",
       },
     ],
-    elixirCode: `counter = fn loop, total ->
+    elixirCode: `# total 是这个进程当前保管的状态
+counter = fn loop, total ->
   receive do
+    # 用新总数进入下一轮，旧值不会被原地修改
     {:add, n} -> loop.(loop, total + n)
     {:read, caller} ->
       send(caller, {:total, total})
@@ -305,9 +319,12 @@ mix run -e 'IO.puts("OTP #{:erlang.system_info(:otp_release)}")'`,
   end
 end
 
+# 启动计数器进程，初始值为 0
 pid = spawn(fn -> counter.(counter, 0) end)`,
-    erlangCode: `Counter = fun Loop(Total) ->
+    erlangCode: `%% Total 是这个进程当前保管的状态
+Counter = fun Loop(Total) ->
   receive
+    %% 用新总数进入下一轮，旧值不会被原地修改
     {add, N} -> Loop(Total + N);
     {read, Caller} ->
       Caller ! {total, Total},
@@ -315,6 +332,7 @@ pid = spawn(fn -> counter.(counter, 0) end)`,
   end
 end,
 
+%% 启动计数器进程，初始值为 0
 Pid = spawn(fun() -> Counter(0) end).`,
     codeCaption:
       "计数器没有擦掉旧数字再写新数字。它每收到一条消息，就带着新的总数进入下一轮等待。",
@@ -327,7 +345,8 @@ Pid = spawn(fun() -> Counter(0) end).`,
         "发送带着自己 PID 的 `{:read, self()}`，让计数器知道回信地址",
         "用 `Process.info(pid, :message_queue_len)` 看看它的收件箱里还有几封信",
       ],
-      command: `send(pid, {:add, 1}); send(pid, {:add, 2}); send(pid, {:add, 3})`,
+      command: `# 连续发送三条加法消息；每次 send 都立即返回
+send(pid, {:add, 1}); send(pid, {:add, 2}); send(pid, {:add, 3})`,
       expected: [
         "最后会收到 `{:total, 6}`",
         "其他进程只能发消息，不能伸手直接改掉计数器保管的数字",
@@ -432,8 +451,10 @@ Pid = spawn(fun() -> Counter(0) end).`,
           "`|>` 把左边结果交给右边函数，作为第一个参数。它让步骤更清楚，但不会替你拆好函数。",
       },
     ],
-    elixirCode: `defmodule LogSummary do
+    elixirCode: `# 把多行日志整理成各级别出现次数
+defmodule LogSummary do
   def summarize(lines) do
+    # 先清理空白，再解析每一行
     lines
     |> Stream.map(&String.trim/1)
     |> Stream.reject(&(&1 == ""))
@@ -441,6 +462,7 @@ Pid = spawn(fun() -> Counter(0) end).`,
     |> Enum.frequencies_by(& &1.level)
   end
 
+  # 用字符串前缀直接取出级别和正文
   defp parse_line("ERROR " <> message),
     do: %{level: :error, message: message}
 
@@ -448,11 +470,13 @@ Pid = spawn(fun() -> Counter(0) end).`,
     do: %{level: :info, message: message}
 end`,
     erlangCode: `%% 同一数据流的 Erlang 轮廓
+%% 先清理空白，再解析每一行
 summarize(Lines) ->
   Clean = [string:trim(L) || L <- Lines, L =/= <<>>],
   Parsed = [parse_line(L) || L <- Clean],
   frequencies(Parsed).
 
+%% binary 模式会取出前缀后的正文
 parse_line(<<"ERROR ", Message/binary>>) ->
   #{level => error, message => Message};
 parse_line(<<"INFO ", Message/binary>>) ->
@@ -467,7 +491,8 @@ parse_line(<<"INFO ", Message/binary>>) ->
         "先运行“去掉两端空格，再删除空字符串”的顺序，记下结果",
         "把 `reject` 移到 `trim` 前面，再用完全相同的输入运行一次",
       ],
-      command: `mix test --trace`,
+      command: `# 运行全部测试，并显示每项测试名称与耗时
+mix test --trace`,
       expected: [
         "先 `trim` 再 `reject` 时，只有空格的那一行会被删掉",
         "先 `reject` 再 `trim` 时，那一行一开始还不是空字符串，随后可能闯进解析器",
@@ -576,19 +601,24 @@ parse_line(<<"INFO ", Message/binary>>) ->
           "装着一串字节的数据盒子，写作 `<<...>>`。UTF-8 文本通常放在 binary 中；传统 charlist 则是一串代表字符的整数。",
       },
     ],
-    elixirCode: `defmodule Orders do
+    elixirCode: `# 计算所有已付款订单的总金额
+defmodule Orders do
   def total(items) do
+    # 先筛选状态，再取出金额并相加
     items
     |> Enum.filter(&(&1.status == :paid))
     |> Enum.map(& &1.amount)
     |> Enum.sum()
   end
 end`,
-    erlangCode: `-module(orders).
+    erlangCode: `%% 这个模块公开一个接收单个参数的 total/1
+-module(orders).
 -export([total/1]).
 
 total(Items) ->
+  %% 列表推导先筛出已付款订单
   Paid = [Item || Item = #{status := paid} <- Items],
+  %% 再取出金额，最后求和
   Amounts = [Amount || #{amount := Amount} <- Paid],
   lists:sum(Amounts).`,
     codeCaption:
@@ -602,7 +632,8 @@ total(Items) ->
         "把第一条入口末尾的分号改成句点，再编译一次",
         "把同一个函数体中表示“接着做”的逗号改成分号，再编译一次",
       ],
-      command: `rebar3 eunit`,
+      command: `# 编译项目，并运行全部 EUnit 测试
+rebar3 eunit`,
       expected: [
         "分号能隔开同名、同参数个数的多个函数入口",
         "句点会告诉编译器：整个函数定义到这里结束",
@@ -712,22 +743,27 @@ total(Items) ->
           "BEAM 中的一份数据叫 term，例如数字、atom、tuple、list 和 map。普通 term 能在两种语言间直接传递。",
       },
     ],
-    elixirCode: `defmodule Order do
+    elixirCode: `# 用 atom 列出订单允许出现的状态
+defmodule Order do
   @type state :: :new | :paid | :shipped
 
+  # 成功返回新状态，失败返回清楚的错误标签
   @spec transition(state(), atom()) ::
           {:ok, state()} | {:error, :invalid_transition}
   def transition(:new, :pay), do: {:ok, :paid}
   def transition(:paid, :ship), do: {:ok, :shipped}
   def transition(_, _), do: {:error, :invalid_transition}
 end`,
-    erlangCode: `-module(order).
+    erlangCode: `%% 订单状态与事件都使用 atom
+-module(order).
 -export([transition/2]).
 
 -type state() :: new | paid | shipped.
+%% 成功返回新状态，失败返回清楚的错误标签
 -spec transition(state(), atom()) ->
   {ok, state()} | {error, invalid_transition}.
 
+%% 每个子句描述一条状态处理规则
 transition(new, pay) -> {ok, paid};
 transition(paid, ship) -> {ok, shipped};
 transition(_, _) -> {error, invalid_transition}.`,
@@ -740,7 +776,8 @@ transition(_, _) -> {error, invalid_transition}.`,
         "在 IEx 中调用 `:order.transition(:new, :pay)`，记下返回值",
         "再从 Erlang 调用 `'Elixir.Order':transition(new, pay)`，比较两边的数据形状",
       ],
-      command: `iex -S mix`,
+      command: `# 编译当前 Mix 项目，并在项目环境中打开 IEx
+iex -S mix`,
       expected: [
         "两边都会得到与 `{ok, paid}` 对应的同一个 tuple term",
         "Erlang 可以用 Elixir 模块真正的 module atom 找到并调用它",
@@ -839,22 +876,30 @@ transition(_, _) -> {error, invalid_transition}.`,
           "单向观察关系。被观察者退出时，观察者收到 `DOWN`，但不会自动退出。",
       },
     ],
-    elixirCode: `def call(server, request, timeout \\\\ 1_000) do
+    elixirCode: `# 发出请求前，先生成本次调用专用的 reference
+def call(server, request, timeout \\\\ 1_000) do
   ref = make_ref()
+  # 同时告诉服务端回信地址和请求编号
   send(server, {:call, self(), ref, request})
 
   receive do
+    # 只接收带有同一 reference 的回复
     {:reply, ^ref, response} -> {:ok, response}
   after
+    # timeout 只停止等待，不会撤回 request
     timeout -> {:error, :timeout}
   end
 end`,
-    erlangCode: `call(Server, Request, Timeout) ->
+    erlangCode: `%% 发出请求前，先生成本次调用专用的 reference
+call(Server, Request, Timeout) ->
   Ref = make_ref(),
+  %% 同时告诉服务端回信地址和请求编号
   Server ! {call, self(), Ref, Request},
   receive
+    %% 只接收带有同一 Ref 的回复
     {reply, Ref, Response} -> {ok, Response}
   after Timeout ->
+    %% timeout 只停止等待，不会撤回 request
     {error, timeout}
   end.`,
     codeCaption: "reference 负责配对请求与回复；timeout 不会撤回已发送的消息。",
@@ -867,7 +912,8 @@ end`,
         "发起一次只愿意等待 500 毫秒的 call",
         "两秒后运行 `Process.info(self(), :messages)`，看看自己的 mailbox",
       ],
-      command: `Process.info(self(), :messages)`,
+      command: `# 查看当前 IEx 进程 mailbox 中仍未处理的消息
+Process.info(self(), :messages)`,
       expected: [
         "call 会先返回 `{:error, :timeout}`",
         "服务端仍可能完成工作，迟到的 reply 也可能出现在调用者的 mailbox",
@@ -970,13 +1016,16 @@ end`,
         definition: "不等 reply 的异步消息。发送过快时，消息会堆进 mailbox。",
       },
     ],
-    elixirCode: `defmodule KV do
+    elixirCode: `# GenServer 负责保存并按顺序更新这张 map
+defmodule KV do
   use GenServer
 
+  # 这些函数是调用者看到的公开 API
   def start_link(opts), do: GenServer.start_link(__MODULE__, %{}, opts)
   def get(server, key), do: GenServer.call(server, {:get, key})
   def put(server, key, value), do: GenServer.call(server, {:put, key, value})
 
+  # callback 负责处理真正的消息与状态
   @impl true
   def init(state), do: {:ok, state}
 
@@ -987,16 +1036,19 @@ end`,
   def handle_call({:put, key, value}, _from, state),
     do: {:reply, :ok, Map.put(state, key, value)}
 end`,
-    erlangCode: `-module(kv).
+    erlangCode: `%% gen_server 负责保存并按顺序更新这张 map
+-module(kv).
 -behaviour(gen_server).
 -export([start_link/0, get/2, put/3]).
 -export([init/1, handle_call/3]).
 
+%% 这些函数是调用者看到的公开 API
 start_link() -> gen_server:start_link(?MODULE, #{}, []).
 get(Server, Key) -> gen_server:call(Server, {get, Key}).
 put(Server, Key, Value) ->
   gen_server:call(Server, {put, Key, Value}).
 
+%% callback 负责处理真正的消息与状态
 init(State) -> {ok, State}.
 handle_call({get, Key}, _From, State) ->
   {reply, maps:find(Key, State), State};
@@ -1011,7 +1063,8 @@ handle_call({put, Key, Value}, _From, State) ->
         "连续送出一大批更新，并分别记录发送结束与处理结束的时间",
         "同时发起一个同步 `get`，记录它的等待时间和 `message_queue_len`",
       ],
-      command: `:erlang.process_info(pid, :message_queue_len)`,
+      command: `# 读取 pid 的 mailbox 长度，观察 cast 是否正在积压
+:erlang.process_info(pid, :message_queue_len)`,
       expected: [
         "发送循环很快结束，不代表服务端已经处理完",
         "同步 `get` 可能排在许多 cast 后面，等待时间明显变长",
@@ -1116,20 +1169,26 @@ handle_call({put, Key, Value}, _From, State) ->
           "OTP 中可启动、停止、配置和声明依赖的组件。根监督树通常由 application callback 启动。",
       },
     ],
-    elixirCode: `children = [
+    elixirCode: `# child 的顺序会影响 rest_for_one 的恢复范围
+children = [
+  # Registry 先启动，后面的组件会使用它
   {Registry, keys: :unique, name: Jobs.Registry},
+  # 动态监督者负责照看临时 worker
   {DynamicSupervisor,
    strategy: :one_for_one,
    name: Jobs.Workers},
   Jobs.Dispatcher
 ]
 
+# 从同一个根监督者启动整组 child
 Supervisor.start_link(
   children,
   strategy: :rest_for_one,
   name: Jobs.Supervisor
 )`,
-    erlangCode: `init([]) ->
+    erlangCode: `%% child 的顺序会影响 rest_for_one 的恢复范围
+init([]) ->
+  %% 先写出每个 child 的启动说明
   Registry = #{
     id => jobs_registry,
     start => {jobs_registry, start_link, []}
@@ -1143,6 +1202,7 @@ Supervisor.start_link(
     id => jobs_dispatcher,
     start => {jobs_dispatcher, start_link, []}
   },
+  %% 前面的 child 退出时，也会重启后面的依赖者
   {ok, {{rest_for_one, 3, 5},
         [Registry, Workers, Dispatcher]}}.`,
     codeCaption: "`rest_for_one` 用 child 顺序表达依赖；前面的故障会重启后面的依赖者。",
@@ -1155,7 +1215,8 @@ Supervisor.start_link(
         "让最后一个 child 异常退出，重新查看 PID",
         "再让第一个 child 异常退出，比较这次有多少 PID 改变",
       ],
-      command: `Supervisor.which_children(Jobs.Supervisor)`,
+      command: `# 列出监督者的 child 名称、PID、类型和模块
+Supervisor.which_children(Jobs.Supervisor)`,
       expected: [
         "最后一个 child 出错时，通常只有它自己重新启动",
         "第一个 child 出错时，`rest_for_one` 会让它和后面的依赖者都重新启动",
@@ -1260,20 +1321,25 @@ Supervisor.start_link(
           "同时运行的任务数有上限，使 CPU、连接和内存用量更可控。",
       },
     ],
-    elixirCode: `urls
+    elixirCode: `# 同时检查 URL，但并发数不会超过设定上限
+urls
 |> Task.async_stream(
   &check_url/1,
+  # 根据调度器数量设置并发上限
   max_concurrency: System.schedulers_online() * 2,
   timeout: 3_000,
   on_timeout: :kill_task,
   ordered: false
 )
+# 把每项结果汇总成成功与失败计数
 |> Enum.reduce(%{ok: 0, error: 0}, &count_result/2)`,
     erlangCode: `%% 一个固定大小 worker 池的核心思想
+%% 先启动不超过 Limit 个任务，其余任务等待
 run_bounded(Jobs, Limit) ->
   {Running, Pending} = start_first(Jobs, Limit),
   collect(Running, Pending, Limit).
 
+%% worker 退出后，移除它并从等待队列补一个任务
 collect(Running, Pending, Limit) ->
   receive
     {'DOWN', Ref, process, _Pid, Result} ->
@@ -1289,7 +1355,8 @@ collect(Running, Pending, Limit) ->
         "从多个 Task 同时 call 这一个 server，记录总时间和 mailbox",
         "把计算改成普通函数，用同一批输入再测一次",
       ],
-      command: `:timer.tc(fn -> workload.() end)`,
+      command: `# 运行 workload，并返回耗时微秒数和函数结果
+:timer.tc(fn -> workload.() end)`,
       expected: [
         "单个 server 会让原本互不依赖的计算排队执行",
         "普通函数可以留在各个调用者中运行，更容易让多个调度器一起工作",
@@ -1394,21 +1461,29 @@ collect(Running, Pending, Limit) ->
           "Elixir 常用的事件测量工具。业务代码发事件，handler 负责统计或导出。",
       },
     ],
-    elixirCode: `:net_kernel.monitor_nodes(true)
+    elixirCode: `# 让当前进程接收节点连上与断开的消息
+:net_kernel.monitor_nodes(true)
 
+# 节点事件会像普通 BEAM 消息一样到达
 receive do
   {:nodeup, node} ->
+    # 记录刚刚连上的节点
     Logger.info("node connected", node: node)
 
   {:nodedown, node} ->
+    # 断连后由应用决定降级或重试
     Logger.warning("node disconnected", node: node)
 end`,
-    erlangCode: `net_kernel:monitor_nodes(true),
+    erlangCode: `%% 让当前进程接收节点连上与断开的消息
+net_kernel:monitor_nodes(true),
 
+%% 节点事件会像普通 BEAM 消息一样到达
 receive
   {nodeup, Node} ->
+    %% 记录刚刚连上的节点
     logger:info("node connected", #{node => Node});
   {nodedown, Node} ->
+    %% 断连后由应用决定降级或重试
     logger:warning("node disconnected", #{node => Node})
 end.`,
     codeCaption: "节点连断会变成消息。收到 `nodedown` 后如何降级或拒绝，要提前约好。",
@@ -1420,7 +1495,8 @@ end.`,
         "从 A `ping` B，并打开 `monitor_nodes`",
         "停止 B，记录 A 收到的事件，也看看未完成请求怎样结束",
       ],
-      command: `Node.ping(:"b@127.0.0.1")`,
+      command: `# 尝试连接节点 b；成功返回 :pong，失败返回 :pang
+Node.ping(:"b@127.0.0.1")`,
       expected: [
         "连接成功时，`Node.ping/1` 返回 `:pong`",
         "B 停止后，A 会收到 `nodedown`",
@@ -1530,25 +1606,31 @@ end.`,
           "两门语言对 exception、exit 和 throw 的处理约定。边界负责把它们转成稳定错误 tuple。",
       },
     ],
-    elixirCode: `defmodule Scheduler do
+    elixirCode: `# Elixir API 负责验证输入并转换边界数据
+defmodule Scheduler do
   @spec submit(binary(), map()) ::
           {:ok, reference()} | {:error, atom()}
   def submit(queue, payload) when is_binary(queue) do
+    # Erlang worker 需要 charlist 和键值 list
     :job_worker.submit(
       String.to_charlist(queue),
       Map.to_list(payload)
     )
   catch
+    # 把跨边界的 exit 整理成稳定错误 tuple
     :exit, reason -> {:error, normalize_exit(reason)}
   end
 end`,
-    erlangCode: `-module(job_worker).
+    erlangCode: `%% Erlang worker 接收已经转换好的边界数据
+-module(job_worker).
 -export([submit/2, call_elixir/1]).
 
+%% guard 明确要求 Queue 与 Payload 都是 list
 submit(Queue, Payload)
     when is_list(Queue), is_list(Payload) ->
   {ok, make_ref()}.
 
+%% Elixir 模块名在 Erlang 中是带前缀的 atom
 call_elixir(Value) ->
   'Elixir.Scheduler':normalize(Value).`,
     codeCaption: "转换集中在边界，核心协议使用带标签 tuple，不让 charlist 扩散到整个项目。",
@@ -1561,7 +1643,8 @@ call_elixir(Value) ->
         "在 adapter 中使用 `String.to_charlist/1` 后再调用 Erlang worker",
         "加入中文队列名的 round-trip 测试，确认来回转换后文字没有改变",
       ],
-      command: `mix test test/interoperability_test.exs`,
+      command: `# 只运行跨语言边界的 ExUnit 测试文件
+mix test test/interoperability_test.exs`,
       expected: [
         "binary 和 charlist 会匹配不同的 guard",
         "在交界处明确转换后，两边约定能够对上",
@@ -1667,24 +1750,30 @@ call_elixir(Value) ->
           "运行说明：看哪些日志与指标，怎样判断问题，可以执行什么安全动作。",
       },
     ],
-    elixirCode: `defmodule Scheduler.API do
+    elixirCode: `# Elixir 层负责输入验证和对外返回格式
+defmodule Scheduler.API do
   def submit(payload, opts \\\\ []) do
+    # 只有验证与入队都成功，任务才算被接收
     with :ok <- validate(payload),
          {:ok, id} <- :scheduler_core.enqueue(payload, opts) do
       {:accepted, id}
     else
+      # 队列满时明确拒绝，不继续占用内存
       {:error, :queue_full} -> {:rejected, :busy}
       {:error, reason} -> {:rejected, reason}
     end
   end
 end`,
-    erlangCode: `handle_call({enqueue, Job, Opts}, _From,
+    erlangCode: `%% Erlang 核心保管队列、容量和调度状态
+handle_call({enqueue, Job, Opts}, _From,
             State = #state{queued = Queue, max = Max}) ->
+  %% 入队前先检查 bounded queue 是否还有位置
   case queue:len(Queue) < Max of
     true ->
       {Id, Next} = add_job(Job, Opts, State),
       {reply, {ok, Id}, dispatch(Next)};
     false ->
+      %% 队列满时保持原状态，并把原因返回调用者
       {reply, {error, queue_full}, State}
   end.`,
     codeCaption: "Elixir 负责 API 与验证，Erlang 保管队列和调度状态。队列满时明确拒绝。",
@@ -1698,7 +1787,8 @@ end`,
         "让任务超过 timeout，检查隔离、取消约定和迟到结果",
         "断开远程节点，检查 stale 标记以及重新连接后的状态",
       ],
-      command: `mix test --only fault_injection --trace`,
+      command: `# 只运行标记为 fault_injection 的测试，并显示执行过程
+mix test --only fault_injection --trace`,
       expected: [
         "需要长期工作的进程最后仍由监督树照看",
         "失败任务只在上限内重试，不会永远循环",

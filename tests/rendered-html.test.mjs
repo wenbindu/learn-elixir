@@ -187,6 +187,8 @@ test("renders a shareable lesson route with the full teaching template", async (
   assert.match(html, /想一想/);
   assert.match(html, /提示 4/);
   assert.match(html, /记住三句话/);
+  assert.match(html, /发出请求前，先生成本次调用专用的 reference/);
+  assert.match(html, /只接收带有同一 reference 的回复/);
   assert.match(html, /href="\/learn\/otp-behaviours"/);
 });
 
@@ -348,6 +350,7 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
     globalStyles,
     keywordData,
     contentStyleGuide,
+    playgroundSource,
   ] =
     await Promise.all([
       readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
@@ -360,7 +363,30 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
       readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
       readFile(new URL("../app/keywords/keyword-data.ts", import.meta.url), "utf8"),
       readFile(new URL("../docs/content-style-guide.md", import.meta.url), "utf8"),
+      readFile(
+        new URL("../app/components/ElixirPlayground.tsx", import.meta.url),
+        "utf8",
+      ),
     ]);
+
+  const elixirLessonBlocks = [
+    ...courseData.matchAll(
+      /\n\s+elixirCode:\s*`([\s\S]*?)`,\n\s+erlangCode:/g,
+    ),
+  ].map((match) => match[1]);
+  const erlangLessonBlocks = [
+    ...courseData.matchAll(
+      /\n\s+erlangCode:\s*`([\s\S]*?)`,\n\s+codeCaption:/g,
+    ),
+  ].map((match) => match[1]);
+  const experimentCommands = [
+    ...courseData.matchAll(
+      /\n\s+command:\s*`([\s\S]*?)`,\n\s+expected:/g,
+    ),
+  ].map((match) => match[1]);
+  const playgroundBlocks = [
+    ...playgroundSource.matchAll(/\n\s+code:\s*`([\s\S]*?)`,/g),
+  ].map((match) => match[1]);
 
   for (const path of [
     "../public/brand-icon.png",
@@ -402,6 +428,46 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
   assert.doesNotMatch(courseData, /\[' INFO boot ', ' ', 'ERROR timeout'\]/);
   assert.match(contentStyleGuide, /比喻只用于引出概念，不能代替技术定义/);
   assert.match(contentStyleGuide, /把报错写成可以观察和处理的结果/);
+  assert.match(contentStyleGuide, /注释只解释意图、数据流、消息去向和失败边界/);
+  assert.equal(elixirLessonBlocks.length, 12);
+  assert.equal(erlangLessonBlocks.length, 12);
+  assert.equal(experimentCommands.length, 12);
+  assert.equal(playgroundBlocks.length, 3);
+  for (const [index, block] of elixirLessonBlocks.entries()) {
+    assert.ok(
+      (block.match(/^\s*#\s+\S/gm) ?? []).length >= 2,
+      `Elixir lesson ${index + 1} needs explanatory comments`,
+    );
+    assert.doesNotMatch(
+      block,
+      /^\s*%%?\s+\S/m,
+      `Elixir lesson ${index + 1} uses Erlang comments`,
+    );
+  }
+  for (const [index, block] of erlangLessonBlocks.entries()) {
+    assert.ok(
+      (block.match(/^\s*%%\s+\S/gm) ?? []).length >= 2,
+      `Erlang lesson ${index + 1} needs explanatory comments`,
+    );
+    assert.doesNotMatch(
+      block,
+      /^\s*#\s+\S/m,
+      `Erlang lesson ${index + 1} uses Elixir comments`,
+    );
+  }
+  for (const [index, block] of experimentCommands.entries()) {
+    assert.match(
+      block,
+      /^\s*#\s+\S/m,
+      `experiment ${index + 1} needs an explanatory comment`,
+    );
+  }
+  for (const [index, block] of playgroundBlocks.entries()) {
+    assert.ok(
+      (block.match(/^\s*#\s+\S/gm) ?? []).length >= 3,
+      `Playground example ${index + 1} needs explanatory comments`,
+    );
+  }
   assert.match(packageJson, /"dev": "next dev"/);
   assert.match(packageJson, /"@vercel\/analytics"/);
   assert.match(packageJson, /"@vercel\/speed-insights"/);

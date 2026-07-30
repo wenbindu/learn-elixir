@@ -7,41 +7,58 @@ const presets = [
     id: "pipeline",
     label: "管道与 Enum",
     goal: "从 1 到 10 中找出偶数，再看看它们的平方。",
-    code: `numbers = 1..10
+    code: `# 数据从这里来：准备 1 到 10 这十个整数
+numbers = 1..10
 
+# 把 numbers 交给管道，一步一步处理
 result =
   numbers
+  # 第一步：只留下能被 2 整除的偶数
   |> Enum.filter(&(rem(&1, 2) == 0))
+  # 第二步：把每个偶数乘以自己
   |> Enum.map(&(&1 * &1))
 
+# 打印最后得到的列表
 IO.inspect(result, label: "偶数平方")`,
   },
   {
     id: "matching",
     label: "模式匹配",
     goal: "分别处理成功和失败。",
-    code: `describe = fn
+    code: `# describe 是一个匿名函数，会接收下面列表中的每一项
+describe = fn
+  # 若数据形状是 {:ok, value}，就取出成功结果
   {:ok, value} -> "成功: #{value}"
+  # 若数据形状是 {:error, reason}，就取出失败原因
   {:error, reason} -> "失败: #{reason}"
 end
 
+# 数据从这里来：一项成功，一项失败
 [ok: 42, error: :timeout]
+# 把两项依次交给 describe
 |> Enum.map(describe)
+# 打印处理后的两个结果
 |> IO.inspect()`,
   },
   {
     id: "process",
     label: "进程与消息",
     goal: "启动一个进程，等它传回计算结果。",
-    code: `parent = self()
+    code: `# 记住当前进程；子进程稍后要把消息发回这里
+parent = self()
 
+# 启动一个子进程，让它在旁边计算
 spawn(fn ->
+  # 算出总和，再把 {:sum, 结果} 发给 parent
   send(parent, {:sum, Enum.sum(1..100)})
 end)
 
+# 当前进程在这里等待消息
 receive do
+  # 收到形状为 {:sum, value} 的消息后，取出并打印 value
   {:sum, value} -> IO.puts("结果: #{value}")
 after
+  # 等了 1 秒还没有匹配的消息，就执行这个分支
   1_000 -> IO.puts("timeout")
 end`,
   },
