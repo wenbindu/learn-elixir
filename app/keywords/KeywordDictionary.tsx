@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { InlineCodeText } from "../components/InlineCodeText";
 import {
   keywordEntries,
   type KeywordEntry,
@@ -29,22 +30,22 @@ const scopeOptions: Array<{
   {
     value: "reserved",
     label: "严格保留字",
-    description: "词法层面不可作为普通标识符使用",
+    description: "语言已经预留，不能随便拿来给变量或函数起名",
   },
   {
     value: "special",
     label: "Elixir 特殊形式",
-    description: "语言基本构造，但多数不是严格保留字",
+    description: "搭起 Elixir 语法的基本零件，但多数不是严格保留字",
   },
   {
     value: "common",
     label: "常用宏与声明",
-    description: "经常被口语化地叫作“关键字”",
+    description: "大家常顺口叫它“关键字”，其实身份不同",
   },
   {
     value: "all",
     label: "全部术语",
-    description: "同时查看三个层级",
+    description: "把三种类型放在一起看",
   },
 ];
 
@@ -83,6 +84,7 @@ function matchesQuery(entry: KeywordEntry, query: string) {
       entry.role,
       entry.summary,
       entry.detail,
+      entry.analogy ?? "",
       entry.example,
       entry.note ?? "",
       entry.language,
@@ -204,7 +206,7 @@ export function KeywordDictionary() {
             </>
           ) : null}
         </p>
-        <span>点击上方分类，切换术语的真实语言层级</span>
+        <span>点上面的分类，看看这些词在语言里的真正身份</span>
       </div>
 
       {groups.length ? (
@@ -247,12 +249,22 @@ export function KeywordDictionary() {
                         <small>{entry.role}</small>
                       </div>
                       <div className="keyword-entry-copy">
-                        <h3>{entry.summary}</h3>
-                        <p>{entry.detail}</p>
+                        <h3>
+                          <InlineCodeText text={entry.summary} />
+                        </h3>
+                        <p>
+                          <InlineCodeText text={entry.detail} />
+                        </p>
+                        {entry.analogy ? (
+                          <div className="keyword-entry-analogy">
+                            <span>借个画面</span>
+                            <InlineCodeText text={entry.analogy} />
+                          </div>
+                        ) : null}
                         {entry.note ? (
                           <div className="keyword-entry-note">
                             <span aria-hidden="true">!</span>
-                            {entry.note}
+                            <InlineCodeText text={entry.note} />
                           </div>
                         ) : null}
                       </div>
@@ -269,8 +281,8 @@ export function KeywordDictionary() {
       ) : (
         <div className="keyword-empty">
           <span aria-hidden="true">∅</span>
-          <h2>没有匹配项</h2>
-          <p>换一个中文概念、英文术语，或恢复默认筛选。</p>
+          <h2>这个词暂时没找到</h2>
+          <p>别担心，试试更短的中文意思或英文单词，也可以回到默认分类重新找。</p>
           <button type="button" onClick={resetFilters}>
             恢复默认
           </button>

@@ -51,6 +51,21 @@ async function render(pathname = "/") {
   });
 }
 
+const lessonSlugs = [
+  "start-line",
+  "beam-mental-model",
+  "elixir-foundations",
+  "erlang-foundations",
+  "shared-semantics",
+  "processes-and-mailboxes",
+  "otp-behaviours",
+  "supervision-trees",
+  "state-and-backpressure",
+  "distributed-operations",
+  "interoperability",
+  "reliable-scheduler",
+];
+
 test("server-renders the complete Chinese tutorial homepage", async () => {
   const response = await render("/");
   assert.equal(response.status, 200);
@@ -58,15 +73,16 @@ test("server-renders the complete Chinese tutorial homepage", async () => {
 
   const html = await response.text();
   assert.match(html, /<html[^>]*lang="zh-CN"/i);
-  assert.match(html, /<title>BEAM Path — Erlang \+ Elixir 交互式学习路径<\/title>/i);
-  assert.match(html, /学透/);
+  assert.match(html, /<title>BEAM Path — 一起学 Erlang 与 Elixir<\/title>/i);
+  assert.match(html, /一起动手学/);
   assert.match(html, /Erlang/);
   assert.match(html, /Elixir/);
-  assert.match(html, /12[^<]*模块/);
-  assert.match(html, /46[^<]*检查点/);
-  assert.match(html, /学习系统，而不只是教程/);
-  assert.match(html, /语义模拟器/);
-  assert.match(html, /可靠任务调度器/);
+  assert.match(html, /12<\/strong><span>探索小站/);
+  assert.match(html, /46<\/strong><span>次动手与自查/);
+  assert.match(html, /报错是线索，不是扣分/);
+  assert.match(html, /我们的学习玩法/);
+  assert.match(html, /消息小实验/);
+  assert.match(html, /不怕小故障的任务调度器/);
   assert.match(
     html,
     /<meta(?=[^>]*property="og:image")(?=[^>]*content="https?:\/\/[^"]+\/og\.png")[^>]*>/i,
@@ -92,7 +108,7 @@ test("homepage previews requested resources and links to the full directory", as
   assert.match(html, /Erlang Forums/);
   assert.match(html, /Exercism/);
   assert.match(html, /href="\/resources"/);
-  assert.match(html, /打开完整资源目录/);
+  assert.match(html, /打开学习工具箱/);
 });
 
 test("renders the Markdown-driven resource directory", async () => {
@@ -100,8 +116,8 @@ test("renders the Markdown-driven resource directory", async () => {
   assert.equal(response.status, 200);
 
   const html = await response.text();
-  assert.match(html, /Elixir \+ Erlang 关联资源/);
-  assert.match(html, /BEAM 关联资源/);
+  assert.match(html, /Elixir \+ Erlang 学习工具箱/);
+  assert.match(html, /BEAM 学习工具箱/);
   assert.match(html, /可搜索目录/);
   assert.match(html, /搜索 Elixir School、安装、练习/);
 
@@ -141,17 +157,55 @@ test("renders a shareable lesson route with the full teaching template", async (
   assert.equal(response.status, 200);
 
   const html = await response.text();
-  assert.match(html, /从裸进程理解并发/);
-  assert.match(html, /为什么先学这个/);
-  assert.match(html, /双语代码桥/);
-  assert.match(html, /可运行实验/);
-  assert.match(html, /故意弄坏/);
-  assert.match(html, /这个实验能证明/);
-  assert.match(html, /这个实验不能证明/);
-  assert.match(html, /快速自测/);
+  assert.match(html, /消息会迟到：亲手写一个并发小服务/);
+  assert.match(html, /这一站有什么用/);
+  assert.match(html, /先借一个故事/);
+  assert.match(html, /镖局回执/);
+  assert.match(html, /比喻到这里/);
+  assert.match(html, /同一件事，两种写法/);
+  assert.match(html, /动手试一试/);
+  assert.match(html, /来捣个小乱/);
+  assert.match(html, /这次我们看清了/);
+  assert.match(html, /先别急着下结论/);
+  assert.match(html, /猜一猜/);
   assert.match(html, /提示 4/);
-  assert.match(html, /复习卡/);
+  assert.match(html, /三句话记住这一站/);
   assert.match(html, /href="\/learn\/otp-behaviours"/);
+});
+
+test("gives every lesson a story bridge with an explicit analogy boundary", async () => {
+  const pages = await Promise.all(
+    lessonSlugs.map(async (slug) => {
+      const response = await render(`/learn/${slug}`);
+      assert.equal(response.status, 200, slug);
+      return response.text();
+    }),
+  );
+
+  for (const [index, html] of pages.entries()) {
+    assert.equal(
+      (html.match(/class="lesson-story-bridge"/g) ?? []).length,
+      1,
+      lessonSlugs[index],
+    );
+    assert.match(html, /回到代码/, lessonSlugs[index]);
+    assert.match(html, /比喻到这里/, lessonSlugs[index]);
+  }
+
+  const allLessons = pages.join("\n");
+  for (const story of [
+    "大闹天宫",
+    "古代驿站",
+    "唐诗",
+    "古文句读",
+    "唐代驿路",
+    "三国演义",
+    "都江堰",
+    "长城烽火台",
+    "文言与白话",
+  ]) {
+    assert.match(allLessons, new RegExp(story));
+  }
 });
 
 test("start line introduces Mix as a project build tool", async () => {
@@ -159,11 +213,12 @@ test("start line introduces Mix as a project build tool", async () => {
   assert.equal(response.status, 200);
 
   const html = await response.text();
-  assert.match(html, /随 Elixir 安装的构建工具/);
+  assert.match(html, /Elixir 项目的工具管家/);
+  assert.match(html, /《大闹天宫》/);
   assert.match(html, /mix\.exs/);
   assert.match(html, /mix new beam_probe/);
   assert.match(html, /mix test/);
-  assert.match(html, /Mix 与 IEx、OTP、Hex 的职责边界/);
+  assert.match(html, /Mix 不是 BEAM 或 OTP，也不等于 Hex/);
   assert.match(
     html,
     /https:\/\/elixir-lang\.org\/getting-started\/mix-otp\/introduction-to-mix\.html/,
@@ -182,7 +237,8 @@ test("renders an embedded Elixir playground with safe fallback guidance", async 
   assert.match(html, /模式匹配/);
   assert.match(html, /进程与消息/);
   assert.match(html, /这是第三方运行环境/);
-  assert.match(html, /不要粘贴密码/);
+  assert.match(html, /请不要放密码/);
+  assert.match(html, /报错.*都是线索/s);
   assert.match(html, /在新窗口打开/);
 });
 
@@ -194,7 +250,7 @@ test("renders a complete Elixir and Erlang keyword dictionary", async () => {
   assert.match(html, /Elixir \+ Erlang 关键字字典/);
   assert.match(html, /<strong>15<\/strong>.*Elixir 严格保留字/s);
   assert.match(html, /<strong>29<\/strong>.*Erlang 严格保留字/s);
-  assert.match(html, /<b>44<\/b>.*个词法保留字/s);
+  assert.match(html, /<b>44<\/b>.*个语言保留字/s);
   assert.match(html, /严格保留字/);
   assert.match(html, /Elixir 特殊形式/);
   assert.match(html, /常用宏与声明/);
@@ -202,8 +258,10 @@ test("renders a complete Elixir and Erlang keyword dictionary", async () => {
   assert.match(html, />when</);
   assert.match(html, />receive</);
   assert.match(html, />maybe</);
-  assert.match(html, /cond.*let.*已保留但未使用/s);
-  assert.match(html, /keyword list 是另一件事/);
+  assert.match(html, /cond.*let.*虽然被保留/s);
+  assert.match(html, /keyword list 不是这页说的“保留字”/);
+  assert.match(html, /借个画面/);
+  assert.match(html, /城门先核对来人的名字/);
 
   const reservedWords = [
     "true",
@@ -271,6 +329,8 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
     localScript,
     localConfig,
     globalStyles,
+    keywordData,
+    contentStyleGuide,
   ] =
     await Promise.all([
       readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
@@ -281,6 +341,8 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
       readFile(new URL("../scripts/start-local.sh", import.meta.url), "utf8"),
       readFile(new URL("../config/local.env", import.meta.url), "utf8"),
       readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+      readFile(new URL("../app/keywords/keyword-data.ts", import.meta.url), "utf8"),
+      readFile(new URL("../docs/content-style-guide.md", import.meta.url), "utf8"),
     ]);
 
   for (const path of [
@@ -309,9 +371,20 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
   assert.match(resourceMarkdown, /https:\/\/www\.erlang\.org\/downloads/);
   assert.match(
     resourceMarkdown,
-    /- \[Elixir School 中文\]\(https:\/\/elixirschool\.com\/zh-hans\/\) — 适合补充中文语法解释与专题阅读。/,
+    /- \[Elixir School 中文\]\(https:\/\/elixirschool\.com\/zh-hans\/\) — 用中文再听一遍 Elixir 语法、工具和常见主题。/,
   );
   assert.match(resourceMarkdown, /- featured: true/);
+  assert.equal(
+    (courseData.match(/storyBridge:\s*\{/g) ?? []).length,
+    13,
+  );
+  assert.equal((keywordData.match(/\n\s+analogy:/g) ?? []).length, 13);
+  assert.ok(
+    courseData.includes('[\\" INFO boot \\", \\" \\", \\"ERROR timeout\\"]'),
+  );
+  assert.doesNotMatch(courseData, /\[' INFO boot ', ' ', 'ERROR timeout'\]/);
+  assert.match(contentStyleGuide, /比喻是一座桥，不是技术定义/);
+  assert.match(contentStyleGuide, /出错是一次观察机会/);
   assert.match(packageJson, /"dev": "next dev"/);
   assert.match(packageJson, /"@vercel\/analytics"/);
   assert.match(packageJson, /"@vercel\/speed-insights"/);

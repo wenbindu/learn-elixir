@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { InlineCodeText } from "./InlineCodeText";
 
 type QuizCardProps = {
   question: string;
@@ -26,8 +27,10 @@ export function QuizCard({
 
   return (
     <section className="quiz-card" aria-labelledby="quick-check-title">
-      <div className="section-kicker">快速自测</div>
-      <h2 id="quick-check-title">{question}</h2>
+      <div className="section-kicker">猜一猜</div>
+      <h2 id="quick-check-title">
+        <InlineCodeText text={question} />
+      </h2>
       <div className="quiz-options">
         {options.map((option, index) => {
           const optionState = checked
@@ -51,7 +54,7 @@ export function QuizCard({
               key={option}
             >
               <span>{String.fromCharCode(65 + index)}</span>
-              {option}
+              <InlineCodeText text={option} />
             </button>
           );
         })}
@@ -62,8 +65,10 @@ export function QuizCard({
           className={`quiz-feedback${isCorrect ? " is-correct" : " is-wrong"}`}
           role="status"
         >
-          <strong>{isCorrect ? "答对了。" : "再想一步。"}</strong>
-          <p>{explanation}</p>
+          <strong>{isCorrect ? "答对啦，你找到了关键线索。" : "差一点，看看下面这条线索。"}</strong>
+          <p>
+            <InlineCodeText text={explanation} />
+          </p>
           <button type="button" onClick={reset}>
             再答一次
           </button>
@@ -75,10 +80,9 @@ export function QuizCard({
           disabled={selected === null}
           onClick={() => setChecked(true)}
         >
-          检查答案
+          看看答案
         </button>
       )}
     </section>
   );
 }
-

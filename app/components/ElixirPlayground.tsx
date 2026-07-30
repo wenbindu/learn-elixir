@@ -6,7 +6,7 @@ const presets = [
   {
     id: "pipeline",
     label: "管道与 Enum",
-    goal: "筛选偶数，再计算平方。",
+    goal: "从 1 到 10 中找出偶数，再看看它们的平方。",
     code: `numbers = 1..10
 
 result =
@@ -19,7 +19,7 @@ IO.inspect(result, label: "偶数平方")`,
   {
     id: "matching",
     label: "模式匹配",
-    goal: "用不同函数子句处理成功和失败。",
+    goal: "让成功和失败走两条不同的小路。",
     code: `describe = fn
   {:ok, value} -> "成功: #{value}"
   {:error, reason} -> "失败: #{reason}"
@@ -32,7 +32,7 @@ end
   {
     id: "process",
     label: "进程与消息",
-    goal: "创建进程，等待它发回计算结果。",
+    goal: "派出一个小进程去计算，再等它把答案送回来。",
     code: `parent = self()
 
 spawn(fn ->
@@ -113,7 +113,8 @@ export function ElixirPlayground() {
 
         <div className="playground-frame-footer">
           <p>
-            修改代码后点击编辑器中的 <strong>Run</strong>，输出会显示在编辑器下方。
+            大胆改一处代码，再点编辑器里的 <strong>Run</strong>。
+            答案或报错都会出现在下方；两种结果都是线索。
           </p>
           <a href={embedUrl} target="_blank" rel="noreferrer">
             在新窗口打开

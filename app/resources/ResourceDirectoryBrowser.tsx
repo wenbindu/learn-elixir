@@ -70,7 +70,7 @@ export function ResourceDirectoryBrowser({
     <div className="resource-directory-browser">
       <div className="resource-directory-controls">
         <div className="resource-directory-search">
-          <label htmlFor="resource-search-input">搜索资源或用途</label>
+          <label htmlFor="resource-search-input">想找什么？</label>
           <div>
             <span aria-hidden="true">⌕</span>
             <input
@@ -123,14 +123,14 @@ export function ResourceDirectoryBrowser({
 
       <div className="resource-directory-summary" aria-live="polite">
         <p>
-          找到 <strong>{resultCount}</strong> 个入口
+          找到了 <strong>{resultCount}</strong> 个资源
           {normalizedQuery ? (
             <>
               ，包含“<span>{query.trim()}</span>”
             </>
           ) : null}
         </p>
-        <span>所有链接将在新窗口打开</span>
+        <span>点开资源时，会使用一个新窗口</span>
       </div>
 
       {filteredGroups.length ? (
@@ -148,7 +148,7 @@ export function ResourceDirectoryBrowser({
                     {group.title}
                   </h2>
                 </div>
-                <strong>{group.resources.length} 个入口</strong>
+                <strong>{group.resources.length} 个资源</strong>
               </div>
 
               <div className="resource-directory-grid">
@@ -184,7 +184,7 @@ export function ResourceDirectoryBrowser({
         <div className="resource-directory-empty">
           <span aria-hidden="true">∅</span>
           <h2>没有匹配的资源</h2>
-          <p>换一个关键词，或者清除当前分类筛选。</p>
+          <p>可能只是叫法不同。试试更短的词，或者清除分类重新找。</p>
           <button type="button" onClick={resetFilters}>
             重置筛选
           </button>

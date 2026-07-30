@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CourseModule, CourseStage } from "../course-data";
+import { InlineCodeText } from "./InlineCodeText";
 
 const STORAGE_KEY = "beam-path-progress.v1";
 const PROGRESS_EVENT = "beam-path-progress";
@@ -119,7 +120,7 @@ export function CourseMap({ modules, stages }: CourseMapProps) {
       setCompleted(next);
       window.dispatchEvent(new CustomEvent(PROGRESS_EVENT, { detail: next }));
     } catch {
-      window.alert("这不是可识别的 BEAM Path 进度文件。");
+      window.alert("没有认出这个进度文件。请重新选择从 BEAM Path 保存的文件。");
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
@@ -130,7 +131,7 @@ export function CourseMap({ modules, stages }: CourseMapProps) {
       <div className="course-controls">
         <label className="course-search">
           <span aria-hidden="true">⌕</span>
-          <span className="sr-only">搜索课程</span>
+          <span className="sr-only">搜索学习内容</span>
           <input
             type="search"
             placeholder="搜索：模式匹配、mailbox、Supervisor…"
@@ -155,9 +156,9 @@ export function CourseMap({ modules, stages }: CourseMapProps) {
 
       <div className="progress-panel">
         <div>
-          <span>你的学习进度</span>
+          <span>你已经走到这里</span>
           <strong>
-            {completed.length} / {modules.length} 模块
+            {completed.length} / {modules.length} 个小站
           </strong>
         </div>
         <div className="progress-track" aria-label={`课程进度 ${percent}%`}>
@@ -166,10 +167,10 @@ export function CourseMap({ modules, stages }: CourseMapProps) {
         <span className="progress-percent">{percent}%</span>
         <div className="progress-actions">
           <button type="button" onClick={exportProgress}>
-            导出
+            保存进度
           </button>
           <button type="button" onClick={() => fileInputRef.current?.click()}>
-            导入
+            读入进度
           </button>
           <input
             ref={fileInputRef}
@@ -217,11 +218,13 @@ export function CourseMap({ modules, stages }: CourseMapProps) {
                       </div>
                     </div>
                     <h4>{module.title}</h4>
-                    <p>{module.summary}</p>
+                    <p>
+                      <InlineCodeText text={module.summary} />
+                    </p>
                     <div className="module-card-meta">
-                      <span>{module.lessons} 个检查点</span>
+                      <span>{module.lessons} 次动手与自查</span>
                       <span>{module.duration}</span>
-                      {isComplete ? <strong>✓ 已完成</strong> : <strong>开始 →</strong>}
+                      {isComplete ? <strong>✓ 走过了</strong> : <strong>去看看 →</strong>}
                     </div>
                   </Link>
                 );
@@ -233,7 +236,7 @@ export function CourseMap({ modules, stages }: CourseMapProps) {
 
       {filtered.length === 0 ? (
         <div className="course-empty">
-          <span>没有匹配的模块</span>
+          <span>暂时没找到这个内容，换个更短的词试试吧</span>
           <button
             type="button"
             onClick={() => {

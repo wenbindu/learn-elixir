@@ -6,11 +6,11 @@ export default function NotFound() {
     <>
       <SiteHeader compact />
       <main className="not-found-page">
-        <span>404 · PROCESS NOT FOUND</span>
-        <h1>这个进程没有注册</h1>
-        <p>课程地址可能已经改变。回到学习路径，选择一个仍在监督树里的模块。</p>
+        <span>404 · 这封信没有送到</span>
+        <h1>这条学习小路暂时找不到了</h1>
+        <p>可能是地址变了，也可能是链接写错了。别担心，回到学习地图，我们换一条路继续。</p>
         <Link className="button button--dark" href="/#roadmap">
-          返回学习路径
+          回到学习地图
           <span aria-hidden="true">→</span>
         </Link>
       </main>

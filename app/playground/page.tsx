@@ -7,24 +7,26 @@ import { SiteHeader } from "../components/SiteHeader";
 export const metadata: Metadata = {
   title: "Elixir 在线 Playground",
   description:
-    "无需安装即可编辑并运行 Elixir 代码，通过管道、模式匹配和 BEAM 进程练习获得即时反馈。",
+    "不用先安装 Elixir，也能马上改代码、点运行，试试管道、模式匹配和进程消息。",
 };
 
 const practiceSteps = [
   {
     number: "01",
-    title: "先预测",
-    description: "运行前先写下你认为会输出什么，再用实际结果校正心智模型。",
+    title: "先猜一猜",
+    description:
+      "运行前先猜输出是什么。猜错也很好，因为差别正是最值得看的地方。",
   },
   {
     number: "02",
-    title: "再改一个条件",
-    description: "替换输入、模式或 timeout；只改一个变量，才能解释因果。",
+    title: "一次只改一处",
+    description:
+      "换一个输入、模式或 timeout，然后再运行。一次只改一个地方，就容易看出是谁带来了变化。",
   },
   {
     number: "03",
-    title: "最后迁回本地",
-    description: "把验证过的片段放进 IEx 或 Mix 项目，再补测试和真实依赖。",
+    title: "带回自己的电脑",
+    description: "把刚才跑通的代码放进 IEx 或 Mix 项目，再试着给它加一个测试。",
   },
 ];
 
@@ -51,14 +53,14 @@ export default function PlaygroundPage() {
               <span>立刻看见反馈。</span>
             </h1>
             <p>
-              不安装 Elixir 也能先练语言与进程模型。选择一个起始练习，修改代码，
-              运行，再把观察写成自己的解释。
+              还没安装 Elixir 也没关系。挑一个小练习，改几个数字或单词，
+              点运行看看程序怎样回应，再用自己的话说说发生了什么。
             </p>
             <div className="playground-hero-tags" aria-label="Playground 特点">
               <span>无需登录</span>
               <span>可编辑</span>
               <span>即时输出</span>
-              <span>隔离沙箱</span>
+              <span>安全试验区</span>
             </div>
           </div>
         </section>
@@ -71,7 +73,7 @@ export default function PlaygroundPage() {
             <div className="playground-shell-header">
               <div>
                 <span className="section-kicker">可运行练习</span>
-                <h2 id="playground-workspace-title">选择一个切口，然后动手改</h2>
+                <h2 id="playground-workspace-title">挑一个小练习，动手改起来</h2>
               </div>
               <a
                 className="playground-provider"
@@ -92,9 +94,9 @@ export default function PlaygroundPage() {
               <div>
                 <strong>这是第三方运行环境</strong>
                 <p>
-                  点击 Run 后，代码会发送到 Codapi 的隔离沙箱执行。不要粘贴密码、
-                  API Key、个人数据或未公开代码。服务版本、限额和可用性由 Codapi
-                  维护；若嵌入失败，可使用上方“在新窗口打开”。
+                  这里借用了 Codapi 的在线试验区。点击 Run 后，代码会交给它运行。
+                  像使用一张借来的实验桌一样，请不要放密码、API Key、个人信息或没有公开的代码。
+                  如果打不开，可以使用上方的“在新窗口打开”。
                 </p>
               </div>
             </aside>
@@ -106,11 +108,11 @@ export default function PlaygroundPage() {
             <div className="section-heading section-heading--split">
               <div>
                 <span className="section-kicker">练习方法</span>
-                <h2>把“运行成功”变成“解释得清”</h2>
+                <h2>不只看“成功”，还要知道为什么</h2>
               </div>
               <p>
-                Playground 适合验证标准库和小片段，不替代完整 Mix 项目、依赖管理、
-                分布式节点或长期运行的 OTP 系统。
+                这里适合试短代码。想做一个完整项目，还要回到自己的电脑，
+                用 Mix 管理文件、依赖和测试。分布式节点和长时间运行的 OTP 程序也要在本地练习。
               </p>
             </div>
 
@@ -126,8 +128,8 @@ export default function PlaygroundPage() {
 
             <div className="playground-next-step">
               <div>
-                <span>准备进入真实工具链？</span>
-                <strong>用 Mix 创建项目，保留今天验证过的代码。</strong>
+                <span>想把这个小练习变成真正的项目吗？</span>
+                <strong>用 Mix 建一个新项目，把今天跑通的代码带回去。</strong>
               </div>
               <Link className="button button--dark" href="/learn/start-line">
                 返回起跑线

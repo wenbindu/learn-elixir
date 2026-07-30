@@ -6,9 +6,9 @@ import { getResourceDirectory } from "../resource-data";
 import { ResourceDirectoryBrowser } from "./ResourceDirectoryBrowser";
 
 export const metadata: Metadata = {
-  title: "Elixir + Erlang 关联资源",
+  title: "Elixir + Erlang 学习工具箱",
   description:
-    "按用途整理的 Elixir、Erlang、BEAM 与 OTP 中文教程、官方文档、工具、社区和在线练习入口。",
+    "Elixir、Erlang、BEAM 与 OTP 的中文教程、官方文档、工具、社区和在线练习，卡住时可以来这里找下一步。",
 };
 
 export default async function ResourcesPage() {
@@ -27,7 +27,7 @@ export default async function ResourcesPage() {
             <div className="playground-breadcrumb">
               <Link href="/">首页</Link>
               <span>/</span>
-              <strong>关联资源</strong>
+              <strong>学习工具箱</strong>
             </div>
 
             <div className="resources-page-hero-layout">
@@ -37,12 +37,12 @@ export default async function ResourcesPage() {
                   BEAM RESOURCE DIRECTORY
                 </div>
                 <h1>
-                  需要哪个入口，
-                  <span>就去正确的地方。</span>
+                  卡住时，
+                  <span>不用一个人猜。</span>
                 </h1>
                 <p>
-                  官方文档用来确认语义，教程用来建立理解，练习用来形成手感，
-                  社区用来查真实工程经验。这里按使用时机整理，不做一堵没有说明的链接墙。
+                  想确认一种写法，就看官方文档；想听别人讲明白，就找教程；
+                  想练熟，就做小题；真的卡住了，还可以去社区看看别人怎样解决。
                 </p>
               </div>
 
@@ -50,7 +50,7 @@ export default async function ResourcesPage() {
                 <div>
                   <span>LINKS</span>
                   <strong>{directory.resources.length}</strong>
-                  <small>经过整理的资源入口</small>
+                  <small>整理好的学习资源</small>
                 </div>
                 <div>
                   <span>GROUPS</span>
@@ -60,7 +60,7 @@ export default async function ResourcesPage() {
                 <p>
                   <b>{featuredCount}</b>
                   个首页常用入口
-                  <small>全部来自同一份 Markdown 配置</small>
+                  <small>首页常用链接也都收在这里</small>
                 </p>
               </aside>
             </div>
@@ -78,7 +78,8 @@ export default async function ResourcesPage() {
                 <h2 id="resource-directory-title">{directory.title}</h2>
               </div>
               <p>
-                输入名称、网站域名或“安装”“练习”等用途，也可以直接选择分类。
+                可以搜网站名字，也可以直接搜“怎么安装”“哪里练习”。
+                不知道名字时，点分类慢慢逛也行。
               </p>
             </div>
             <ResourceDirectoryBrowser
@@ -93,35 +94,36 @@ export default async function ResourcesPage() {
             <div className="section-heading section-heading--split">
               <div>
                 <span className="section-kicker">如何使用</span>
-                <h2>把资源放进学习动作里</h2>
+                <h2>卡住时，按这三步找答案</h2>
               </div>
               <p>
-                资源只有在解决具体问题时才有价值。先跑一个最小实验，再带着观察结果去查文档或社区。
+                先跑一小段代码，看看自己到底卡在哪里，再带着这个问题去查资料，
+                会比漫无目的地翻网页更容易找到答案。
               </p>
             </div>
 
             <div className="resource-usage-grid">
               <article>
                 <span>01</span>
-                <h3>先确认官方语义</h3>
-                <p>查清版本、API 和边界条件，再决定代码应该怎么写。</p>
+                <h3>先看官方怎么说</h3>
+                <p>看清使用的版本、API 写法和限制，再决定代码怎么改。</p>
               </article>
               <article>
                 <span>02</span>
-                <h3>再补教程解释</h3>
-                <p>用课程和长文连接概念，但把示例放进自己的 IEx 或 erl 里验证。</p>
+                <h3>再找一位会讲清楚的老师</h3>
+                <p>教程能帮你听懂来龙去脉。看完别忘了把示例放进自己的 IEx 或 erl 里跑一下。</p>
               </article>
               <article>
                 <span>03</span>
-                <h3>最后动手与追问</h3>
-                <p>通过练习发现盲点；带着最小复现和错误信息去社区搜索。</p>
+                <h3>动手试，再带着线索去问</h3>
+                <p>去社区提问时，带上报错、能重现问题的最短代码，以及你已经试过的方法。</p>
               </article>
             </div>
 
             <div className="resource-usage-cta">
               <div>
-                <strong>还没有本地运行环境？</strong>
-                <p>从起跑线检查 Erlang、Elixir、IEx、erl 与 Mix。</p>
+                <strong>电脑上还没装好 Elixir？</strong>
+                <p>从起跑线开始，我们会一起检查 Erlang、Elixir、IEx、erl 和 Mix。</p>
               </div>
               <Link className="button button--dark" href="/learn/start-line">
                 打开起跑线

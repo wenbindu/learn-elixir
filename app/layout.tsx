@@ -3,9 +3,9 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
-const siteTitle = "BEAM Path — Erlang + Elixir 学习路径";
+const siteTitle = "BEAM Path — 一起学 Erlang 与 Elixir";
 const siteDescription =
-  "一套从零到 OTP 实战的中文 Erlang + Elixir 交互式教程。";
+  "从第一段能运行的代码开始，边猜、边改、边观察，一起认识 Erlang、Elixir、BEAM 和 OTP。";
 const deploymentHost =
   process.env.NEXT_PUBLIC_SITE_URL ??
   process.env.VERCEL_PROJECT_PRODUCTION_URL ??
@@ -54,7 +54,7 @@ export const metadata: Metadata = {
         url: "/og.png",
         width: 1200,
         height: 630,
-        alt: "BEAM Path — Erlang + Elixir 学习路径",
+        alt: "BEAM Path — 一起学 Erlang 与 Elixir",
       },
     ],
   },

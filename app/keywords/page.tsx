@@ -7,32 +7,32 @@ import { KeywordDictionary } from "./KeywordDictionary";
 export const metadata: Metadata = {
   title: "Elixir + Erlang 关键字字典",
   description:
-    "可搜索的中文 Elixir 与 Erlang 关键字字典：完整保留字清单、准确分类、用途解释、最小示例和版本提示。",
+    "遇到陌生词时，可以在这里查它做什么、怎样写，以及哪些 Erlang 或 Elixir 版本支持它。",
 };
 
 const distinctions = [
   {
     number: "01",
-    title: "严格保留字",
-    label: "lexer level",
+    title: "有固定座位的词",
+    label: "严格保留字",
     description:
-      "编译器在词法阶段就赋予特殊含义，不能随意拿来当普通变量或函数名。本页默认先展示这一层。",
+      "它们像象棋里的“将”和“帅”，名字一出现就带着固定规则，不能随便拿去给变量或函数起名。",
     example: "Elixir: when · fn · do\nErlang: case · receive · fun",
   },
   {
     number: "02",
-    title: "特殊形式",
-    label: "language building block",
+    title: "搭起语言的梁柱",
+    label: "特殊形式",
     description:
-      "Elixir 的语言基本构造，无法被开发者覆盖；但除 fn 外，它们大多不在严格保留字清单里。",
+      "这些写法是 Elixir 搭建代码结构时用的基本零件，不能被换成别的含义。它们很像保留字，却不完全属于同一类。",
     example: "case · with · receive\nalias · quote · unquote",
   },
   {
     number: "03",
-    title: "宏、属性与指令",
-    label: "common syntax",
+    title: "工具箱里的常用工具",
+    label: "宏、属性与指令",
     description:
-      "写起来很像关键字，却属于 Kernel 宏、Erlang 模块属性或预处理器。理解这点，元编程就不再神秘。",
+      "它们看起来也像关键字，其实有的是宏，有的是模块标记，还有的是预处理命令。先记住用途，再慢慢认识分类。",
     example: "defmodule · use · if\n-module · -spec · -define",
   },
 ];
@@ -58,13 +58,13 @@ export default function KeywordsPage() {
                   ELIXIR + ERLANG LEXICON
                 </div>
                 <h1>
-                  别猜它是不是关键字，
-                  <span>查清它是什么。</span>
+                  遇到不认识的词，
+                  <span>就像查字典一样来这里。</span>
                 </h1>
                 <p>
-                  两门语言的严格保留字完整收录，并把特殊形式、宏、模块属性和
-                  预处理指令分开解释。搜英文，也可以直接搜“短路”“模式匹配”
-                  “异常”这样的中文概念。
+                  这里收好了 Elixir 和 Erlang 中那些“有固定任务的词”。
+                  你可以搜英文，也可以搜“模式匹配”“异常”“短路”这样的中文问题。
+                  每个词都会告诉你：它是谁、做什么、怎么用。
                 </p>
               </div>
 
@@ -81,8 +81,8 @@ export default function KeywordsPage() {
                 </div>
                 <p>
                   <b>44</b>
-                  个词法保留字
-                  <small>逐项按官方语言参考核对</small>
+                  个语言保留字
+                  <small>每一项都查过官方资料</small>
                 </p>
               </aside>
             </div>
@@ -97,11 +97,11 @@ export default function KeywordsPage() {
             <div className="keyword-dictionary-intro">
               <div>
                 <span className="section-kicker">可搜索字典</span>
-                <h2 id="keyword-dictionary-title">从词法边界开始查</h2>
+                <h2 id="keyword-dictionary-title">先认识那些不能随便拿来起名的词</h2>
               </div>
               <p>
-                默认只看严格保留字。需要找 <code>defmodule</code>、
-                <code>with</code> 或 <code>-module</code> 时，切换到对应补充分类。
+                打开页面时，先看到严格保留字。想找 <code>defmodule</code>、
+                <code>with</code> 或 <code>-module</code>，点一下上面的其他分类就能找到。
               </p>
             </div>
             <KeywordDictionary />
@@ -112,12 +112,12 @@ export default function KeywordsPage() {
           <div className="section-shell">
             <div className="section-heading section-heading--split">
               <div>
-                <span className="section-kicker">先分层，再记忆</span>
-                <h2>“看起来像关键字”不等于保留字</h2>
+                <span className="section-kicker">长得很像，身份却不同</span>
+                <h2>“看起来像关键字”，不一定就是保留字</h2>
               </div>
               <p>
-                Elixir 语法高度宏化，同样一段自然语言般的代码，可能横跨词法、
-                特殊形式和普通宏三个层级。
+                这些词写在代码里时很像，但在编译器眼中有不同身份。
+                就像同样穿古装的人，可能是将军、信使或掌柜：先看他做什么，再看他属于哪一类。
               </p>
             </div>
 
@@ -140,14 +140,15 @@ export default function KeywordsPage() {
             <aside className="keyword-list-callout">
               <span aria-hidden="true">≠</span>
               <div>
-                <strong>Elixir 的 keyword list 是另一件事</strong>
+                <strong>小心：keyword list 不是这页说的“保留字”</strong>
                 <p>
-                  <code>[timeout: 5_000, log: true]</code> 是由二元组组成的数据结构，
-                  中文通常叫“关键字列表”；这里的 keyword 与语言“保留字”不是同一概念。
+                  <code>[timeout: 5_000, log: true]</code> 是一种装数据的列表，
+                  中文叫“关键字列表”。这里的 keyword 只是数据结构的名字，
+                  和语言预留的词不是一回事。
                 </p>
               </div>
               <Link href="/learn/elixir-foundations">
-                去基础课看数据结构
+                看看 keyword list 怎样装数据
                 <span aria-hidden="true">→</span>
               </Link>
             </aside>
@@ -158,14 +159,14 @@ export default function KeywordsPage() {
           <div className="section-shell">
             <div className="keyword-sources-copy">
               <span className="section-kicker">官方依据</span>
-              <h2>字典给解释，官方文档给完整语义</h2>
+              <h2>这里帮你听懂，官方文档帮你查全</h2>
               <p>
-                清单以当前官方语言参考为准。Erlang 的 <code>maybe</code> 在 OTP
-                25–26 默认关闭，自 OTP 27 起默认开启；<code>cond</code> 与
-                <code>let</code> 目前仍是“已保留但未使用”。
+                本页按官方资料整理。Erlang 的 <code>maybe</code> 在 OTP
+                25–26 中默认关闭，从 OTP 27 起默认开启。<code>cond</code> 和
+                <code>let</code> 虽然被保留，目前还没有实际语法用途。
               </p>
               <Link className="button button--dark" href="/playground">
-                带一个词去 Playground 试
+                挑一个词，去 Playground 试试看
                 <span aria-hidden="true">→</span>
               </Link>
             </div>
@@ -208,7 +209,7 @@ export default function KeywordsPage() {
               >
                 <span>Erlang/OTP</span>
                 <strong>Expressions</strong>
-                <small>控制流、guard 与运算符语义</small>
+                <small>控制流、guard 与运算符用法</small>
                 <b aria-hidden="true">↗</b>
               </a>
             </div>

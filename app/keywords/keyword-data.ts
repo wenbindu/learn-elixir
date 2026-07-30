@@ -10,6 +10,7 @@ export type KeywordEntry = {
   summary: string;
   detail: string;
   example: string;
+  analogy?: string;
   note?: string;
 };
 
@@ -20,9 +21,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "reserved",
     role: "收尾或超时子句",
-    summary: "声明 try 的清理逻辑，或 receive 的超时分支。",
+    summary: "让收尾工作一定执行，也能给收消息设定最长等待时间。",
     detail:
-      "在 try 中，after 里的代码无论成功或失败都会执行；在 receive 中，它为等待消息设置超时结果。",
+      "`try ... after` 会在离开 try 前执行清理；`receive ... after` 只结束这次等待，不会撤回已经发送的消息。",
     example: "try do\n  work()\nafter\n  cleanup()\nend",
   },
   {
@@ -30,9 +31,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "reserved",
     role: "严格布尔运算符",
-    summary: "仅接受布尔值，并且短路计算逻辑与。",
+    summary: "判断两个布尔条件是不是同时为 true。",
     detail:
-      "左侧必须是 true 或 false；左侧为 false 时不会计算右侧。若要使用真值语义，可用 &&。",
+      "两边必须是 true 或 false；左边为 false 时右边不会运行。需要按真值判断其他数据时用 &&。",
     example: "ready? and enabled?",
   },
   {
@@ -40,9 +41,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "reserved",
     role: "捕获子句",
-    summary: "在 try 中捕获 throw、exit 等非异常信号。",
+    summary: "接住 try 中的 throw、exit 等特殊信号。",
     detail:
-      "普通异常通常交给 rescue；catch 更适合处理 throw/1、进程退出和底层错误类别。",
+      "普通异常通常交给 rescue；catch 主要处理 `throw/1`、进程退出和较底层的错误类别。",
     example:
       "try do\n  throw(:stop)\ncatch\n  :throw, reason -> reason\nend",
   },
@@ -51,9 +52,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "reserved",
     role: "代码块起点",
-    summary: "引入宏、函数或控制结构的主体。",
+    summary: "告诉 Elixir：接下来的内容属于这个函数或判断。",
     detail:
-      "既可写成 do ... end 多行块，也可写成 do: expression 关键字参数形式。",
+      "多行内容写成 `do ... end`；只有一个表达式时，也可以缩写成 `do: expression`。",
     example: "if ready?, do: run()",
   },
   {
@@ -61,9 +62,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "reserved",
     role: "备选子句",
-    summary: "描述条件不满足或匹配链失败后的分支。",
+    summary: "当前面的条件或匹配没有成功时，走另一条路。",
     detail:
-      "常见于 if、unless、with 和 try；它的具体匹配规则由所在构造决定。",
+      "它可出现在 if、unless、with 和 try 中；放在不同结构里，触发它的规则并不完全一样。",
     example: "if ok?, do: :yes, else: :no",
   },
   {
@@ -71,9 +72,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "reserved",
     role: "代码块终点",
-    summary: "结束由 do、fn 等开启的块。",
+    summary: "给 do、fn 等打开的代码块画上句号。",
     detail:
-      "Elixir 不依赖缩进闭合语法块；多行块必须使用 end 明确结束。",
+      "缩进只帮助人阅读，不能代替语法；多行代码块必须用 end 明确结束。",
     example: "if ready? do\n  run()\nend",
   },
   {
@@ -81,9 +82,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "reserved",
     role: "布尔字面量",
-    summary: "表示布尔假值。",
+    summary: "表示“否”或“条件不成立”。",
     detail:
-      "在 Elixir 的条件判断中，false 与 nil 是仅有的两个假值，其余值均为真值。",
+      "Elixir 的条件判断只把 false 和 nil 当作假值，0、空字符串和空列表都算真值。",
     example: "active? = false",
   },
   {
@@ -91,9 +92,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "reserved",
     role: "匿名函数",
-    summary: "创建可赋值、传递和调用的匿名函数。",
+    summary: "做一个没有固定名字、可以交给别处使用的函数。",
     detail:
-      "匿名函数可以包含多个模式匹配子句，调用时需在变量名后使用点号。",
+      "匿名函数可以有多个模式匹配子句；保存在变量里以后，要用 `变量.(参数)` 的点号形式调用。",
     example: "double = fn x -> x * 2 end\ndouble.(3)",
   },
   {
@@ -101,9 +102,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "reserved",
     role: "成员关系运算符",
-    summary: "检查左侧值是否属于右侧集合。",
+    summary: "看看一个值是否出现在列表或范围里。",
     detail:
-      "常用于列表或范围成员检查，也可用于 guard；推导式中的生成器使用的是 <-，不要混为一谈。",
+      "in 也能用于 guard；它只检查成员关系，推导式里从集合取值使用的是 `<-`。",
     example: "2 in 1..3",
   },
   {
@@ -111,9 +112,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "reserved",
     role: "空值字面量",
-    summary: "表示没有值，并在条件中视为假。",
+    summary: "表示这里暂时没有值。",
     detail:
-      "nil 是原子 :nil 的字面写法，常作为未找到或可选结果的空值。",
+      "nil 是原子 `:nil` 的字面写法，在条件判断中算假；它常表示“没找到”或可选值缺席。",
     example: "result = nil",
   },
   {
@@ -121,9 +122,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "reserved",
     role: "严格布尔运算符",
-    summary: "对布尔值取反。",
+    summary: "把 true 变成 false，把 false 变成 true。",
     detail:
-      "操作数必须是 true 或 false；若要使用真值语义取反，可使用 !。",
+      "not 只接受 true 或 false；如果要对 nil 或其他数据按真值取反，使用 `!`。",
     example: "not finished?",
   },
   {
@@ -131,9 +132,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "reserved",
     role: "严格布尔运算符",
-    summary: "仅接受布尔值，并且短路计算逻辑或。",
+    summary: "判断两个布尔条件里是否至少有一个为 true。",
     detail:
-      "左侧必须是 true 或 false；左侧为 true 时不会计算右侧。真值语义版本是 ||。",
+      "两边必须是 true 或 false；左边为 true 时右边不会运行。需要按真值判断其他数据时用 `||`。",
     example: "cached? or fetch?()",
   },
   {
@@ -141,9 +142,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "reserved",
     role: "异常子句",
-    summary: "在 try 中匹配并处理异常。",
+    summary: "当 try 里发生普通异常时，按异常类型处理它。",
     detail:
-      "可匹配指定异常结构，例如 ArgumentError；未匹配的异常仍会向外传播。",
+      "可以只接住 ArgumentError 等指定异常；没有匹配到的异常仍会继续向外传。",
     example:
       "try do\n  risky()\nrescue\n  ArgumentError -> :invalid\nend",
   },
@@ -152,9 +153,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "reserved",
     role: "布尔字面量",
-    summary: "表示布尔真值。",
+    summary: "表示“是”或“条件成立”。",
     detail:
-      "true 是原子 :true 的字面写法，常用作条件结果或 cond 的兜底条件。",
+      "true 是原子 `:true` 的字面写法，也常在 cond 的最后一条分支里表示“其他情况都走这里”。",
     example: "enabled? = true",
   },
   {
@@ -162,9 +163,11 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "reserved",
     role: "守卫子句",
-    summary: "为模式匹配增加守卫条件。",
+    summary: "模式先对上以后，再检查一个额外条件。",
     detail:
-      "守卫只能调用允许在 guard 中使用的运算符和函数，并在模式匹配之后进行检查。",
+      "when 里的 guard 只能使用允许的运算符和函数；普通函数不能随意放进去。",
+    analogy:
+      "像城门先核对来人的名字，再检查通行条件；两关都对上，这条路才算匹配成功。",
     example: "def positive?(n) when n > 0, do: true",
   },
 
@@ -174,9 +177,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "超时或收尾子句",
-    summary: "为 receive 设置超时，或为 try 提供清理阶段。",
+    summary: "让收消息不必一直等，也能保证 try 离开前做清理。",
     detail:
-      "receive after 可避免永久等待消息；try after 中的表达式会在离开 try 前执行。",
+      "`receive ... after` 到时只停止等待；`try ... after` 中的表达式会在离开 try 前执行。",
     example: "receive\n  Msg -> Msg\nafter 1000 ->\n  timeout\nend",
   },
   {
@@ -184,9 +187,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "严格布尔运算符",
-    summary: "计算两侧后执行布尔逻辑与。",
+    summary: "把两边都算完，再判断它们是不是同时为 true。",
     detail:
-      "两侧都必须是布尔值，而且不会短路；需要短路时使用 andalso。",
+      "两边都必须是布尔值，而且右边一定会运行；不想在左边为 false 时运行右边，请用 andalso。",
     example: "true and false. % false",
   },
   {
@@ -194,9 +197,11 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "短路布尔运算符",
-    summary: "左侧为 true 时才计算右侧。",
+    summary: "先看左边，只有左边为 true 才继续算右边。",
     detail:
-      "它适合把前置检查与后续表达式串联，避免不必要或不安全的右侧计算。",
+      "两边都应得到布尔值；它常把安全检查放在前面，避免右边做没有必要或可能出错的计算。",
+    analogy:
+      "像先确认桥没有封闭，才让车开上桥；第一关没过，后面的动作就不做了。",
     example: "N > 0 andalso N rem 2 =:= 0.",
   },
   {
@@ -204,8 +209,8 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "位运算符",
-    summary: "对整数逐位执行与运算。",
-    detail: "常用于掩码、标志位和二进制协议字段处理。",
+    summary: "逐个比较两个整数的二进制位，只有两边都是 1 才留下 1。",
+    detail: "它只处理整数，常用来读取掩码、标志位或二进制协议里的某几位。",
     example: "6 band 3. % 2",
   },
   {
@@ -213,9 +218,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "表达式块",
-    summary: "把多个表达式组合成一个表达式。",
+    summary: "把几步计算包在一起，当成一个完整表达式。",
     detail:
-      "表达式按顺序执行，以逗号分隔，整个 begin ... end 的值是最后一个表达式的值。",
+      "各步用逗号分开并按顺序执行，整个 `begin ... end` 最终得到最后一步的值。",
     example: "begin A = 1, A + 1 end.",
   },
   {
@@ -223,8 +228,8 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "位运算符",
-    summary: "对整数的每一位执行按位取反。",
-    detail: "Erlang 整数精度不受固定位宽限制，因此结果遵循无限精度整数语义。",
+    summary: "把整数二进制表示里的每一位反过来。",
+    detail: "Erlang 整数没有固定的 8 位、32 位上限，因此结果按无限精度整数的规则计算。",
     example: "bnot 0. % -1",
   },
   {
@@ -232,8 +237,8 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "位运算符",
-    summary: "对整数逐位执行或运算。",
-    detail: "常用于合并多个独立的位标志。",
+    summary: "逐个比较两个整数的二进制位，只要一边是 1 就得到 1。",
+    detail: "它只处理整数，常用来把多个互不冲突的位标志合在一起。",
     example: "4 bor 1. % 5",
   },
   {
@@ -241,8 +246,8 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "位移运算符",
-    summary: "把整数的位向左移动指定数量。",
-    detail: "正数位移通常等价于乘以 2 的相应幂。",
+    summary: "把整数的二进制位整体向左挪几格。",
+    detail: "位移数量为正时，效果通常等于乘以相应次方的 2；它只接受整数。",
     example: "3 bsl 2. % 12",
   },
   {
@@ -250,8 +255,8 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "位移运算符",
-    summary: "把整数的位向右移动指定数量。",
-    detail: "对负数执行算术右移，保留符号语义。",
+    summary: "把整数的二进制位整体向右挪几格。",
+    detail: "它只接受整数；负数使用算术右移，会保留负号所代表的符号语义。",
     example: "12 bsr 2. % 3",
   },
   {
@@ -259,8 +264,8 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "位运算符",
-    summary: "对整数逐位执行异或运算。",
-    detail: "对应位不同时结果位为 1，相同时为 0。",
+    summary: "逐个比较两个整数的二进制位，不一样时得到 1。",
+    detail: "相同的位得到 0，不同的位得到 1；这是整数位运算，不是布尔 xor。",
     example: "6 bxor 3. % 5",
   },
   {
@@ -268,9 +273,11 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "模式分支",
-    summary: "根据模式匹配选择并执行一个分支。",
+    summary: "看一个值长什么样，再走第一个匹配的分支。",
     detail:
-      "case 表达式求值一次，然后按顺序尝试 of 后的模式和可选守卫。",
+      "case 只把目标表达式算一次，再从上到下尝试 of 后的模式与可选 guard；没有命中会报错。",
+    analogy:
+      "像驿站按信封上的标记分信：先遇到哪条合适的分拣规则，就把信交给那一处。",
     example: "case X of\n  0 -> zero;\n  _ -> other\nend.",
   },
   {
@@ -278,9 +285,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "异常捕获",
-    summary: "捕获表达式产生的异常或抛出值。",
+    summary: "接住表达式抛出的值或错误，让它变成可以继续处理的结果。",
     detail:
-      "既可作为旧式 catch Expression，也用于 try 的 catch 子句；新代码通常优先使用结构更清楚的 try。",
+      "它既有旧式 `catch Expression` 写法，也出现在 try 的 catch 子句中；新代码通常用结构更清楚的 try。",
     example: "Result = catch risky().",
   },
   {
@@ -288,9 +295,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "保留未使用",
-    summary: "被词法分析器保留，但当前没有 cond 表达式。",
+    summary: "这个名字被 Erlang 留着，但现在不能拿它写 cond 条件块。",
     detail:
-      "它不能作为未加引号的原子、变量或函数名使用；条件分支请使用 case 或 if。",
+      "cond 不能直接当原子、变量或函数名；需要这个原子时写 `'cond'`，条件分支使用 case 或 if。",
     example: "erl_scan:reserved_word('cond'). % true",
     note: "当前 Erlang 语法未使用该词。",
   },
@@ -299,8 +306,8 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "算术运算符",
-    summary: "执行整数除法并返回整数商。",
-    detail: "结果向零截断；除数为零会引发 badarith 错误。",
+    summary: "用两个整数相除，只保留整数部分。",
+    detail: "结果朝 0 的方向截断，不会四舍五入；除数为 0 会产生 `badarith` 错误。",
     example: "7 div 2. % 3",
   },
   {
@@ -308,9 +315,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "maybe 失败分支",
-    summary: "处理 maybe 表达式中 ?= 匹配失败的值。",
+    summary: "当 maybe 中某一步没有匹配成功时，决定怎样处理那个失败值。",
     detail:
-      "else 后使用模式子句选择失败结果；它是 maybe 表达式语法的一部分，而非通用 if-else。",
+      "else 后面仍用模式子句选择结果；它只属于 maybe 语法，并不是任何地方都能使用的 if-else。",
     example: "maybe {ok, V} ?= fetch(), V else error -> missing end.",
     note: "与 maybe 表达式一同使用；旧版 OTP 可能不支持该语法。",
   },
@@ -319,8 +326,8 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "表达式块终点",
-    summary: "结束 case、fun、if、receive、try 等表达式块。",
-    detail: "Erlang 的多分支表达式都使用 end 明确闭合。",
+    summary: "给 case、fun、if、receive 或 try 等代码块画上句号。",
+    detail: "缩进不能结束这些表达式；每个打开的多行块都要用 end 明确闭合。",
     example: "fun(X) -> X * 2 end.",
   },
   {
@@ -328,9 +335,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "匿名函数或函数引用",
-    summary: "创建匿名函数，或引用已有函数。",
+    summary: "做一个匿名函数，或者把已有函数当成一个值拿来使用。",
     detail:
-      "匿名函数可以拥有多个模式子句；Module:Function/Arity 形式可捕获远程函数。",
+      "匿名函数可以有多个模式子句；`fun Module:Function/Arity` 可以引用已经存在的远程函数。",
     example: "Double = fun(X) -> X * 2 end.",
   },
   {
@@ -338,9 +345,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "守卫分支",
-    summary: "按顺序选择第一个守卫为真的分支。",
+    summary: "从上到下检查条件，执行第一条 guard 为 true 的分支。",
     detail:
-      "if 的条件是 guard 序列，不是任意表达式；没有分支命中会产生 if_clause 错误。",
+      "if 里只能写允许的 guard 表达式，不是任意函数调用；没有分支命中会产生 `if_clause` 错误。",
     example: "if N > 0 -> positive; true -> other end.",
   },
   {
@@ -348,9 +355,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "保留未使用",
-    summary: "被词法分析器保留，但当前没有 let 表达式。",
+    summary: "这个名字被 Erlang 留着，但现在没有可以使用的 let 表达式。",
     detail:
-      "Erlang 通过模式匹配绑定变量；若需要名为 let 的原子，必须写成 'let'。",
+      "Erlang 用模式匹配绑定变量；如果确实需要名为 let 的原子，必须写成 `'let'`。",
     example: "erl_scan:reserved_word('let'). % true",
     note: "当前 Erlang 语法未使用该词。",
   },
@@ -359,9 +366,11 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "顺序匹配表达式",
-    summary: "顺序执行表达式，并在 ?= 匹配失败时提前返回。",
+    summary: "把几步可能失败的操作排好，一步没对上就提前停下。",
     detail:
-      "适合串联多个可能失败的操作；可搭配 else 把失败值转换为统一结果。",
+      "`?=` 只在 maybe 中使用；匹配失败时返回失败值，也可以交给 else 转成统一结果。",
+    analogy:
+      "像一张通关文牒要逐站盖印：有一站没盖上，后面的行程先停下，再按失败原因处理。",
     example: "maybe\n  {ok, V} ?= fetch(),\n  V\nend.",
     note:
       "maybe 表达式从 Erlang/OTP 25 引入；较旧版本不支持，早期版本可能需启用 maybe_expr 特性。",
@@ -371,8 +380,8 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "布尔运算符",
-    summary: "对布尔值取反。",
-    detail: "操作数必须是 true 或 false，否则会引发 badarg 错误。",
+    summary: "把 true 变成 false，把 false 变成 true。",
+    detail: "not 只接受布尔值；传入数字、原子等其他数据会产生 `badarg` 错误。",
     example: "not false. % true",
   },
   {
@@ -380,9 +389,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "模式子句引导词",
-    summary: "引出 case 或 try 成功结果的模式分支。",
+    summary: "告诉 case 或 try：接下来要按不同形状处理结果。",
     detail:
-      "在 case 中连接待匹配表达式与子句；在 try 中可选择性处理主体的正常返回值。",
+      "case 必须用 of 引出分支；try 中的 of 是可选的，只处理 try 主体正常返回的值。",
     example: "case Value of ok -> done; _ -> retry end.",
   },
   {
@@ -390,9 +399,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "严格布尔运算符",
-    summary: "计算两侧后执行布尔逻辑或。",
+    summary: "把两边都算完，再判断是否至少有一边为 true。",
     detail:
-      "两侧都必须是布尔值，而且不会短路；需要短路时使用 orelse。",
+      "两边都必须是布尔值，而且右边一定会运行；不想在左边为 true 时运行右边，请用 orelse。",
     example: "false or true. % true",
   },
   {
@@ -400,9 +409,11 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "短路布尔运算符",
-    summary: "左侧为 false 时才计算右侧。",
+    summary: "先看左边，只有左边为 false 才继续算右边。",
     detail:
-      "常用于提供兜底条件，并避免左侧已满足时执行有副作用或昂贵的右侧表达式。",
+      "两边都应得到布尔值；左边已经满足时，右边不会运行，所以它常用来安排备用条件。",
+    analogy:
+      "像先试近路，近路能走就不再绕远；只有近路不通，才去检查备用路线。",
     example: "Cached orelse filelib:is_file(Path).",
   },
   {
@@ -410,9 +421,11 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "进程消息接收",
-    summary: "从当前进程邮箱中选择性接收匹配消息。",
+    summary: "从当前进程的 mailbox 里取出第一条符合规则的消息。",
     detail:
-      "消息按到达顺序扫描，只有匹配某个子句的消息才会被取出；可使用 after 设置超时。",
+      "消息按到达顺序扫描，不匹配的会留在 mailbox 中；可以用 after 避免一直等待。",
+    analogy:
+      "像从一叠来信中找第一封符合约定格式的信；暂时不合要求的信不会消失，而是继续留在信箱里。",
     example: "receive\n  {ping, From} -> From ! pong\nend.",
   },
   {
@@ -420,9 +433,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "算术运算符",
-    summary: "返回整数除法的余数。",
+    summary: "把两个整数相除，告诉你最后还剩多少。",
     detail:
-      "它与 div 配套，并满足 X = (X div Y) * Y + (X rem Y)。",
+      "rem 与 div 配套，并满足 `X = (X div Y) * Y + (X rem Y)`；除数为 0 会报错。",
     example: "7 rem 2. % 1",
   },
   {
@@ -430,9 +443,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "异常处理表达式",
-    summary: "处理正常结果、异常和最终清理逻辑。",
+    summary: "把可能出错的计算、成功结果和收尾工作放在一起处理。",
     detail:
-      "可组合 of、catch 和 after 子句，精确区分成功值以及 error、exit、throw 类别。",
+      "try 可以组合 of、catch 和 after，分别处理正常值以及 error、exit、throw；没有匹配的错误仍会向外传。",
     example: "try risky() catch _:Reason -> {error, Reason} end.",
   },
   {
@@ -440,9 +453,11 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "守卫子句",
-    summary: "为函数或模式分支增加守卫条件。",
+    summary: "模式先对上以后，再检查一个额外条件。",
     detail:
-      "守卫只能使用允许的 guard 表达式；它在模式匹配成功后决定子句是否可选。",
+      "when 后只能使用允许的 guard 表达式；普通函数不能随意放进去，条件为 false 时会继续尝试下一子句。",
+    analogy:
+      "像先按名册找到队伍，再核对年龄或号码；两项都符合，才进入这一条处理路线。",
     example: "abs(N) when N < 0 -> -N.",
   },
   {
@@ -450,8 +465,8 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "reserved",
     role: "布尔运算符",
-    summary: "执行布尔异或，两侧不同时为 true。",
-    detail: "两侧都会计算且必须是布尔值；它不是整数位异或，整数位异或请使用 bxor。",
+    summary: "判断两个布尔值是否恰好一真一假。",
+    detail: "两边都会运行且都必须是布尔值；整数每一位的异或运算要使用 bxor。",
     example: "true xor false. % true",
   },
 
@@ -461,9 +476,11 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "special",
     role: "特殊形式",
-    summary: "用模式匹配从多个分支中选择一个。",
+    summary: "看一个值长什么样，再走第一个匹配的分支。",
     detail:
-      "待匹配表达式只计算一次，每个分支都可附加 when 守卫；未匹配会引发 CaseClauseError。",
+      "目标表达式只计算一次，分支可以加 when；如果没有任何分支匹配，会产生 `CaseClauseError`。",
+    analogy:
+      "像整理书包时按物品形状分类：先遇到哪条合适的规则，就把这件东西放进对应的位置。",
     example: "case value do\n  {:ok, x} -> x\n  _ -> nil\nend",
   },
   {
@@ -471,9 +488,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "special",
     role: "特殊形式",
-    summary: "选择第一个条件为真值的分支。",
+    summary: "从上到下检查条件，执行第一条算作真的分支。",
     detail:
-      "适合没有共同匹配值的多条件判断；通常用 true -> ... 作为最终兜底。",
+      "cond 适合几条问题彼此不同的情况；如果没有分支为真会报错，通常用 `true -> ...` 接住剩余情况。",
     example: "cond do\n  ready? -> :go\n  true -> :wait\nend",
   },
   {
@@ -481,9 +498,11 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "special",
     role: "特殊形式",
-    summary: "串联多个模式匹配成功路径。",
+    summary: "把几步可能失败的操作排好，一步没对上就提前停下。",
     detail:
-      "任一 <- 匹配失败就停止后续步骤并返回失败值，或交给可选的 else 子句处理。",
+      "任一 `<-` 匹配失败都会跳过后续步骤，直接返回失败值，或交给可选的 else 处理。",
+    analogy:
+      "像通关文牒要逐站盖印：前一站没有盖上，后面的站先不去，再按失败原因处理。",
     example: "with {:ok, user} <- fetch_user(), do: user.name",
   },
   {
@@ -491,9 +510,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "special",
     role: "特殊形式",
-    summary: "组合异常、抛出、成功结果与清理处理。",
+    summary: "把可能出错的计算、成功结果和收尾工作放在一起处理。",
     detail:
-      "可包含 rescue、catch、else 和 after；日常控制流应优先使用返回值而不是异常。",
+      "try 可以包含 rescue、catch、else 和 after；普通的成功或失败分支，通常用返回值比抛异常更清楚。",
     example: "try do\n  risky()\nrescue\n  _ -> :error\nend",
   },
   {
@@ -501,9 +520,11 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "special",
     role: "特殊形式",
-    summary: "从当前进程邮箱接收匹配的消息。",
+    summary: "从当前进程的 mailbox 里取出第一条符合规则的消息。",
     detail:
-      "它是 BEAM 进程通信的底层构造，可使用 after 子句避免无限等待。",
+      "不匹配的消息会留在 mailbox 中；可以用 after 设定最长等待时间，避免一直卡住。",
+    analogy:
+      "像从一叠来信中找第一封符合约定格式的信；暂时不合要求的信还留在信箱里。",
     example: "receive do\n  {:ping, from} -> send(from, :pong)\nend",
   },
   {
@@ -511,9 +532,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "special",
     role: "列表推导",
-    summary: "从可枚举值生成、筛选并收集结果。",
+    summary: "从一批数据里逐个取值，可以筛选，再把新结果收集起来。",
     detail:
-      "可组合多个生成器和过滤条件，还能通过 into: 收集到列表以外的数据结构。",
+      "for 可以组合多个生成器和过滤条件；结果默认是列表，使用 `into:` 才会收进其他数据结构。",
     example: "for x <- 1..3, do: x * 2",
   },
   {
@@ -521,9 +542,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "special",
     role: "模块别名",
-    summary: "为模块名创建当前词法作用域内的短名称。",
+    summary: "给很长的模块名取一个只在当前范围使用的短名字。",
     detail:
-      "它只影响编译期名称展开，不会复制或导入模块中的函数。",
+      "alias 只在编译时改变名称写法，不会复制模块，也不会把模块里的函数导入当前模块。",
     example: "alias MyApp.Accounts.User, as: User",
   },
   {
@@ -531,9 +552,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "special",
     role: "函数与宏导入",
-    summary: "允许省略模块名前缀调用指定函数或宏。",
+    summary: "把指定函数或宏带到当前范围，调用时可以省略模块名。",
     detail:
-      "建议使用 only: 或 except: 控制范围，减少名称冲突并让调用来源更明确。",
+      "导入太多容易出现同名冲突；用 `only:` 或 `except:` 缩小范围，也能让来源更容易看懂。",
     example: "import Enum, only: [map: 2]",
   },
   {
@@ -541,9 +562,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "special",
     role: "宏依赖声明",
-    summary: "确保模块已加载，以便调用其中的宏。",
+    summary: "在调用一个模块的宏之前，先告诉编译器需要这个模块。",
     detail:
-      "普通函数调用不需要 require；远程宏调用通常需要先 require 对应模块。",
+      "普通远程函数不需要 require；远程宏通常需要先 require，因为宏会在编译代码时展开。",
     example: "require Logger\nLogger.info(\"ready\")",
   },
   {
@@ -551,9 +572,11 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "special",
     role: "AST 构造",
-    summary: "把代码转换为 Elixir 抽象语法树。",
+    summary: "先把一段代码变成可以查看和组合的数据，而不是立刻照常运行。",
     detail:
-      "它是编写宏的基础；返回的三元组与列表结构可由编译器继续展开和编译。",
+      "quote 得到的是由 tuple、列表和字面量组成的 AST，常供宏继续改造并交给编译器展开。",
+    analogy:
+      "像先画建筑图纸：图纸说明准备怎样建，却不等于房子已经盖好了。",
     example: "ast = quote do: x + 1",
   },
   {
@@ -561,9 +584,11 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "special",
     role: "AST 插值",
-    summary: "把外部表达式的值插入 quote 生成的 AST。",
+    summary: "把 quote 外面准备好的一个值或一段 AST 填进代码模板。",
     detail:
-      "它只能在 quote 上下文中使用，作用类似代码模板中的单个插值点。",
+      "unquote 只在 quote 的上下文里有这种作用，每次插入一个值；插入一列 AST 要用 unquote_splicing。",
+    analogy:
+      "像活字印刷时在版面上留一个空位，再把选好的那一块字模嵌进去。",
     example: "quote do: unquote(value) + 1",
   },
   {
@@ -571,9 +596,11 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "special",
     role: "AST 列表插值",
-    summary: "把 AST 列表中的多个元素展开插入 quote。",
+    summary: "把一列 AST 拆开，将里面的多个元素一起填进 quote。",
     detail:
-      "与 unquote 插入一个值不同，它会把列表内容拼接到所在的参数或元素序列。",
+      "它要求插入的内容能作为列表元素展开，并把这些元素拼进当前位置；unquote 则只放入一个值。",
+    analogy:
+      "如果 unquote 是嵌入一块活字，unquote_splicing 就是把排好的一整列活字接进版面。",
     example: "quote do: [0, unquote_splicing(values)]",
   },
   {
@@ -581,9 +608,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "special",
     role: "被覆盖实现调用",
-    summary: "在可覆盖定义中调用被覆盖前的实现。",
+    summary: "覆盖默认函数以后，仍然调用原来的那份实现。",
     detail:
-      "常与 defoverridable 和 use 生成的默认实现配合；super() 会沿用当前函数参数。",
+      "super 只能用于可覆盖的定义，常与 defoverridable 或 use 生成的默认实现配合；参数仍要符合当前函数的元数。",
     example: "def greet(name), do: super(name) <> \"!\"",
   },
 
@@ -593,9 +620,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "common",
     role: "Kernel 宏",
-    summary: "定义模块并建立模块体的编译上下文。",
+    summary: "开一个模块，把相关函数、宏和数据定义放在同一个名字下面。",
     detail:
-      "模块名通常使用大驼峰别名；模块体中的属性、函数和宏会编译到该模块。",
+      "模块名通常写成大驼峰别名；do 块里的属性、函数和宏会在编译时归入这个模块。",
     example: "defmodule Greeter do\nend",
     note: "常被称为关键字，但它是 Kernel 提供的宏。",
   },
@@ -604,9 +631,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "common",
     role: "Kernel 宏",
-    summary: "定义可从模块外调用的公开函数。",
+    summary: "定义一个模块外也能调用的函数。",
     detail:
-      "同名同元数函数可用多个模式和守卫组成多个子句，按声明顺序匹配。",
+      "同名且参数个数相同的 def 可以写成多个模式与 guard 子句，调用时按声明顺序尝试。",
     example: "def add(a, b), do: a + b",
     note: "它是宏，不属于 15 个严格保留字。",
   },
@@ -615,9 +642,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "common",
     role: "Kernel 宏",
-    summary: "定义只能在当前模块内调用的私有函数。",
+    summary: "定义一个只给当前模块内部使用的函数。",
     detail:
-      "私有函数不会导出，也不能通过 Module.function 形式从其他模块调用。",
+      "defp 不会导出；其他模块不能用 `Module.function` 调用它，即使知道它的名字也不行。",
     example: "defp normalize(text), do: String.trim(text)",
     note: "它是宏，不属于 15 个严格保留字。",
   },
@@ -626,9 +653,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "common",
     role: "Kernel 宏",
-    summary: "定义在编译期接收并返回 AST 的宏。",
+    summary: "定义一个在编译代码时生成或改写代码的宏。",
     detail:
-      "调用方传入的是语法树而非普通运行时值；通常搭配 quote 与 unquote 生成代码。",
+      "宏收到的是调用代码的 AST，不是普通运行时结果；它必须返回 AST，通常会搭配 quote 与 unquote。",
     example: "defmacro twice(expr), do: quote(do: unquote(expr) * 2)",
     note: "它是定义宏的宏，不是严格保留字。",
   },
@@ -637,9 +664,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "common",
     role: "Kernel 宏",
-    summary: "为当前模块定义结构体字段和默认值。",
+    summary: "给当前模块定义一组固定字段和它们的默认值。",
     detail:
-      "结构体是带有固定键和 __struct__ 标识的映射，可在编译期检查未知字段。",
+      "结构体底层是带 `__struct__` 标记的 map；允许哪些键在编译时已经确定，写入未知字段会报错。",
     example: "defstruct name: \"\", age: 0",
     note: "它是宏，不属于严格保留字。",
   },
@@ -648,9 +675,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "common",
     role: "Kernel 宏",
-    summary: "定义按数据类型分派的协议。",
+    summary: "规定一个动作，让不同数据类型可以各自回答“我该怎么做”。",
     detail:
-      "协议声明一组函数契约，由不同数据类型通过 defimpl 提供各自实现。",
+      "defprotocol 只声明函数；具体行为由不同类型的 defimpl 提供，分派依据是协议函数的第一个参数。",
     example: "defprotocol Size do\n  def size(value)\nend",
     note: "它是宏，不属于严格保留字。",
   },
@@ -659,9 +686,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "common",
     role: "Kernel 宏",
-    summary: "为指定数据类型实现一个协议。",
+    summary: "告诉某一种数据类型怎样完成协议规定的动作。",
     detail:
-      "for: 指定实现目标；协议调用会根据第一个参数的数据类型选择相应实现。",
+      "`for:` 指定目标类型；协议会查看第一个参数的类型来选择实现，没有实现时通常会报协议未实现。",
     example: "defimpl Size, for: BitString do\n  def size(v), do: byte_size(v)\nend",
     note: "它是宏，不属于严格保留字。",
   },
@@ -670,9 +697,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "common",
     role: "Kernel 宏",
-    summary: "根据条件的真值选择 do 或 else 分支。",
+    summary: "条件算作真时走 do，否则走 else。",
     detail:
-      "只有 false 和 nil 被视为假；if 是宏，因此并不属于 Elixir 的严格保留字列表。",
+      "只有 false 和 nil 算假，0、空字符串和空列表都算真；if 是 Kernel 宏，不是严格保留字。",
     example: "if logged_in?, do: :home, else: :login",
     note: "它是 Kernel 宏，不是严格保留字。",
   },
@@ -681,9 +708,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "common",
     role: "Kernel 宏",
-    summary: "调用目标模块的 __using__/1 宏注入编译期行为。",
+    summary: "请另一个模块在编译时为当前模块加入一套预先准备的代码。",
     detail:
-      "框架常用它批量 alias、import、require 或生成默认函数；应查看目标模块文档了解副作用。",
+      "use 实际调用目标模块的 `__using__/1` 宏，可能加入 alias、import、require 或函数；使用前要看目标模块说明。",
     example: "use MyApp.Plugin, option: true",
     note: "它会展开为对 __using__/1 的调用，不是严格保留字。",
   },
@@ -692,9 +719,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "elixir",
     scope: "common",
     role: "Kernel 宏",
-    summary: "创建并抛出异常。",
+    summary: "遇到无法正常继续的情况时，主动抛出一个异常。",
     detail:
-      "可传入异常模块和消息，或直接传入异常结构；用于真正异常的情况而非普通分支。",
+      "可以传异常模块与消息，也可以传异常结构；能预料到的普通失败通常更适合返回 `{:error, reason}`。",
     example: "raise ArgumentError, \"invalid value\"",
     note: "它是 Kernel 宏，不是严格保留字。",
   },
@@ -705,9 +732,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "common",
     role: "模块属性",
-    summary: "声明源文件编译出的模块名称。",
+    summary: "告诉编译器：这个 .erl 文件要生成哪个模块。",
     detail:
-      "每个普通 Erlang 模块都需要一个 -module(Name). 属性，名称通常与 .erl 文件名一致。",
+      "普通 Erlang 模块需要一个 `-module(Name).`，模块名通常必须与 .erl 文件名保持一致。",
     example: "-module(counter).",
     note: "这是模块属性，不是保留字。",
   },
@@ -716,9 +743,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "common",
     role: "模块属性",
-    summary: "列出允许从模块外调用的函数与元数。",
+    summary: "列出哪些函数可以被其他模块调用。",
     detail:
-      "函数使用 name/arity 形式标识；未导出的函数只能由本模块直接调用。",
+      "每个函数用 `name/arity` 标出名字和参数个数；没有导出的函数只能在本模块里直接调用。",
     example: "-export([start/0, inc/1]).",
     note: "这是模块属性，不是保留字。",
   },
@@ -727,9 +754,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "common",
     role: "模块属性",
-    summary: "声明模块实现某个 behaviour 的回调约定。",
+    summary: "说明当前模块准备遵守某个 behaviour 的回调规则。",
     detail:
-      "编译器会依据 behaviour 的 callback 定义检查缺失回调；OTP 常见示例是 gen_server。",
+      "编译器会按 behaviour 的 callback 声明检查是否漏写必需函数；`gen_server` 是常见例子。",
     example: "-behaviour(gen_server).",
     note: "这是模块属性，拼写采用英式 behaviour。",
   },
@@ -738,9 +765,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "common",
     role: "类型规格",
-    summary: "描述函数参数和返回值的类型。",
+    summary: "写下一个函数愿意接收什么类型，又会返回什么类型。",
     detail:
-      "Dialyzer 可利用 spec 进行静态分析；规格本身不会在运行时强制检查类型。",
+      "Dialyzer 会利用 spec 查找可疑调用，但程序运行时不会因为写了 spec 就自动检查每个值。",
     example: "-spec add(integer(), integer()) -> integer().",
     note: "这是类型属性，不是保留字。",
   },
@@ -749,9 +776,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "common",
     role: "类型声明",
-    summary: "为类型表达式定义本地名称。",
+    summary: "给一段较长的类型说明取一个本地名字。",
     detail:
-      "自定义类型可用于 spec 和其他类型；若需暴露给其他模块，还要使用 -export_type。",
+      "这个名字可以用于 spec 和其他类型；其他模块要引用它，还必须用 `-export_type` 导出。",
     example: "-type user_id() :: pos_integer().",
     note: "这是类型属性，不是保留字。",
   },
@@ -760,9 +787,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "common",
     role: "记录声明",
-    summary: "定义具名字段的 record 模板。",
+    summary: "定义一组带名字的字段，方便创建和读取同一种记录。",
     detail:
-      "record 在编译期展开为元组，可设置字段默认值并在模式匹配中按字段名访问。",
+      "record 会在编译时展开成 tuple，并不是运行时对象；可以设置默认值，也能按字段名写模式。",
     example: "-record(user, {id, name = <<>>}).",
     note: "这是模块属性，不是保留字。",
   },
@@ -771,9 +798,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "common",
     role: "预处理指令",
-    summary: "定义预处理宏。",
+    summary: "给一段常量或代码片段取一个可重复展开的宏名字。",
     detail:
-      "宏通过 ?NAME 或带参数形式展开，发生在 Erlang 语法分析之前。",
+      "宏写成 `?NAME` 或带参数的形式，并在 Erlang 正式解析语法之前展开；它不是普通运行时函数。",
     example: "-define(TIMEOUT, 5000).",
     note: "这是 EPP 预处理指令，不是保留字。",
   },
@@ -782,9 +809,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "common",
     role: "预处理指令",
-    summary: "把头文件内容包含到当前模块。",
+    summary: "在编译前，把一个头文件的内容放进当前模块。",
     detail:
-      "通常用于共享 record、宏和类型声明；标准库头文件还可使用 -include_lib。",
+      "它常用来共享 record、宏和类型声明；依赖库里的头文件通常使用 `-include_lib`。",
     example: "-include(\"records.hrl\").",
     note: "这是 EPP 预处理指令，不是保留字。",
   },
@@ -793,9 +820,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "common",
     role: "条件预处理",
-    summary: "仅在指定宏已定义时包含一段源码。",
+    summary: "只有某个宏已经定义时，才把一段源码交给编译器。",
     detail:
-      "它需要与 -endif 配对，并可使用 -else；常用于测试代码或平台差异。",
+      "`-ifdef` 必须与 `-endif` 配对，也可以加 `-else`；判断发生在预处理阶段，不是运行时 if。",
     example: "-ifdef(TEST).\n-export([helper/0]).\n-endif.",
     note: "这是 EPP 条件编译指令，不是保留字。",
   },
@@ -804,9 +831,9 @@ export const keywordEntries: KeywordEntry[] = [
     language: "erlang",
     scope: "common",
     role: "语言特性控制",
-    summary: "在支持的 OTP 版本中启用或禁用可选语言特性。",
+    summary: "告诉支持它的 OTP 编译器，要打开或关闭某项可选语法。",
     detail:
-      "特性名称与状态取决于编译器版本；应放在模块属性区域并核对目标 OTP 的特性状态。",
+      "有哪些特性、默认是否开启都随 OTP 版本变化；它应写在模块属性区域，并按目标版本的文档核对。",
     example: "-feature(maybe_expr, enable).",
     note:
       "这是模块属性而非保留字；maybe_expr 在早期 OTP 中曾通过它启用，新版本可能已永久启用。",

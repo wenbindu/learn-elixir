@@ -12,7 +12,7 @@ import {
 } from "./resource-types";
 
 const RESOURCE_FILE = path.join(process.cwd(), "content", "resources.md");
-const DEFAULT_TITLE = "BEAM 关联资源";
+const DEFAULT_TITLE = "BEAM 学习工具箱";
 const RESOURCE_LINE_PATTERN =
   /^- \[([^\]]*)\]\(([^)]*)\)\s+—\s*(.*)$/;
 const METADATA_LINE_PATTERN = /^\s{2,}-\s+([^:]+):\s*(.*)$/;
