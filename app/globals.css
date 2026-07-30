@@ -509,6 +509,7 @@ img {
 
 .hero-visual {
   position: relative;
+  overflow: hidden;
   min-height: 540px;
   border: 1px solid rgb(255 255 255 / 0.1);
   border-radius: 30px;
@@ -619,10 +620,14 @@ img {
 }
 
 .beam-core small {
+  display: block;
+  width: 124px;
   margin-top: 7px;
   color: rgb(255 255 255 / 0.38);
   font-family: var(--font-mono);
   font-size: var(--text-micro);
+  line-height: 1.35;
+  text-align: center;
 }
 
 .beam-node {
@@ -712,12 +717,14 @@ img {
   bottom: 20px;
   left: 22px;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
 .scheduler-strip div {
   display: flex;
+  overflow: hidden;
+  min-width: 0;
   align-items: center;
   gap: 4px;
   height: 27px;
@@ -736,6 +743,9 @@ img {
 
 .scheduler-strip i {
   width: 12px;
+  min-width: 4px;
+  flex: 1 1 12px;
+  max-width: 12px;
   height: 4px;
   border-radius: 9px;
   background: rgb(39 213 174 / 0.46);
@@ -2767,10 +2777,14 @@ button.button--dark:disabled {
 
 .sidebar-stage a {
   display: grid;
-  grid-template-columns: 22px 1fr auto;
-  gap: 7px;
+  grid-template-columns: 22px minmax(0, 1fr);
+  grid-template-areas:
+    "number title"
+    "number meta";
+  column-gap: 7px;
+  row-gap: 2px;
   align-items: center;
-  min-height: 42px;
+  min-height: 48px;
   padding: 6px 8px;
   border-radius: 7px;
   color: #606c72;
@@ -2793,12 +2807,20 @@ button.button--dark:disabled {
 }
 
 .sidebar-stage a b {
+  grid-area: number;
+  align-self: start;
+  margin-top: 3px;
   font-family: var(--font-mono);
   font-size: var(--text-caption);
   font-weight: 650;
 }
 
+.sidebar-stage a > span {
+  grid-area: title;
+}
+
 .sidebar-stage a small {
+  grid-area: meta;
   color: inherit;
   font-size: var(--text-caption);
   opacity: 0.52;
@@ -5425,6 +5447,12 @@ button.button--dark:disabled {
     min-height: 78px;
   }
 
+  .hero-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 20px;
+  }
+
   .hero-visual {
     min-height: 500px;
   }
@@ -5444,6 +5472,17 @@ button.button--dark:disabled {
 
   .beam-node--three {
     right: 21px;
+  }
+
+  .beam-message--two {
+    top: 260px;
+    right: 34px;
+  }
+
+  .beam-message--three {
+    bottom: 118px;
+    left: 50%;
+    transform: translateX(-50%);
   }
 
   .module-grid {

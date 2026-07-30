@@ -19,7 +19,7 @@ IO.inspect(result, label: "偶数平方")`,
   {
     id: "matching",
     label: "模式匹配",
-    goal: "让成功和失败走两条不同的小路。",
+    goal: "分别处理成功和失败。",
     code: `describe = fn
   {:ok, value} -> "成功: #{value}"
   {:error, reason} -> "失败: #{reason}"
@@ -32,7 +32,7 @@ end
   {
     id: "process",
     label: "进程与消息",
-    goal: "派出一个小进程去计算，再等它把答案送回来。",
+    goal: "启动一个进程，等它传回计算结果。",
     code: `parent = self()
 
 spawn(fn ->
@@ -113,8 +113,7 @@ export function ElixirPlayground() {
 
         <div className="playground-frame-footer">
           <p>
-            大胆改一处代码，再点编辑器里的 <strong>Run</strong>。
-            答案或报错都会出现在下方；两种结果都是线索。
+            先改一处，再点 <strong>Run</strong>。输出和报错都在下方。
           </p>
           <a href={embedUrl} target="_blank" rel="noreferrer">
             在新窗口打开

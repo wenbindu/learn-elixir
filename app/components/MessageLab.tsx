@@ -11,16 +11,16 @@ type LabMessage = {
 export function MessageLab() {
   const [queue, setQueue] = useState<LabMessage[]>([]);
   const [events, setEvents] = useState<string[]>([
-    "准备好了：等待 client 寄出第一封消息",
+    "等待 client 发送消息",
   ]);
   const [broken, setBroken] = useState(false);
   const [nextId, setNextId] = useState(1);
   const [processed, setProcessed] = useState(0);
 
   const status = useMemo(() => {
-    if (queue.length > 3) return "收信箱里的信越来越多";
-    if (queue.length > 0) return "server 还有信没读";
-    return "收信箱为空";
+    if (queue.length > 3) return "mailbox 正在积压";
+    if (queue.length > 0) return "server 还有消息没处理";
+    return "mailbox 为空";
   }, [queue.length]);
 
   function send(type: "ping" | "work") {
@@ -45,7 +45,7 @@ export function MessageLab() {
     setEvents((current) => {
       const next = [`server 处理 · ${message.label}`];
       if (broken) {
-        next.unshift(`故意制造的小故障：server 读了 #${message.id}，却没有寄出 reply`);
+        next.unshift(`故障：server 处理了 #${message.id}，但没有发送 reply`);
       } else {
         next.unshift(`server → client · {:reply, #${message.id}, :ok}`);
       }
@@ -55,7 +55,7 @@ export function MessageLab() {
 
   function reset() {
     setQueue([]);
-    setEvents(["已经重新开始：收信箱为空"]);
+    setEvents(["已重置：mailbox 为空"]);
     setProcessed(0);
     setNextId(1);
     setBroken(false);
@@ -66,7 +66,7 @@ export function MessageLab() {
       <div className="lab-toolbar">
         <div>
           <span className="live-dot" />
-          消息小实验
+          消息实验
         </div>
         <button type="button" onClick={reset}>
           重置
@@ -77,7 +77,7 @@ export function MessageLab() {
         <div className="process-card process-card--client">
           <span>PROCESS 01</span>
           <strong>client</strong>
-          <small>寄出请求 request</small>
+          <small>发送 request</small>
         </div>
 
         <div className="message-lane" aria-label="消息通道">
@@ -105,14 +105,14 @@ export function MessageLab() {
         <div className="process-card process-card--server">
           <span>PROCESS 02</span>
           <strong>server</strong>
-          <small>已经读完 {processed} 封</small>
+          <small>已处理 {processed} 条</small>
         </div>
       </div>
 
       <div className="lab-status-row">
         <span>{status}</span>
         <span>
-          回信 reply：<strong>{broken ? "关闭" : "正常"}</strong>
+          reply：<strong>{broken ? "关闭" : "正常"}</strong>
         </span>
       </div>
 
@@ -137,7 +137,7 @@ export function MessageLab() {
             checked={broken}
             onChange={(event) => setBroken(event.target.checked)}
           />
-          <span>故意弄坏：不回 reply</span>
+          <span>故意不回 reply</span>
         </label>
       </div>
 
@@ -155,8 +155,8 @@ export function MessageLab() {
       </div>
 
       <p className="lab-disclaimer">
-        这是画在浏览器里的消息模型，不是真正的 Erlang VM。它像一张驿站演示图，
-        帮你看清消息怎样排队和回复；课程页仍会给出可以放进 IEx / erl 运行的真实代码。
+        这是浏览器中展示消息传递的模型，不是真正的 Erlang VM。
+        它用来观察消息怎样排队和回复。课程页另有可在 IEx / erl 运行的代码。
       </p>
     </div>
   );

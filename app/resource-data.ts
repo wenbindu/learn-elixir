@@ -60,7 +60,7 @@ function validateUrl(href: string, lineNumber: number): string {
   if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
     throw configurationError(
       lineNumber,
-      `资源 URL 仅支持 http 或 https，当前为“${parsedUrl.protocol}”。`,
+      `URL 只支持 http 或 https，当前为“${parsedUrl.protocol}”。`,
     );
   }
 
@@ -86,7 +86,7 @@ function applyMetadata(
     if (!RESOURCE_ACCENTS.includes(value as ResourceAccent)) {
       throw configurationError(
         lineNumber,
-        `accent 必须是 ${RESOURCE_ACCENTS.join("、")} 之一，当前为“${value}”。`,
+        `accent 只可为 ${RESOURCE_ACCENTS.join("、")}，当前为“${value}”。`,
       );
     }
 
@@ -98,7 +98,7 @@ function applyMetadata(
     if (value !== "true" && value !== "false") {
       throw configurationError(
         lineNumber,
-        `featured 只能是 true 或 false，当前为“${value}”。`,
+        `featured 只可为 true 或 false，当前为“${value}”。`,
       );
     }
 
@@ -108,7 +108,7 @@ function applyMetadata(
 
   throw configurationError(
     lineNumber,
-    `未知元数据“${key}”，仅支持 short、accent、featured。`,
+    `不支持元数据“${key}”；可用 short、accent、featured。`,
   );
 }
 
@@ -156,7 +156,7 @@ export function parseResourceMarkdown(source: string): ResourceDirectory {
       if (previousLine !== undefined) {
         throw configurationError(
           lineNumber,
-          `分类“${category}”重复，第一次出现在第 ${previousLine} 行。`,
+          `分类“${category}”重复；首次出现在第 ${previousLine} 行。`,
         );
       }
 
@@ -176,7 +176,7 @@ export function parseResourceMarkdown(source: string): ResourceDirectory {
       if (titleLine !== undefined) {
         throw configurationError(
           lineNumber,
-          `页面标题重复，第一次出现在第 ${titleLine} 行。`,
+          `页面标题重复；首次出现在第 ${titleLine} 行。`,
         );
       }
 
@@ -192,7 +192,7 @@ export function parseResourceMarkdown(source: string): ResourceDirectory {
       if (!currentGroup) {
         throw configurationError(
           lineNumber,
-          "资源必须写在一个以“##”开头的分类下面。",
+          "资源前需要一个“## 分类”。",
         );
       }
 
@@ -218,7 +218,7 @@ export function parseResourceMarkdown(source: string): ResourceDirectory {
       if (previousLine !== undefined) {
         throw configurationError(
           lineNumber,
-          `URL“${href}”重复，第一次出现在第 ${previousLine} 行。`,
+          `URL“${href}”重复；首次出现在第 ${previousLine} 行。`,
         );
       }
 
@@ -243,7 +243,7 @@ export function parseResourceMarkdown(source: string): ResourceDirectory {
       if (!currentResource) {
         throw configurationError(
           lineNumber,
-          "元数据必须紧跟在某个资源下面，不能单独出现。",
+          "元数据必须紧跟在资源下面。",
         );
       }
 
@@ -261,7 +261,7 @@ export function parseResourceMarkdown(source: string): ResourceDirectory {
 
     throw configurationError(
       lineNumber,
-      "无法识别此行；分类使用“## 分类”，资源使用“- [名称](https://...) — 中文描述”。",
+      "无法识别此行。分类写“## 分类”；资源写“- [名称](https://...) — 中文描述”。",
     );
   });
 
@@ -270,7 +270,7 @@ export function parseResourceMarkdown(source: string): ResourceDirectory {
   }
 
   if (groups.length === 0) {
-    throw new Error("资源配置至少需要一个以“##”开头的分类。");
+    throw new Error("资源配置至少需要一个“## 分类”。");
   }
 
   if (resources.length === 0) {

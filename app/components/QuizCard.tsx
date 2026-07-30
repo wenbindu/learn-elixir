@@ -27,7 +27,7 @@ export function QuizCard({
 
   return (
     <section className="quiz-card" aria-labelledby="quick-check-title">
-      <div className="section-kicker">猜一猜</div>
+      <div className="section-kicker">想一想</div>
       <h2 id="quick-check-title">
         <InlineCodeText text={question} />
       </h2>
@@ -65,7 +65,7 @@ export function QuizCard({
           className={`quiz-feedback${isCorrect ? " is-correct" : " is-wrong"}`}
           role="status"
         >
-          <strong>{isCorrect ? "答对啦，你找到了关键线索。" : "差一点，看看下面这条线索。"}</strong>
+          <strong>{isCorrect ? "答对了。看看解释，确认原因。" : "这次没选对。看看解释，再试一次。"}</strong>
           <p>
             <InlineCodeText text={explanation} />
           </p>
@@ -80,7 +80,7 @@ export function QuizCard({
           disabled={selected === null}
           onClick={() => setChecked(true)}
         >
-          看看答案
+          检查答案
         </button>
       )}
     </section>

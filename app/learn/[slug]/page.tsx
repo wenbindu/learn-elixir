@@ -70,7 +70,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
                         key={item.slug}
                       >
                         <b>{item.number}</b>
-                        <span>{item.title.replace(/^[^：]+：/, "")}</span>
+                        <span>{item.title}</span>
                         <small>{item.duration}</small>
                       </Link>
                     ))}
@@ -80,7 +80,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
 
             <div className="sidebar-note">
               <span className="live-dot" />
-              进度只记在这台设备里；换设备前，记得先去首页导出。
+              进度只在这台设备。换设备前，去首页保存。
             </div>
           </aside>
 
@@ -88,7 +88,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
             <details className="lesson-mobile-nav">
               <summary>
                 <span>第 {courseModule.number} 站</span>
-                看看整条探险路线
+                展开探险地图
               </summary>
               <div>
                 {courseModules.map((item) => (
@@ -132,15 +132,15 @@ export default async function LessonPage({ params }: LessonPageProps) {
                 </div>
                 <div>
                   <span>{courseModule.duration}</span>
-                  <small>慢慢来，可以分几次</small>
+                  <small>可以分几次</small>
                 </div>
                 <ProgressButton slug={courseModule.slug} />
               </div>
             </header>
 
             <section className="lesson-block lesson-block--why">
-              <div className="section-kicker">这一站有什么用</div>
-              <h2>先看看它在解决什么麻烦</h2>
+              <div className="section-kicker">为什么学这一站</div>
+              <h2>它要解决什么</h2>
               <p>
                 <InlineCodeText text={courseModule.why} />
               </p>
@@ -152,7 +152,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
               </div>
               <div className="lesson-story-copy">
                 <div className="section-kicker">
-                  先借一个故事 · {courseModule.storyBridge.label}
+                  借一个故事 · {courseModule.storyBridge.label}
                 </div>
                 <h2>{courseModule.storyBridge.title}</h2>
                 <p>
@@ -180,8 +180,8 @@ export default async function LessonPage({ params }: LessonPageProps) {
             <section className="lesson-block">
               <div className="lesson-two-column">
                 <div>
-                  <div className="section-kicker">闯过这一站，你会</div>
-                  <h2>亲手做到这些事</h2>
+                  <div className="section-kicker">走完这一站</div>
+                  <h2>你会做到</h2>
                   <ul className="check-list">
                     {courseModule.outcomes.map((outcome) => (
                       <li key={outcome}>
@@ -192,7 +192,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
                   </ul>
                 </div>
                 <div className="prerequisite-card">
-                  <span>出发前最好会</span>
+                  <span>出发前</span>
                   <ul>
                     {courseModule.prerequisites.map((prerequisite) => (
                       <li key={prerequisite}>
@@ -205,8 +205,8 @@ export default async function LessonPage({ params }: LessonPageProps) {
             </section>
 
             <section className="lesson-block">
-              <div className="section-kicker">先把难词变简单</div>
-              <h2>认识三个关键词</h2>
+              <div className="section-kicker">先认词</div>
+              <h2>三个关键词</h2>
               <div className="concept-grid">
                 {courseModule.concepts.map((concept, index) => (
                   <article key={concept.term}>
@@ -224,7 +224,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
               <div className="section-heading-inline">
                 <div>
                   <div className="section-kicker">同一件事，两种写法</div>
-                  <h2>先看它们在做什么，再比较怎么写</h2>
+                  <h2>先看做什么，再看怎么写</h2>
                 </div>
                 <p>
                   <InlineCodeText text={courseModule.codeCaption} />
@@ -249,11 +249,11 @@ export default async function LessonPage({ params }: LessonPageProps) {
                 <div>
                   <span className="experiment-index">LAB</span>
                   <div>
-                    <div className="section-kicker">动手试一试</div>
+                    <div className="section-kicker">动手</div>
                     <h2>{courseModule.experiment.title}</h2>
                   </div>
                 </div>
-                <span className="experiment-time">不用赶，大约 15–25 分钟</span>
+                <span className="experiment-time">约 15–25 分钟</span>
               </div>
               <p className="experiment-intro">
                 <InlineCodeText text={courseModule.experiment.intro} />
@@ -273,11 +273,11 @@ export default async function LessonPage({ params }: LessonPageProps) {
               <CopyBlock
                 code={courseModule.experiment.command}
                 language="shell"
-                label="复制到终端，然后按回车"
+                label="复制到终端，按回车"
               />
 
               <div className="expected-panel">
-                <span>你可能会看到</span>
+                <span>你会看到</span>
                 <ul>
                   {courseModule.experiment.expected.map((item) => (
                     <li key={item}>
@@ -293,7 +293,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
                     !
                   </span>
                   <div>
-                    <strong>来捣个小乱</strong>
+                    <strong>故意弄坏</strong>
                     <p>
                       <InlineCodeText text={courseModule.experiment.breakIt} />
                     </p>
@@ -303,13 +303,13 @@ export default async function LessonPage({ params }: LessonPageProps) {
 
               <div className="evidence-grid">
                 <div>
-                  <span>这次我们看清了</span>
+                  <span>这次能看清</span>
                   <p>
                     <InlineCodeText text={courseModule.experiment.canProve} />
                   </p>
                 </div>
                 <div>
-                  <span>先别急着下结论</span>
+                  <span>这次还不能说明</span>
                   <p>
                     <InlineCodeText
                       text={courseModule.experiment.cannotProve}
@@ -327,7 +327,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
             />
 
             <section className="lesson-block challenge-block">
-              <div className="section-kicker">轮到你出手</div>
+              <div className="section-kicker">轮到你</div>
               <h2>{courseModule.challenge.title}</h2>
               <p className="challenge-brief">
                 <InlineCodeText text={courseModule.challenge.brief} />
@@ -361,7 +361,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
               </div>
 
               <div className="acceptance-card">
-                <span>做到这些就算过关</span>
+                <span>过关条件</span>
                 <ul>
                   {courseModule.challenge.acceptance.map((item) => (
                     <li key={item}>
@@ -375,8 +375,8 @@ export default async function LessonPage({ params }: LessonPageProps) {
 
             <section className="lesson-block takeaway-block">
               <div>
-                <div className="section-kicker">临走装进书包</div>
-                <h2>三句话记住这一站</h2>
+                <div className="section-kicker">带走</div>
+                <h2>记住三句话</h2>
               </div>
               <ol>
                 {courseModule.takeaways.map((takeaway, index) => (
@@ -389,8 +389,8 @@ export default async function LessonPage({ params }: LessonPageProps) {
             </section>
 
             <section className="lesson-block references-block">
-              <div className="section-kicker">想再挖深一点</div>
-              <h2>去原版资料里看看</h2>
+              <div className="section-kicker">再读一点</div>
+              <h2>去看原版资料</h2>
               <div>
                 {courseModule.references.map((reference) => (
                   <a

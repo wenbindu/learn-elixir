@@ -9,43 +9,43 @@ import { getResourceDirectory } from "./resource-data";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "BEAM Path — 一起学 Erlang 与 Elixir",
+    absolute: "BEAM Path — 学 Erlang 和 Elixir",
   },
   description:
-    "从第一段能运行的代码开始，认识 Erlang、Elixir、BEAM 和 OTP。边猜、边改、边观察，让程序亲自告诉你发生了什么。",
+    "从一段能运行的代码开始。猜结果，改代码，看输出。逐步认识 Erlang、Elixir、BEAM 和 OTP。",
 };
 
 const pillars = [
   {
     number: "01",
-    title: "先跑一跑",
+    title: "先跑代码",
     metric: "12 次跑代码",
     description:
-      "每学到一个新东西，都有一小段代码可以放进 IEx 或 erl 亲手试。页面里的动画，会把原本看不见的消息传递画出来。",
+      "每个新概念都有一小段代码，可以放进 IEx 或 erl 运行。页面动画会把消息传递画出来。",
     accent: "blue",
   },
   {
     number: "02",
-    title: "放在一起比一比",
+    title: "两种写法",
     metric: "同题两种写法",
     description:
-      "同一个小任务，分别看看 Elixir 和 Erlang 怎么写。它们像用两种笔法写信，最后都交给同一套 BEAM 运行系统。",
+      "同一个任务，分别用 Elixir 和 Erlang 来写。写法不同，都运行在 BEAM 上。",
     accent: "orange",
   },
   {
     number: "03",
-    title: "学一点，试一点",
+    title: "改一处，再运行",
     metric: "46 次小挑战",
     description:
-      "每走一小站，就做一道小题、翻译一段代码，再改一个条件看看结果。答错没关系，它正好告诉你下一步可以试什么。",
+      "做一道小题，翻译一段代码，再改一个条件。答错没关系，结果会告诉你下一步该试什么。",
     accent: "green",
   },
   {
     number: "04",
-    title: "放心玩坏",
-    metric: "安心试错",
+    title: "看看哪里会坏",
+    metric: "故意制造故障",
     description:
-      "我们会故意让回信迟到、让 mailbox 排起长队，甚至让进程突然倒下。你可以放心试错，也会知道小实验能说明什么。",
+      "让回信迟到，让 mailbox 堆积，让进程退出。观察结果，也记住这个实验不能说明什么。",
     accent: "violet",
   },
 ];
@@ -55,7 +55,7 @@ const mappingRows = [
   ["Foo.bar()", "'Elixir.Foo':bar()", "找到同一个模块"],
   [":lists.reverse(xs)", "lists:reverse(Xs)", "借用同一个 Erlang 工具"],
   ["fn x -> x * 2 end", "fun(X) -> X * 2 end", "都在创建匿名函数"],
-  ["GenServer", "gen_server", "共同遵守 OTP 章法"],
+  ["GenServer", "gen_server", "同一个 OTP behaviour"],
 ];
 
 export default async function Home() {
@@ -77,10 +77,10 @@ export default async function Home() {
             <div className="hero-copy">
               <div className="eyebrow eyebrow--dark">
                 <span />
-                两种写法，共用同一个 BEAM 世界
+                Erlang 和 Elixir 都运行在 BEAM 上
               </div>
               <h1>
-                一起动手学
+                动手学
                 <span className="hero-language hero-language--erlang">
                   Erlang
                 </span>
@@ -90,9 +90,9 @@ export default async function Home() {
                 </span>
               </h1>
               <p className="hero-lead">
-                从第一条消息出发，看看进程怎样合作、出错后怎样重新站起来。
+                从第一条消息开始。看进程怎样合作，也看它们出错后怎样恢复。
                 <strong>
-                  每遇到一个新概念，我们都先猜一猜、跑一跑，再用自己的话说说看见了什么。报错是线索，不是扣分。
+                  先猜，再运行。遇到报错，读一读；它常会指出问题在哪。
                 </strong>
               </p>
 
@@ -100,16 +100,16 @@ export default async function Home() {
                 <Link className="route-card route-card--primary" href="/learn/start-line">
                   <span>零基础</span>
                   <strong>让第一段代码跑起来</strong>
-                  <small>第 00 站 · 先认识 BEAM 在做什么</small>
+                  <small>第 00 站 · 认识 BEAM 运行环境</small>
                 </Link>
                 <Link className="route-card" href="/learn/elixir-foundations">
                   <span>已有编程基础</span>
                   <strong>先用 Elixir 动手</strong>
-                  <small>第 02 站 · 几分钟就能看到结果</small>
+                  <small>第 02 站 · 几分钟看到输出</small>
                 </Link>
                 <Link className="route-card" href="/learn/otp-behaviours">
                   <span>已有 Elixir 基础</span>
-                  <strong>去看进程怎样互相帮忙</strong>
+                  <strong>看进程怎样合作</strong>
                   <small>第 06 站 · 认识 OTP 和 behaviour</small>
                 </Link>
               </div>
@@ -117,11 +117,11 @@ export default async function Home() {
               <div className="hero-metrics">
                 <div>
                   <strong>12</strong>
-                  <span>探索小站</span>
+                  <span>学习小站</span>
                 </div>
                 <div>
                   <strong>46</strong>
-                  <span>次动手与自查</span>
+                  <span>次练习与自查</span>
                 </div>
                 <div>
                   <strong>3 分钟</strong>
@@ -148,7 +148,11 @@ export default async function Home() {
               <div className="beam-core">
                 <span>VM</span>
                 <strong>BEAM</strong>
-                <small>scheduler · mailbox · isolation</small>
+                <small>
+                  process · mailbox
+                  <br />
+                  scheduler · isolation
+                </small>
               </div>
 
               <div className="beam-node beam-node--one">
@@ -196,7 +200,7 @@ export default async function Home() {
             <div className="quick-resources-heading">
               <div>
                 <span className="section-kicker">常用入口</span>
-                <h2 id="quick-resources-title">常用工具，放在手边</h2>
+                <h2 id="quick-resources-title">常用资料，随时可查</h2>
               </div>
               <Link href="/resources">
                 打开学习工具箱
@@ -230,12 +234,12 @@ export default async function Home() {
           <div className="section-shell">
             <div className="section-heading section-heading--split">
               <div>
-                <span className="section-kicker">我们的学习玩法</span>
-                <h2>先猜，再跑，再把结果讲给自己听</h2>
+                <span className="section-kicker">怎么学</span>
+                <h2>先猜结果，再运行代码</h2>
               </div>
               <p>
-                每一课都有可以亲手修改的代码。遇到意外结果时，先看清它，
-                再一次只改一个地方，你会更容易找到原因。
+                每一课都有代码可改。结果和预想不同时，先看输出，
+                再只改一个地方。这样容易找到原因。
               </p>
             </div>
 
@@ -261,37 +265,37 @@ export default async function Home() {
         <section className="bridge-section">
           <div className="section-shell bridge-grid">
             <div className="bridge-copy">
-              <span className="section-kicker">两种语言怎么一起学</span>
-              <h2>先用 Elixir 迈出第一步，再看 Erlang 怎样写同一件事</h2>
+              <span className="section-kicker">两种语言</span>
+              <h2>先写 Elixir，再读 Erlang</h2>
               <p>
-                不用先学完一门，再把相同内容从头学一遍。开始时分别熟悉两种写法；
-                到了进程和消息，我们把它们放在一起练，看看它们怎样共享 BEAM。
+                不必先学完一门，再从头学另一门。先分别熟悉两种写法。
+                到了进程和消息，再把它们放在一起练。
               </p>
               <ol className="bridge-steps">
                 <li>
                   <span>1</span>
                   <div>
-                    <strong>Elixir：先把想法跑起来</strong>
+                    <strong>Elixir：先写出结果</strong>
                     <p>模式匹配、多子句函数、Enum、Mix 与 ExUnit。</p>
                   </div>
                 </li>
                 <li>
                   <span>2</span>
                   <div>
-                    <strong>Erlang：看看 BEAM 更早的写法</strong>
+                    <strong>Erlang：读另一种写法</strong>
                     <p>term、模块、binary、递归、Rebar3 与 EUnit。</p>
                   </div>
                 </li>
                 <li>
                   <span>3</span>
                   <div>
-                    <strong>BEAM / OTP：让许多小进程一起合作</strong>
+                    <strong>BEAM / OTP：让进程合作</strong>
                     <p>消息、behaviour、监督树、容量与分布式。</p>
                   </div>
                 </li>
               </ol>
               <Link className="text-link" href="/learn/shared-semantics">
-                看看两种语言怎样互相对应
+                对照两种写法
                 <span aria-hidden="true">→</span>
               </Link>
             </div>
@@ -320,7 +324,7 @@ export default async function Home() {
                 </div>
               ))}
               <div className="mapping-footer">
-                <span>共同认识</span>
+                <span>共同概念</span>
                 <div>
                   <b>数据 term</b>
                   <b>小进程 process</b>
@@ -337,11 +341,11 @@ export default async function Home() {
             <div className="section-heading section-heading--split">
               <div>
                 <span className="section-kicker">学习地图</span>
-                <h2>从第一段代码，走到一个会按规则从故障中恢复的小系统</h2>
+                <h2>从第一段代码，到可靠系统</h2>
               </div>
               <p>
-                这里有 12 个小站，不用赶，也不用一次走完。你可以顺着地图前进，
-                也可以先去找眼下最好奇的内容。每站都有代码、小实验和完成后的自查。
+                这里有 12 站。可以按顺序走，也可以先找眼下想学的内容。
+                每站都有代码、实验和自查。
               </p>
             </div>
             <CourseMap modules={courseModules} stages={stages} />
@@ -351,25 +355,24 @@ export default async function Home() {
         <section className="lab-section" id="lab">
           <div className="section-shell lab-grid">
             <div className="lab-copy">
-              <span className="section-kicker section-kicker--mint">先试 3 分钟</span>
-              <h2>把消息送进进程的收信箱，看看回信怎样回来</h2>
+              <span className="section-kicker section-kicker--mint">试 3 分钟</span>
+              <h2>发消息，等回信</h2>
               <p>
-                把每个进程想成一座小驿站，它有自己的收信箱（mailbox）。
-                先送几封信，再让驿站一封一封处理。然后打开“故意弄坏”，看看信已经读过、
-                回信却没有送出时会发生什么。
+                每个进程都有一个 mailbox，像驿站收信箱。先发几条消息，再逐条处理。
+                打开“故意不回 reply”，看看消息已经处理、reply 却没有发出时会怎样。
               </p>
               <ul className="lab-learning-list">
                 <li>
                   <span>01</span>
-                  信寄出去了，不等于对方已经收到或处理
+                  消息发出，不等于已经收到或处理
                 </li>
                 <li>
                   <span>02</span>
-                  等待 timeout，只是你不再等；那封信并没有自动追回
+                  timeout 结束等待，但不会撤回消息
                 </li>
                 <li>
                   <span>03</span>
-                  收信箱会越堆越长，不能一直往里塞消息
+                  mailbox 会积压，不能只收不处理
                 </li>
               </ul>
               <div className="lab-actions">
@@ -377,14 +380,14 @@ export default async function Home() {
                   className="button button--light"
                   href="/learn/processes-and-mailboxes"
                 >
-                  去学进程和收信箱
+                  学习进程与 mailbox
                   <span aria-hidden="true">→</span>
                 </Link>
                 <Link
                   className="button button--outline-light"
                   href="/playground"
                 >
-                  再写一段真实 Elixir
+                  去 Playground 写代码
                 </Link>
               </div>
             </div>
@@ -397,13 +400,13 @@ export default async function Home() {
             <div className="capstone-copy">
               <div className="eyebrow">
                 <span />
-                终点作品 · 第 11 站
+                第 11 站 · 综合练习
               </div>
-              <h2>做一个不怕小故障的任务调度器</h2>
+              <h2>做一个任务调度器</h2>
               <p>
-                把它想成一位驿站总管：Elixir 负责收下任务，Erlang 的 gen_server
-                负责排队和安排 worker。就算回信迟到、某个 worker 倒下或节点断开，
-                系统也要给出看得懂的结果。
+                它像驿站总管。Elixir 收下任务，Erlang 的 gen_server
+                排队并安排 worker。即使回复迟到、worker 退出或节点断开，
+                系统也要给出清楚结果。
               </p>
               <div className="capstone-tags">
                 <span>有界队列</span>
@@ -413,7 +416,7 @@ export default async function Home() {
                 <span>Release</span>
               </div>
               <Link className="button button--dark" href="/learn/reliable-scheduler">
-                看看最后要完成什么
+                查看任务要求
                 <span aria-hidden="true">→</span>
               </Link>
             </div>
@@ -446,11 +449,11 @@ export default async function Home() {
             <div className="section-heading section-heading--split">
               <div>
                 <span className="section-kicker">学习工具箱</span>
-                <h2>卡住时，来这里找下一步</h2>
+                <h2>遇到问题，去查资料</h2>
               </div>
               <p>
-                不知道该看文档、教程，还是去社区提问？每个链接旁都写了它适合解决什么问题，
-                你不用在一长串网址里碰运气。
+                可以查官方文档，也可以看教程或去社区提问。
+                每个链接旁都写着用途，不必逐个打开。
               </p>
             </div>
 
@@ -489,7 +492,7 @@ export default async function Home() {
 
             <div className="resources-preview-cta">
               <p>
-                这里先放每类最常用的两个。想找更多，可以到完整目录里按名字或用途搜索。
+                这里每类列出两个。更多资料可按名字或用途搜索。
               </p>
               <Link className="button button--dark" href="/resources">
                 打开学习工具箱

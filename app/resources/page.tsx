@@ -8,7 +8,7 @@ import { ResourceDirectoryBrowser } from "./ResourceDirectoryBrowser";
 export const metadata: Metadata = {
   title: "Elixir + Erlang 学习工具箱",
   description:
-    "Elixir、Erlang、BEAM 与 OTP 的中文教程、官方文档、工具、社区和在线练习，卡住时可以来这里找下一步。",
+    "汇总 Elixir、Erlang、BEAM 与 OTP 的官方文档、教程、工具、社区和在线练习。",
 };
 
 export default async function ResourcesPage() {
@@ -37,12 +37,12 @@ export default async function ResourcesPage() {
                   BEAM RESOURCE DIRECTORY
                 </div>
                 <h1>
-                  卡住时，
-                  <span>不用一个人猜。</span>
+                  找资料，
+                  <span>从这里开始。</span>
                 </h1>
                 <p>
-                  想确认一种写法，就看官方文档；想听别人讲明白，就找教程；
-                  想练熟，就做小题；真的卡住了，还可以去社区看看别人怎样解决。
+                  查语法时看官方文档，理解概念时看教程，练习时打开题库。
+                  遇到具体问题，也可以搜索社区讨论。
                 </p>
               </div>
 
@@ -50,17 +50,17 @@ export default async function ResourcesPage() {
                 <div>
                   <span>LINKS</span>
                   <strong>{directory.resources.length}</strong>
-                  <small>整理好的学习资源</small>
+                  <small>学习资源</small>
                 </div>
                 <div>
                   <span>GROUPS</span>
                   <strong>{directory.groups.length}</strong>
-                  <small>按用途划分的类别</small>
+                  <small>用途分类</small>
                 </div>
                 <p>
                   <b>{featuredCount}</b>
                   个首页常用入口
-                  <small>首页常用链接也都收在这里</small>
+                  <small>与首页使用同一份配置</small>
                 </p>
               </aside>
             </div>
@@ -78,8 +78,8 @@ export default async function ResourcesPage() {
                 <h2 id="resource-directory-title">{directory.title}</h2>
               </div>
               <p>
-                可以搜网站名字，也可以直接搜“怎么安装”“哪里练习”。
-                不知道名字时，点分类慢慢逛也行。
+                可以搜网站名称，也可以搜“安装”或“练习”。不知道名称时，
+                直接按分类查看。
               </p>
             </div>
             <ResourceDirectoryBrowser
@@ -94,36 +94,35 @@ export default async function ResourcesPage() {
             <div className="section-heading section-heading--split">
               <div>
                 <span className="section-kicker">如何使用</span>
-                <h2>卡住时，按这三步找答案</h2>
+                <h2>按问题选择资料</h2>
               </div>
               <p>
-                先跑一小段代码，看看自己到底卡在哪里，再带着这个问题去查资料，
-                会比漫无目的地翻网页更容易找到答案。
+                先保留报错和最短代码，再查对应资料。问题越具体，越容易找到答案。
               </p>
             </div>
 
             <div className="resource-usage-grid">
               <article>
                 <span>01</span>
-                <h3>先看官方怎么说</h3>
-                <p>看清使用的版本、API 写法和限制，再决定代码怎么改。</p>
+                <h3>先重现问题</h3>
+                <p>保留完整报错，并写出能重现问题的最短代码。</p>
               </article>
               <article>
                 <span>02</span>
-                <h3>再找一位会讲清楚的老师</h3>
-                <p>教程能帮你听懂来龙去脉。看完别忘了把示例放进自己的 IEx 或 erl 里跑一下。</p>
+                <h3>再查文档或教程</h3>
+                <p>先核对版本、API 和限制，再把示例放进 IEx 或 erl 运行。</p>
               </article>
               <article>
                 <span>03</span>
-                <h3>动手试，再带着线索去问</h3>
-                <p>去社区提问时，带上报错、能重现问题的最短代码，以及你已经试过的方法。</p>
+                <h3>带上线索提问</h3>
+                <p>说明报错、最短代码，以及已经试过哪些方法。</p>
               </article>
             </div>
 
             <div className="resource-usage-cta">
               <div>
-                <strong>电脑上还没装好 Elixir？</strong>
-                <p>从起跑线开始，我们会一起检查 Erlang、Elixir、IEx、erl 和 Mix。</p>
+                <strong>还没安装 Elixir？</strong>
+                <p>从起跑线检查 Erlang、Elixir、IEx、erl 和 Mix。</p>
               </div>
               <Link className="button button--dark" href="/learn/start-line">
                 打开起跑线

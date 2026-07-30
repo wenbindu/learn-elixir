@@ -30,17 +30,17 @@ const scopeOptions: Array<{
   {
     value: "reserved",
     label: "严格保留字",
-    description: "语言已经预留，不能随便拿来给变量或函数起名",
+    description: "语言已预留，不能用作普通变量名或函数名",
   },
   {
     value: "special",
     label: "Elixir 特殊形式",
-    description: "搭起 Elixir 语法的基本零件，但多数不是严格保留字",
+    description: "由编译器直接处理，多数不是严格保留字",
   },
   {
     value: "common",
     label: "常用宏与声明",
-    description: "大家常顺口叫它“关键字”，其实身份不同",
+    description: "常被叫作关键字，实际是宏、属性或指令",
   },
   {
     value: "all",
@@ -56,12 +56,12 @@ const languageMeta: Record<
   elixir: {
     label: "Elixir",
     eyebrow: "EX",
-    description: "15 个严格保留字，以及常用特殊形式和 Kernel 宏",
+    description: "15 个严格保留字、常用特殊形式和 Kernel 宏",
   },
   erlang: {
     label: "Erlang",
     eyebrow: "ERL",
-    description: "29 个严格保留字，以及常见模块属性与预处理指令",
+    description: "29 个严格保留字、常见模块属性和预处理指令",
   },
 };
 
@@ -199,14 +199,14 @@ export function KeywordDictionary() {
 
       <div className="keyword-result-summary" aria-live="polite">
         <p>
-          找到 <strong>{filteredEntries.length}</strong> 项
+          共 <strong>{filteredEntries.length}</strong> 项
           {normalizedQuery ? (
             <>
               ，包含“<span>{query.trim()}</span>”
             </>
           ) : null}
         </p>
-        <span>点上面的分类，看看这些词在语言里的真正身份</span>
+        <span>可按语言或分类缩小范围</span>
       </div>
 
       {groups.length ? (
@@ -233,7 +233,7 @@ export function KeywordDictionary() {
 
                 <div className="keyword-list-heading" aria-hidden="true">
                   <span>术语与类型</span>
-                  <span>它做什么</span>
+                  <span>作用与限制</span>
                   <span>最小示例</span>
                 </div>
 
@@ -257,7 +257,7 @@ export function KeywordDictionary() {
                         </p>
                         {entry.analogy ? (
                           <div className="keyword-entry-analogy">
-                            <span>借个画面</span>
+                            <span>帮助理解</span>
                             <InlineCodeText text={entry.analogy} />
                           </div>
                         ) : null}
@@ -281,8 +281,8 @@ export function KeywordDictionary() {
       ) : (
         <div className="keyword-empty">
           <span aria-hidden="true">∅</span>
-          <h2>这个词暂时没找到</h2>
-          <p>别担心，试试更短的中文意思或英文单词，也可以回到默认分类重新找。</p>
+          <h2>没有找到</h2>
+          <p>试试更短的中文词或英文词，也可以恢复默认分类。</p>
           <button type="button" onClick={resetFilters}>
             恢复默认
           </button>

@@ -56,7 +56,7 @@ export function ProgressButton({ slug }: ProgressButtonProps) {
       <span className="progress-button-mark" aria-hidden="true">
         {complete ? "✓" : ""}
       </span>
-      {complete ? "这一站完成啦" : "完成这一站"}
+      {complete ? "已完成" : "标记完成"}
     </button>
   );
 }

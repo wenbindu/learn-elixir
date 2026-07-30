@@ -1,20 +1,19 @@
 # BEAM Path
 
-一套从第一段可运行代码出发的中文 Erlang + Elixir 学习站。它把两门语言放在同一条
-BEAM / OTP 探索路线中，用故事、双语代码、小实验和放心试错，陪初学者一步步看懂
-进程怎样传消息、合作，并在故障后按规则恢复。
+一个中文 Erlang + Elixir 学习站。课程从可运行代码开始，把两门语言放在同一条
+BEAM / OTP 路线上。每章包含简短讲解、双语代码、实验和故障观察。
 
 ## 已包含
 
-- 12 个探索小站、46 次动手与自查，覆盖零基础、语言基础、并发、OTP、监督树、容量、分布式与互操作
-- 首页三条学习入口，以及可搜索、可筛选的完整探险地图
-- Elixir / Erlang 双栏代码与每章一组可复制到 IEx / erl 的真实实验
+- 12 个模块、46 个检查点，覆盖入门、语言基础、并发、OTP、监督树、容量、分布式与互操作
+- 首页三条学习入口，以及可搜索、可筛选的课程地图
+- Elixir / Erlang 双栏代码，以及可复制到 IEx / erl 的章节实验
 - 独立的 Elixir 在线 Playground，内置管道、模式匹配与进程消息练习
 - 可搜索的 Elixir + Erlang 关键字字典，区分严格保留字、特殊形式、宏与声明
 - 独立的关联资源目录，资源从一份易维护的 Markdown 配置自动生成
-- 12 个课程故事桥，用中国历史、文学和生活场景解释抽象概念，并明确比喻边界
-- 全站统一可读字号层级，并接入 Vercel Analytics 与 Speed Insights
-- “故意弄坏”、实验能说明 / 不能说明什么、快速猜一猜、四级提示和完成自查
+- 12 个故事桥，用历史、文学和生活场景引出抽象概念，并说明比喻边界
+- 统一的字号层级，以及 Vercel Analytics 与 Speed Insights
+- 故障实验、结论边界、小测、分级提示和完成自查
 - 浏览器端进度记录，以及带 schema 版本的 JSON 导入 / 导出
 - Hex、HexDocs、Elixir Forum、Erlang Forums、官方安装 / 下载页等资源导航
 - 深蓝背景的原创 Elixir 相关品牌图标、Chrome favicon 与 PWA manifest
@@ -59,23 +58,23 @@ BEAM / OTP 探索路线中，用故事、双语代码、小实验和放心试错
 
 ## 添加关联资源
 
-资源的唯一配置文件是 [`content/resources.md`](content/resources.md)。站点的
-[`/resources`](http://127.0.0.1:3000/resources) 页面与首页常用入口都从这里读取，
-不需要再修改 React 代码。
+资源只在 [`content/resources.md`](content/resources.md) 中维护。
+[`/resources`](http://127.0.0.1:3000/resources) 页面和首页常用入口都读取该文件，
+无需修改 React 代码。
 
-最常用的操作，是在对应的 `## 分类` 下增加一行：
+在对应的 `## 分类` 下增加一行：
 
 ```md
 - [资源名称](https://example.com/) — 一句简短的中文用途说明。
 ```
 
-例如本项目中的 Elixir School 中文站：
+例如：
 
 ```md
 - [Elixir School 中文](https://elixirschool.com/zh-hans/) — 用中文再听一遍 Elixir 语法、工具和常见主题。
 ```
 
-需要调整卡片短名称、色彩或将资源放到首页时，可以紧跟在资源下增加可选元数据：
+如需设置短名称、色彩或首页入口，在资源下一行添加可选元数据：
 
 ```md
 - [资源名称](https://example.com/) — 一句简短的中文用途说明。
@@ -88,9 +87,8 @@ BEAM / OTP 探索路线中，用故事、双语代码、小实验和放心试错
 - `accent`：可选 `elixir`、`erlang`、`beam`、`tool`；省略时自动推断。
 - `featured`：设为 `true` 才显示在首页“常用入口”；普通资源无需填写。
 
-分类顺序就是页面顺序。构建时会检查 URL、重复链接、空描述和未知元数据，并给出具体
-行号；保存后刷新本地页面即可看到更新。提交到 GitHub 后，Vercel 会随下一次部署读取
-新配置。
+分类顺序就是页面顺序。构建会检查 URL、重复链接、空描述和未知元数据，并报告行号。
+保存后刷新本地页面即可查看。提交到 GitHub 后，Vercel 会在下次部署时读取新配置。
 
 ## 部署到 Vercel
 
@@ -204,7 +202,7 @@ docs/
 
 ## 关于浏览器实验
 
-首页的 mailbox 组件明确是语义模拟器，并不声称在浏览器中运行 Erlang VM。在线
-Playground 通过 Codapi 第三方隔离沙箱执行 Elixir 小片段，不能替代完整 Mix 项目，
-也不应提交密码、API Key 或未公开代码。课程页面同时提供可复制到真实 IEx / erl
-环境的命令、预期观察、故障开关与结论边界。
+首页 mailbox 组件是语义模拟器，不在浏览器中运行 Erlang VM。在线 Playground
+通过 Codapi 第三方隔离沙箱执行 Elixir 小片段，不能替代完整 Mix 项目。请勿提交密码、
+API Key 或未公开代码。课程页也提供可复制到 IEx / erl 的命令、预期结果、故障步骤和
+结论边界。

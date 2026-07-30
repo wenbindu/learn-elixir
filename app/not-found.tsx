@@ -6,9 +6,9 @@ export default function NotFound() {
     <>
       <SiteHeader compact />
       <main className="not-found-page">
-        <span>404 · 这封信没有送到</span>
-        <h1>这条学习小路暂时找不到了</h1>
-        <p>可能是地址变了，也可能是链接写错了。别担心，回到学习地图，我们换一条路继续。</p>
+        <span>404 · 页面不存在</span>
+        <h1>这条路走不通</h1>
+        <p>地址可能改了，也可能写错了。回到学习地图，再选一站。</p>
         <Link className="button button--dark" href="/#roadmap">
           回到学习地图
           <span aria-hidden="true">→</span>
