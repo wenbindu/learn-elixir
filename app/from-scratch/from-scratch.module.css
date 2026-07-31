@@ -1500,39 +1500,6 @@
   --scratch-erlang-ink: #ffaaa3;
 }
 
-@media (prefers-color-scheme: dark) {
-  :global(html[data-theme="system"]) .page,
-  :global(html[data-theme="system"]) .lessonPage {
-    --scratch-canvas: #07111d;
-    --scratch-surface: #0e1b29;
-    --scratch-surface-muted: #091522;
-    --scratch-surface-raised: #122231;
-    --scratch-border: #293c4c;
-    --scratch-border-hover: #4c697e;
-    --scratch-ink: #edf4fa;
-    --scratch-ink-soft: #b9c7d2;
-    --scratch-muted: #91a3b1;
-    --scratch-link: #7dbdff;
-    --scratch-link-hover: #acd6ff;
-    --scratch-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.34);
-    --scratch-shadow-md: 0 20px 55px rgb(0 0 0 / 0.34);
-    --scratch-green-surface: #0b2522;
-    --scratch-green-surface-strong: #11322d;
-    --scratch-green-border: #2e6257;
-    --scratch-green-border-soft: #28564d;
-    --scratch-green-ink: #c1ded6;
-    --scratch-green-strong: #82e4c7;
-    --scratch-green-accent: #5dd3b2;
-    --scratch-blue-surface: #0b2337;
-    --scratch-blue-border: #315c7e;
-    --scratch-purple-border: #5b4674;
-    --scratch-elixir-badge: #302244;
-    --scratch-elixir-ink: #d1afff;
-    --scratch-erlang-badge: #402422;
-    --scratch-erlang-ink: #ffaaa3;
-  }
-}
-
 .page,
 .lessonPage {
   color: var(--scratch-ink);
@@ -1785,14 +1752,6 @@
   color: var(--scratch-ink);
   border-color: var(--scratch-border);
   background: var(--scratch-surface);
-}
-
-@media (prefers-color-scheme: dark) {
-  :global(html[data-theme="system"]) .page {
-    background:
-      radial-gradient(circle at 8% 15%, rgb(49 133 245 / 0.1), transparent 25%),
-      var(--scratch-canvas);
-  }
 }
 
 :global(html[data-theme="dark"]) .page {

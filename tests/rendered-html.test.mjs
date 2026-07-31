@@ -158,7 +158,7 @@ test("server-renders the complete Chinese tutorial homepage", async () => {
   assert.doesNotMatch(html, /Your site is taking shape|Starter Project/i);
 });
 
-test("renders an accessible light, dark and system theme control", async () => {
+test("renders a compact accessible light and dark theme switch", async () => {
   for (const pathname of ["/", "/learn/start-line"]) {
     const response = await render(pathname);
     assert.equal(response.status, 200, pathname);
@@ -166,25 +166,16 @@ test("renders an accessible light, dark and system theme control", async () => {
 
     assert.match(
       html,
-      /<html(?=[^>]*lang="zh-CN")(?=[^>]*data-theme="system")(?=[^>]*data-theme-preference="system")[^>]*>/i,
-      pathname,
-    );
-    assert.match(html, /role="group" aria-label="显示主题"/, pathname);
-    assert.match(html, /aria-label="浅色模式"/, pathname);
-    assert.match(html, /aria-label="深色模式"/, pathname);
-    assert.match(html, /aria-label="跟随系统"/, pathname);
-    assert.equal(
-      (
-        html.match(/class="theme-option(?: is-active)?"/g) ?? []
-      ).length,
-      3,
+      /<html(?=[^>]*lang="zh-CN")(?=[^>]*data-theme="light")[^>]*>/i,
       pathname,
     );
     assert.match(
       html,
-      /class="theme-option is-active"[^>]*aria-label="跟随系统"[^>]*aria-pressed="true"/,
+      /class="theme-switch"[^>]*role="switch"[^>]*aria-checked="false"[^>]*aria-label="切换到深色模式"/,
       pathname,
     );
+    assert.match(html, /class="theme-switch-knob"/, pathname);
+    assert.doesNotMatch(html, /跟随系统|theme-option/, pathname);
   }
 });
 
@@ -751,11 +742,11 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
   assert.match(basicProgressSource, /beam-path-basics-progress\.v1/);
   assert.doesNotMatch(basicProgressSource, /beam-path-progress\.v1/);
   assert.match(basicProgressSource, /`\$\{language\}:\$\{slug\}`/);
-  assert.match(themeSwitcherSource, /"light" \| "dark" \| "system"/);
+  assert.match(themeSwitcherSource, /type Theme = "light" \| "dark"/);
   assert.match(themeSwitcherSource, /localStorage\.setItem\(STORAGE_KEY/);
-  assert.match(themeSwitcherSource, /matchMedia\(DARK_MODE_QUERY\)/);
-  assert.match(themeSwitcherSource, /addEventListener\("change", syncTheme\)/);
-  assert.match(themeSwitcherSource, /root\.dataset\.themePreference/);
+  assert.match(themeSwitcherSource, /role="switch"/);
+  assert.match(themeSwitcherSource, /aria-checked=\{isDark\}/);
+  assert.doesNotMatch(themeSwitcherSource, /system|matchMedia|themeOptions/);
   assert.doesNotMatch(themeSwitcherSource, /<svg\b/);
   const elixirBasicsStart = basicPathData.indexOf(
     "const elixirLessons: BasicLesson[]",
@@ -855,11 +846,8 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
   assert.match(globalStyles, /--text-micro:\s*11px/);
   assert.match(globalStyles, /--text-code:\s*14px/);
   assert.match(globalStyles, /html\[data-theme="dark"\]/);
-  assert.match(
-    globalStyles,
-    /@media \(prefers-color-scheme:\s*dark\)[\s\S]*html\[data-theme="system"\]/,
-  );
-  assert.match(globalStyles, /\.theme-option\.is-active/);
+  assert.doesNotMatch(globalStyles, /data-theme="system"|theme-option/);
+  assert.match(globalStyles, /\.theme-switch\.is-dark/);
   assert.match(
     fromScratchStyles,
     /:global\(html\[data-theme="dark"\]\) \.lessonPage/,

@@ -17,24 +17,17 @@ const siteUrl = deploymentHost.startsWith("http")
 const themeBootstrapScript = `
   (() => {
     const root = document.documentElement;
-    const systemTheme = () =>
-      window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light";
-
-    let preference = "system";
+    let theme = "light";
 
     try {
       const stored = window.localStorage.getItem("beam-path-theme");
-      if (stored === "light" || stored === "dark" || stored === "system") {
-        preference = stored;
+      if (stored === "light" || stored === "dark") {
+        theme = stored;
       }
     } catch {}
 
-    const resolved = preference === "system" ? systemTheme() : preference;
-    root.dataset.theme = resolved;
-    root.dataset.themePreference = preference;
-    root.style.colorScheme = resolved;
+    root.dataset.theme = theme;
+    root.style.colorScheme = theme;
   })();
 `;
 
@@ -107,12 +100,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="zh-CN"
-      data-theme="system"
-      data-theme-preference="system"
-      suppressHydrationWarning
-    >
+    <html lang="zh-CN" data-theme="light" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
       </head>

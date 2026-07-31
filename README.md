@@ -9,7 +9,7 @@
 - 11 站 BEAM 主线、2 站可选语言复习，共 49 个检查点；覆盖安装、并发、OTP、监督树、容量、分布式与互操作
 - macOS、Linux、Windows 三套安装准备，说明 Erlang/OTP、Elixir 的顺序以及 Mix 随 Elixir 提供
 - 首页按 From Scratch、进阶、高级分层，并保留可搜索、可筛选的 BEAM 课程地图
-- 右上角支持浅色、深色与跟随系统三种显示主题，并在本机保存选择
+- 右上角用紧凑开关切换浅色与深色主题，并在本机保存选择
 - 专门拆解 `String.trim/1`、`string:trim/1`、arity、`&1`、capture 与管道，不把缩写当作前置知识
 - Elixir / Erlang 双栏代码，以及可复制到 IEx / erl 的章节实验
 - 独立的 Elixir 在线 Playground，内置管道、模式匹配与进程消息练习
