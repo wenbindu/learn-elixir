@@ -3386,22 +3386,21 @@ button.button--dark:disabled {
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  min-height: 38px;
-  margin-left: auto;
-  padding: 0 12px;
-  border: 1px solid rgb(255 255 255 / 0.15);
+  min-height: 42px;
+  padding: 0 15px;
+  border: 1px solid var(--success-line);
   border-radius: 9px;
-  color: rgb(255 255 255 / 0.73);
-  background: rgb(255 255 255 / 0.06);
+  color: var(--success-text);
+  background: var(--surface-raised);
   font-size: var(--text-control);
   font-weight: 670;
   cursor: pointer;
 }
 
 .progress-button.is-complete {
-  color: #08251d;
-  border-color: var(--beam);
-  background: var(--beam);
+  color: var(--success-text);
+  border-color: var(--success-line);
+  background: var(--success-surface);
 }
 
 .progress-button-mark {
@@ -4353,6 +4352,38 @@ button.button--dark:disabled {
 
 .references-block a b {
   color: #96a1a7;
+}
+
+.lesson-completion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 20px;
+  padding: 22px 24px;
+  border: 1px solid var(--success-line);
+  border-radius: 16px;
+  background: var(--success-surface);
+}
+
+.lesson-completion > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.lesson-completion > div > span {
+  color: var(--success-text);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  font-weight: 780;
+  letter-spacing: 0.08em;
+}
+
+.lesson-completion strong {
+  font-size: var(--text-body);
+  line-height: 1.55;
 }
 
 .lesson-pagination {
@@ -7514,8 +7545,14 @@ button.button--dark:disabled {
 
   .progress-button {
     width: 100%;
-    margin-left: 0;
     justify-content: center;
+  }
+
+  .lesson-completion {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
   }
 
   .lesson-block,

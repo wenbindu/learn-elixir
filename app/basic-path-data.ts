@@ -141,7 +141,7 @@ String.upcase("beam")`,
     number: "02",
     slug: "values-and-types",
     title: "先认六种值",
-    summary: "从数字、布尔值、nil、atom 和字符串开始。",
+    summary: "从整数、浮点数、布尔值、nil、atom 和字符串开始。",
     duration: "20 分钟",
     goal: "你能看出常见值属于哪种类型，并分清 `:ok` 和 `\"ok\"`。",
     plain: [
@@ -151,8 +151,20 @@ String.upcase("beam")`,
     ],
     concepts: [
       {
-        term: "数字",
-        explanation: "整数没有小数点，如 `12`；浮点数有小数点，如 `12.5`。",
+        term: "整数",
+        explanation: "没有小数点的数字，如 `12`、`0` 和 `-3`。",
+      },
+      {
+        term: "浮点数",
+        explanation: "带小数点的数字，如 `12.5`。先把它理解为可以表示小数的数。",
+      },
+      {
+        term: "布尔值",
+        explanation: "只有 `true` 和 `false` 两个值，用来回答真或假。",
+      },
+      {
+        term: "nil",
+        explanation: "表示这里没有值。它不是数字 `0`，也不是空字符串。",
       },
       {
         term: "atom",
@@ -164,28 +176,43 @@ String.upcase("beam")`,
       },
     ],
     symbols: [
-      { token: "true / false", reading: "两个布尔值，用来表示真和假。" },
-      { token: "nil", reading: "表示没有值。它不是数字 0，也不是空字符串。" },
-      { token: ":ok", reading: "冒号开头，表示 atom 标签 `ok`。" },
+      { token: ":", reading: "放在名字前面，组成 atom。例如 `:ok`。" },
+      { token: '" "', reading: "双引号包住文字，组成字符串。" },
+      { token: "==", reading: "比较左右两个值是否相等，结果是 `true` 或 `false`。" },
     ],
     example: {
       label: "在 IEx 里认识值",
-      code: `# 整数和浮点数都是数字
-is_integer(12)
-is_float(12.5)
+      code: `# 整数没有小数点
+12
+
+# 浮点数带小数点
+12.5
+
+# 布尔值只回答真或假
+true
+
+# nil 表示没有值
+nil
+
+# atom 像一枚固定标签
+:ok
+
+# 双引号包住字符串
+"你好，阿青"
 
 # atom 和字符串不是同一种值
-:ok == "ok"
-
-# 字符串自己也是一个值
-"你好，阿青"`,
-      caption: "先看外形，再用 `is_*` 函数核对。",
-      output: ["两个类型判断都返回 `true`。", "`:ok == \"ok\"` 返回 `false`。", "最后得到 `\"你好，阿青\"`。"],
+:ok == "ok"`,
+      caption: "一行只认一种值。先看外形，再看 IEx 给出的结果。",
+      output: [
+        "前六段依次得到整数、浮点数、布尔值、`nil`、atom 和字符串。",
+        "`:ok` 原样返回；`\"你好，阿青\"` 也原样返回。",
+        "最后的比较返回 `false`，因为 atom 和字符串不是同一种值。",
+      ],
     },
     steps: [
-      "`is_integer(12)` 在问：`12` 是不是整数。",
-      "`==` 比较左右两边的值是否相等。atom `:ok` 不等于字符串 `\"ok\"`。",
-      "双引号包住的是字符串。中文、字母和空格都可以放进去。",
+      "`12` 和 `12.5` 都是数字；有没有小数点，让它们分成整数和浮点数。",
+      "`true`、`false` 用来表示真假；`nil` 表示没有值。三者不要混成一类。",
+      "冒号开头的是 atom，双引号包住的是字符串。因此 `:ok` 不等于 `\"ok\"`。",
     ],
     practice: {
       task: "分三行写出城市、天气和是否下雨。这里先只写值，不给它们起名字。",

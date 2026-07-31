@@ -167,7 +167,6 @@ export default async function LessonPage({ params }: LessonPageProps) {
                   <span>{courseModule.duration}</span>
                   <small>可以分几次</small>
                 </div>
-                <ProgressButton slug={courseModule.slug} />
               </div>
             </header>
 
@@ -517,6 +516,14 @@ export default async function LessonPage({ params }: LessonPageProps) {
                   </a>
                 ))}
               </div>
+            </section>
+
+            <section className="lesson-completion">
+              <div>
+                <span>本站结束</span>
+                <strong>实验做过，答案也想过，就把这一站收好。</strong>
+              </div>
+              <ProgressButton slug={courseModule.slug} />
             </section>
 
             <nav className="lesson-pagination" aria-label="相邻模块">

@@ -117,13 +117,7 @@ export default async function BasicLessonPage({
                 <span>
                   {path.language.toUpperCase()} · LESSON {lesson.number}
                 </span>
-                <div>
-                  <small>{lesson.duration}</small>
-                  <BasicProgressButton
-                    language={path.id}
-                    slug={lesson.slug}
-                  />
-                </div>
+                <small>{lesson.duration}</small>
               </div>
               <h1>{lesson.title}</h1>
               <p>{lesson.summary}</p>
@@ -149,9 +143,15 @@ export default async function BasicLessonPage({
             </section>
 
             <section className={styles.lessonSection}>
-              <div className="section-kicker">先认三个词</div>
+              <div className="section-kicker">
+                {lesson.concepts.length > 3 ? "先分成六类" : "先认三个词"}
+              </div>
               <h2>够用就好</h2>
-              <div className={styles.conceptGrid}>
+              <div
+                className={`${styles.conceptGrid} ${
+                  lesson.concepts.length > 3 ? styles.conceptGridExpanded : ""
+                }`}
+              >
                 {lesson.concepts.map((concept, index) => (
                   <article key={concept.term}>
                     <span>{String(index + 1).padStart(2, "0")}</span>
@@ -286,6 +286,14 @@ export default async function BasicLessonPage({
                 ))}
               </div>
             </aside>
+
+            <section className={styles.lessonCompletion}>
+              <div>
+                <span>本课结束</span>
+                <strong>代码也跑过一次，就把这一课收好。</strong>
+              </div>
+              <BasicProgressButton language={path.id} slug={lesson.slug} />
+            </section>
 
             <nav className={styles.lessonPagination} aria-label="相邻基础课">
               {previous ? (

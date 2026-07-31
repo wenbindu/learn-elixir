@@ -231,6 +231,10 @@ test("renders all 18 beginner lessons with the slow-reading template", async () 
       assert.match(html, /aria-current="page"/, `${language}/${slug}`);
       assert.match(html, /aria-pressed="false"/, `${language}/${slug}`);
       assert.match(html, /标记学完/, `${language}/${slug}`);
+      assert.ok(
+        html.indexOf("标记学完") > html.indexOf("这条路线参考"),
+        `${language}/${slug} keeps the completion mark at the lesson end`,
+      );
     }
   }
 
@@ -238,6 +242,27 @@ test("renders all 18 beginner lessons with the slow-reading template", async () 
   assert.equal(badLanguage.status, 404);
   const badLesson = await render("/from-scratch/elixir/not-a-lesson");
   assert.equal(badLesson.status, 404);
+});
+
+test("keeps Elixir lesson two readable as six distinct value groups", async () => {
+  const response = await render("/from-scratch/elixir/values-and-types");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+
+  for (const valueType of [
+    "整数",
+    "浮点数",
+    "布尔值",
+    "nil",
+    "atom",
+    "字符串",
+  ]) {
+    assert.match(html, new RegExp(`>${valueType}<`));
+  }
+
+  assert.match(html, /一行只认一种值/);
+  assert.match(html, /conceptGridExpanded/);
+  assert.ok(html.indexOf("标记学完") > html.indexOf("本课结束"));
 });
 
 test("explains arity, trim and capture shorthand before using them as magic", async () => {
@@ -370,6 +395,9 @@ test("renders a shareable lesson route with the full teaching template", async (
   assert.match(html, /想一想/);
   assert.match(html, /提示 4/);
   assert.match(html, /记住三句话/);
+  assert.match(html, /本站结束/);
+  assert.match(html, /标记完成/);
+  assert.ok(html.indexOf("标记完成") > html.indexOf("去看原版资料"));
   assert.match(html, /发出请求前，先生成本次调用专用的 reference/);
   assert.match(html, /只接收带有同一 reference 的回复/);
   assert.match(html, /href="\/learn\/otp-behaviours"/);

@@ -784,12 +784,6 @@
   gap: 16px;
 }
 
-.lessonHeaderTop > div {
-  display: flex;
-  gap: 11px;
-  align-items: center;
-}
-
 .lessonHeaderTop > span {
   color: var(--beam);
   font-family: var(--font-mono);
@@ -805,14 +799,15 @@
 
 .basicProgressButton {
   display: inline-flex;
-  min-height: 38px;
+  min-height: 42px;
   gap: 8px;
   align-items: center;
-  padding: 0 12px;
-  border: 1px solid rgb(255 255 255 / 0.2);
+  justify-content: center;
+  padding: 0 15px;
+  border: 1px solid var(--success-line);
   border-radius: 9px;
-  color: rgb(255 255 255 / 0.8);
-  background: rgb(255 255 255 / 0.07);
+  color: var(--success-text);
+  background: var(--surface-raised);
   font-size: var(--text-control);
   font-weight: 720;
   cursor: pointer;
@@ -823,15 +818,15 @@
   width: 18px;
   height: 18px;
   place-items: center;
-  border: 1px solid rgb(255 255 255 / 0.34);
+  border: 1px solid var(--success-line);
   border-radius: 5px;
   font-size: 12px;
 }
 
 .basicProgressButtonComplete {
-  color: #d6f6eb;
-  border-color: rgb(85 210 170 / 0.48);
-  background: rgb(35 148 112 / 0.2);
+  color: var(--success-text);
+  border-color: var(--success-line);
+  background: var(--success-surface);
 }
 
 .lessonHeader h1 {
@@ -919,6 +914,18 @@
   border: 1px solid var(--line);
   border-radius: 13px;
   background: var(--paper);
+}
+
+.conceptGridExpanded {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.conceptGridExpanded article {
+  min-height: 145px;
+}
+
+.conceptGridExpanded h3 {
+  margin-top: 18px;
 }
 
 .conceptGrid span {
@@ -1207,6 +1214,39 @@
   font-size: var(--text-meta);
 }
 
+.lessonCompletion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 16px;
+  padding: 22px 24px;
+  border: 1px solid var(--success-line);
+  border-radius: 16px;
+  background: var(--success-surface);
+}
+
+.lessonCompletion > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.lessonCompletion > div > span {
+  color: var(--success-text);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  font-weight: 780;
+  letter-spacing: 0.08em;
+}
+
+.lessonCompletion strong {
+  color: var(--ink);
+  font-size: var(--text-body);
+  line-height: 1.55;
+}
+
 .lessonPagination strong {
   margin-top: 4px;
   font-size: var(--text-control);
@@ -1399,14 +1439,15 @@
     align-items: flex-start;
   }
 
-  .lessonHeaderTop > div {
-    flex-direction: column;
-    align-items: flex-end;
+  .basicProgressButton {
+    width: 100%;
   }
 
-  .basicProgressButton {
-    min-height: 36px;
-    padding-inline: 10px;
+  .lessonCompletion {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
   }
 
   .lessonHeader p {
