@@ -1432,3 +1432,371 @@
     text-align: left;
   }
 }
+
+/*
+ * From Scratch uses a few teaching-specific surfaces in addition to the
+ * global design tokens. Keeping them here lets every overview, path and lesson
+ * switch as one coherent theme without changing the lesson markup.
+ */
+.page,
+.lessonPage {
+  --scratch-canvas: var(--paper);
+  --scratch-surface: var(--surface);
+  --scratch-surface-muted: var(--paper);
+  --scratch-surface-raised: #fff;
+  --scratch-border: var(--line);
+  --scratch-border-hover: #aebdc5;
+  --scratch-ink: var(--ink);
+  --scratch-ink-soft: var(--ink-soft);
+  --scratch-muted: var(--muted);
+  --scratch-link: #1f67b5;
+  --scratch-link-hover: #145f9d;
+  --scratch-shadow-sm: var(--shadow-sm);
+  --scratch-shadow-md: var(--shadow-md);
+  --scratch-green-surface: #eff8f4;
+  --scratch-green-surface-strong: #eaf7f2;
+  --scratch-green-border: #bfdcd3;
+  --scratch-green-border-soft: #cfe2dc;
+  --scratch-green-ink: #315f53;
+  --scratch-green-strong: #15745c;
+  --scratch-green-accent: #13846a;
+  --scratch-blue-surface: #f0f7fb;
+  --scratch-blue-border: #bfd8e9;
+  --scratch-purple-border: #cfc3df;
+  --scratch-elixir-badge: #eadcff;
+  --scratch-elixir-ink: #7040ad;
+  --scratch-erlang-badge: #ffe1dd;
+  --scratch-erlang-ink: #a73c35;
+}
+
+:global(html[data-theme="dark"]) .page,
+:global(html[data-theme="dark"]) .lessonPage {
+  --scratch-canvas: #07111d;
+  --scratch-surface: #0e1b29;
+  --scratch-surface-muted: #091522;
+  --scratch-surface-raised: #122231;
+  --scratch-border: #293c4c;
+  --scratch-border-hover: #4c697e;
+  --scratch-ink: #edf4fa;
+  --scratch-ink-soft: #b9c7d2;
+  --scratch-muted: #91a3b1;
+  --scratch-link: #7dbdff;
+  --scratch-link-hover: #acd6ff;
+  --scratch-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.34);
+  --scratch-shadow-md: 0 20px 55px rgb(0 0 0 / 0.34);
+  --scratch-green-surface: #0b2522;
+  --scratch-green-surface-strong: #11322d;
+  --scratch-green-border: #2e6257;
+  --scratch-green-border-soft: #28564d;
+  --scratch-green-ink: #c1ded6;
+  --scratch-green-strong: #82e4c7;
+  --scratch-green-accent: #5dd3b2;
+  --scratch-blue-surface: #0b2337;
+  --scratch-blue-border: #315c7e;
+  --scratch-purple-border: #5b4674;
+  --scratch-elixir-badge: #302244;
+  --scratch-elixir-ink: #d1afff;
+  --scratch-erlang-badge: #402422;
+  --scratch-erlang-ink: #ffaaa3;
+}
+
+@media (prefers-color-scheme: dark) {
+  :global(html[data-theme="system"]) .page,
+  :global(html[data-theme="system"]) .lessonPage {
+    --scratch-canvas: #07111d;
+    --scratch-surface: #0e1b29;
+    --scratch-surface-muted: #091522;
+    --scratch-surface-raised: #122231;
+    --scratch-border: #293c4c;
+    --scratch-border-hover: #4c697e;
+    --scratch-ink: #edf4fa;
+    --scratch-ink-soft: #b9c7d2;
+    --scratch-muted: #91a3b1;
+    --scratch-link: #7dbdff;
+    --scratch-link-hover: #acd6ff;
+    --scratch-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.34);
+    --scratch-shadow-md: 0 20px 55px rgb(0 0 0 / 0.34);
+    --scratch-green-surface: #0b2522;
+    --scratch-green-surface-strong: #11322d;
+    --scratch-green-border: #2e6257;
+    --scratch-green-border-soft: #28564d;
+    --scratch-green-ink: #c1ded6;
+    --scratch-green-strong: #82e4c7;
+    --scratch-green-accent: #5dd3b2;
+    --scratch-blue-surface: #0b2337;
+    --scratch-blue-border: #315c7e;
+    --scratch-purple-border: #5b4674;
+    --scratch-elixir-badge: #302244;
+    --scratch-elixir-ink: #d1afff;
+    --scratch-erlang-badge: #402422;
+    --scratch-erlang-ink: #ffaaa3;
+  }
+}
+
+.page,
+.lessonPage {
+  color: var(--scratch-ink);
+  background-color: var(--scratch-canvas);
+}
+
+.page {
+  background:
+    radial-gradient(circle at 8% 15%, rgb(49 133 245 / 0.06), transparent 25%),
+    var(--scratch-canvas);
+}
+
+.pathCard,
+.lessonCard,
+.bridgeCard,
+.sourceCard,
+.lessonSidebar,
+.goalCard,
+.lessonSection,
+.practiceSection,
+.takeawaySection,
+.lessonSources,
+.lessonPagination > a {
+  border-color: var(--scratch-border);
+  background-color: var(--scratch-surface);
+  box-shadow: var(--scratch-shadow-sm);
+}
+
+.pathCard {
+  box-shadow: var(--scratch-shadow-md);
+}
+
+.pathCard:hover,
+.lessonCard:hover {
+  border-color: var(--scratch-border-hover);
+}
+
+.pathCardElixir {
+  background:
+    radial-gradient(circle at 100% 0%, rgb(169 117 238 / 0.12), transparent 35%),
+    var(--scratch-surface);
+}
+
+.pathCardErlang {
+  background:
+    radial-gradient(circle at 100% 0%, rgb(225 91 82 / 0.11), transparent 35%),
+    var(--scratch-surface);
+}
+
+.sectionIntro > p,
+.pathCard > strong,
+.pathCard > p,
+.startPanel p,
+.startPanel li,
+.lessonCard p,
+.sourceCard a,
+.lessonSidebar nav a,
+.plainCopy p,
+.conceptGrid p,
+.symbolRow p,
+.exampleIntro,
+.stepsList li,
+.practiceTask,
+.revealStack summary,
+.checkCard summary,
+.revealStack details > p,
+.checkCard > p,
+.lessonSources a {
+  color: var(--scratch-ink-soft);
+}
+
+.pathCardTop > span:first-child,
+.pathCardMeta,
+.lessonCardTop,
+.basicLessonStatus,
+.lessonBreadcrumb,
+.lessonSources > span {
+  color: var(--scratch-muted);
+}
+
+.pathCardLink,
+.lessonCardFooter > span:first-child,
+.lessonBreadcrumb a:hover,
+.sourceCard a:hover,
+.lessonPagination small {
+  color: var(--scratch-link);
+}
+
+.pathCardLink,
+.basicLessonStatus,
+.sourceCard,
+.sourceCard a,
+.lessonSidebar,
+.lessonSources,
+.lessonSources a,
+.lessonPagination > a,
+.conceptGrid article,
+.symbolRow,
+.stepsList li,
+.revealStack details,
+.checkCard {
+  border-color: var(--scratch-border);
+}
+
+.sourceCard a:hover {
+  color: var(--scratch-link-hover);
+  border-color: var(--scratch-link);
+}
+
+.languageBadgeElixir {
+  color: var(--scratch-elixir-ink);
+  background: var(--scratch-elixir-badge);
+}
+
+.languageBadgeErlang {
+  color: var(--scratch-erlang-ink);
+  background: var(--scratch-erlang-badge);
+}
+
+.installStepCard {
+  color: var(--scratch-ink);
+  border-color: var(--scratch-green-border);
+  background:
+    radial-gradient(circle at 94% 12%, rgb(255 255 255 / 0.08), transparent 27%),
+    var(--scratch-green-surface);
+  box-shadow: var(--scratch-shadow-md);
+}
+
+.installStepCard:hover {
+  border-color: var(--scratch-green-accent);
+}
+
+.installStepCopy p {
+  color: var(--scratch-green-ink);
+}
+
+.installStepCopy code {
+  color: var(--scratch-green-strong);
+}
+
+.startPanel,
+.goalCard,
+.takeawaySection {
+  border-color: var(--scratch-green-border);
+  background: var(--scratch-green-surface);
+}
+
+.startPanel li::before,
+.goalCard strong {
+  color: var(--scratch-green-strong);
+}
+
+.startActions code {
+  color: var(--scratch-green-strong);
+  border-color: var(--scratch-green-border);
+  background: var(--scratch-surface-raised);
+}
+
+.basicLessonStatus {
+  background: var(--scratch-surface-muted);
+}
+
+.basicLessonStatusComplete {
+  color: var(--scratch-green-strong);
+  border-color: var(--scratch-green-border);
+  background: var(--scratch-green-surface-strong);
+}
+
+.bridgeCard {
+  color: #fff;
+  border-color: #253d54;
+  background: #07182d;
+  box-shadow: var(--scratch-shadow-sm);
+}
+
+.lessonSidebar nav a:hover,
+.conceptGrid article,
+.symbolRow,
+.mobilePathNav a {
+  background: var(--scratch-surface-muted);
+}
+
+.lessonSidebar nav a[data-active="true"],
+.mobilePathNav a[data-active="true"],
+.stepsList li::before {
+  color: var(--scratch-link);
+  background: var(--scratch-blue-surface);
+}
+
+.lessonBreadcrumb a:hover {
+  color: var(--scratch-link-hover);
+}
+
+.goalCard p,
+.outputPanel ul,
+.expectedLine,
+.takeawaySection li {
+  color: var(--scratch-green-ink);
+}
+
+.outputPanel {
+  border-color: var(--scratch-green-border);
+  background: var(--scratch-green-surface);
+}
+
+.outputPanel strong,
+.takeawaySection li > span {
+  color: var(--scratch-green-strong);
+}
+
+.symbolRow code,
+.conceptGrid span {
+  color: var(--scratch-link);
+}
+
+.practiceSection {
+  border-color: var(--scratch-purple-border);
+  background:
+    radial-gradient(circle at 100% 0%, rgb(169 117 238 / 0.1), transparent 34%),
+    var(--scratch-surface);
+}
+
+.expectedLine {
+  background: var(--scratch-green-surface-strong);
+}
+
+.revealStack details,
+.checkCard {
+  background: var(--scratch-surface-raised);
+}
+
+.checkCard {
+  border-color: var(--scratch-blue-border);
+  background: var(--scratch-blue-surface);
+}
+
+.takeawaySection li {
+  border-color: var(--scratch-green-border-soft);
+  background: var(--scratch-surface-raised);
+}
+
+.lessonSection :global(.code-card),
+.practiceSection :global(.code-card),
+.revealStack details :global(.code-card) {
+  border-color: #304a62;
+  box-shadow: 0 15px 35px rgb(0 0 0 / 0.22);
+}
+
+.mobilePathNav {
+  color: var(--scratch-ink);
+  border-color: var(--scratch-border);
+  background: var(--scratch-surface);
+}
+
+@media (prefers-color-scheme: dark) {
+  :global(html[data-theme="system"]) .page {
+    background:
+      radial-gradient(circle at 8% 15%, rgb(49 133 245 / 0.1), transparent 25%),
+      var(--scratch-canvas);
+  }
+}
+
+:global(html[data-theme="dark"]) .page {
+  background:
+    radial-gradient(circle at 8% 15%, rgb(49 133 245 / 0.1), transparent 25%),
+    var(--scratch-canvas);
+}

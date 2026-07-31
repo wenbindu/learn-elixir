@@ -14,6 +14,29 @@ const deploymentHost =
 const siteUrl = deploymentHost.startsWith("http")
   ? deploymentHost
   : `https://${deploymentHost}`;
+const themeBootstrapScript = `
+  (() => {
+    const root = document.documentElement;
+    const systemTheme = () =>
+      window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light";
+
+    let preference = "system";
+
+    try {
+      const stored = window.localStorage.getItem("beam-path-theme");
+      if (stored === "light" || stored === "dark" || stored === "system") {
+        preference = stored;
+      }
+    } catch {}
+
+    const resolved = preference === "system" ? systemTheme() : preference;
+    root.dataset.theme = resolved;
+    root.dataset.themePreference = preference;
+    root.style.colorScheme = resolved;
+  })();
+`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -71,8 +94,11 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#07182d",
-  colorScheme: "light",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f4f2eb" },
+    { media: "(prefers-color-scheme: dark)", color: "#07182d" },
+  ],
+  colorScheme: "light dark",
 };
 
 export default function RootLayout({
@@ -81,7 +107,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN">
+    <html
+      lang="zh-CN"
+      data-theme="system"
+      data-theme-preference="system"
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+      </head>
       <body>
         {children}
         <Analytics />

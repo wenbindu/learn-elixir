@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ThemeSwitcher } from "./ThemeSwitcher";
 
 type SiteHeaderProps = {
   compact?: boolean;
@@ -33,6 +34,8 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
           <Link href="/keywords">关键字字典</Link>
           <Link href="/resources">学习工具箱</Link>
         </nav>
+
+        <ThemeSwitcher />
 
         <Link className="header-cta" href="/from-scratch">
           开始学习

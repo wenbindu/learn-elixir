@@ -158,6 +158,36 @@ test("server-renders the complete Chinese tutorial homepage", async () => {
   assert.doesNotMatch(html, /Your site is taking shape|Starter Project/i);
 });
 
+test("renders an accessible light, dark and system theme control", async () => {
+  for (const pathname of ["/", "/learn/start-line"]) {
+    const response = await render(pathname);
+    assert.equal(response.status, 200, pathname);
+    const html = await response.text();
+
+    assert.match(
+      html,
+      /<html(?=[^>]*lang="zh-CN")(?=[^>]*data-theme="system")(?=[^>]*data-theme-preference="system")[^>]*>/i,
+      pathname,
+    );
+    assert.match(html, /role="group" aria-label="显示主题"/, pathname);
+    assert.match(html, /aria-label="浅色模式"/, pathname);
+    assert.match(html, /aria-label="深色模式"/, pathname);
+    assert.match(html, /aria-label="跟随系统"/, pathname);
+    assert.equal(
+      (
+        html.match(/class="theme-option(?: is-active)?"/g) ?? []
+      ).length,
+      3,
+      pathname,
+    );
+    assert.match(
+      html,
+      /class="theme-option is-active"[^>]*aria-label="跟随系统"[^>]*aria-pressed="true"/,
+      pathname,
+    );
+  }
+});
+
 test("renders two independent From Scratch path overviews", async () => {
   const overviewResponse = await render("/from-scratch");
   assert.equal(overviewResponse.status, 200);
@@ -613,6 +643,8 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
     playgroundSource,
     basicPathData,
     basicProgressSource,
+    themeSwitcherSource,
+    fromScratchStyles,
   ] =
     await Promise.all([
       readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
@@ -632,6 +664,17 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
       readFile(new URL("../app/basic-path-data.ts", import.meta.url), "utf8"),
       readFile(
         new URL("../app/components/BasicProgress.tsx", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL("../app/components/ThemeSwitcher.tsx", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL(
+          "../app/from-scratch/from-scratch.module.css",
+          import.meta.url,
+        ),
         "utf8",
       ),
     ]);
@@ -668,7 +711,11 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
 
   assert.match(layout, /\/favicon\.ico/);
   assert.match(layout, /\/apple-touch-icon\.png/);
-  assert.match(layout, /themeColor:\s*"#07182d"/);
+  assert.match(layout, /colorScheme:\s*"light dark"/);
+  assert.match(layout, /prefers-color-scheme: dark/);
+  assert.match(layout, /localStorage\.getItem\("beam-path-theme"\)/);
+  assert.match(layout, /suppressHydrationWarning/);
+  assert.ok(layout.indexOf("<script") < layout.indexOf("<body"));
   assert.match(layout, /@vercel\/analytics\/next/);
   assert.match(layout, /@vercel\/speed-insights\/next/);
   assert.match(layout, /<Analytics\s*\/>/);
@@ -704,6 +751,12 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
   assert.match(basicProgressSource, /beam-path-basics-progress\.v1/);
   assert.doesNotMatch(basicProgressSource, /beam-path-progress\.v1/);
   assert.match(basicProgressSource, /`\$\{language\}:\$\{slug\}`/);
+  assert.match(themeSwitcherSource, /"light" \| "dark" \| "system"/);
+  assert.match(themeSwitcherSource, /localStorage\.setItem\(STORAGE_KEY/);
+  assert.match(themeSwitcherSource, /matchMedia\(DARK_MODE_QUERY\)/);
+  assert.match(themeSwitcherSource, /addEventListener\("change", syncTheme\)/);
+  assert.match(themeSwitcherSource, /root\.dataset\.themePreference/);
+  assert.doesNotMatch(themeSwitcherSource, /<svg\b/);
   const elixirBasicsStart = basicPathData.indexOf(
     "const elixirLessons: BasicLesson[]",
   );
@@ -801,6 +854,16 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
   assert.match(localConfig, /BEAM_PATH_PORT=3000/);
   assert.match(globalStyles, /--text-micro:\s*11px/);
   assert.match(globalStyles, /--text-code:\s*14px/);
+  assert.match(globalStyles, /html\[data-theme="dark"\]/);
+  assert.match(
+    globalStyles,
+    /@media \(prefers-color-scheme:\s*dark\)[\s\S]*html\[data-theme="system"\]/,
+  );
+  assert.match(globalStyles, /\.theme-option\.is-active/);
+  assert.match(
+    fromScratchStyles,
+    /:global\(html\[data-theme="dark"\]\) \.lessonPage/,
+  );
   assert.doesNotMatch(globalStyles, /font-size:\s*(?:[7-9]|10)px/);
   assert.match(
     globalStyles,
