@@ -53,7 +53,8 @@ export default async function LessonPage({ params }: LessonPageProps) {
               <span>BEAM PATH</span>
               <strong>BEAM 探险地图</strong>
               <small>
-                {courseStats.stations} 站 · {courseStats.checkpoints} 个小关卡
+                {courseStats.mainlineStations} 站主线 ·{" "}
+                {courseStats.optionalReviewStations} 站可选复习
               </small>
             </div>
 
@@ -74,7 +75,10 @@ export default async function LessonPage({ params }: LessonPageProps) {
                       >
                         <b>{item.number}</b>
                         <span>{item.title}</span>
-                        <small>{item.duration}</small>
+                        <small>
+                          {item.optionalReview ? "可选复习 · " : ""}
+                          {item.duration}
+                        </small>
                       </Link>
                     ))}
                 </div>
@@ -90,7 +94,10 @@ export default async function LessonPage({ params }: LessonPageProps) {
           <article className="lesson-article">
             <details className="lesson-mobile-nav">
               <summary>
-                <span>第 {courseModule.number} 站</span>
+                <span>
+                  第 {courseModule.number} 站
+                  {courseModule.optionalReview ? " · 可选复习" : ""}
+                </span>
                 展开探险地图
               </summary>
               <div>
@@ -102,6 +109,9 @@ export default async function LessonPage({ params }: LessonPageProps) {
                   >
                     <span>{item.number}</span>
                     {item.title}
+                    {item.optionalReview ? (
+                      <small className="lesson-nav-optional">可选复习</small>
+                    ) : null}
                   </Link>
                 ))}
               </div>
@@ -110,10 +120,29 @@ export default async function LessonPage({ params }: LessonPageProps) {
             <div className="lesson-breadcrumb">
               <Link href="/">首页</Link>
               <span>/</span>
-              <Link href="/#roadmap">学习路径</Link>
+              <Link href="/#beam-roadmap">BEAM 主线</Link>
               <span>/</span>
               <strong>第 {courseModule.number} 站</strong>
             </div>
+
+            {courseModule.slug === "start-line" ? (
+              <aside className="syntax-path-note">
+                <div>
+                  <span>还没学过语法？</span>
+                  <strong>
+                    如果值、模式、函数或模块还陌生，先从一门语言学起。
+                  </strong>
+                  <p>
+                    Elixir 和 Erlang 任选一条。学完任意一条，再回来走 BEAM
+                    主线。
+                  </p>
+                </div>
+                <div>
+                  <Link href="/from-scratch/elixir">Elixir 从零 →</Link>
+                  <Link href="/from-scratch/erlang">Erlang 从零 →</Link>
+                </div>
+              </aside>
+            ) : null}
 
             <header className={`lesson-hero lesson-hero--${courseModule.stage}`}>
               <div className="lesson-hero-top">
@@ -121,6 +150,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
                 <div className="lesson-labels">
                   <span>{courseModule.stageLabel}</span>
                   <span>{courseModule.level}</span>
+                  {courseModule.optionalReview ? <span>可选复习</span> : null}
                   {courseModule.languages.map((language) => (
                     <span key={language}>{language}</span>
                   ))}
@@ -500,7 +530,12 @@ export default async function LessonPage({ params }: LessonPageProps) {
               ) : (
                 <span />
               )}
-              {next ? (
+              {courseModule.slug === "install-toolchain" ? (
+                <Link href="/from-scratch">
+                  <span>下一步 →</span>
+                  <strong>选择一条从零路线</strong>
+                </Link>
+              ) : next ? (
                 <Link href={`/learn/${next.slug}`}>
                   <span>下一站 →</span>
                   <strong>
@@ -508,7 +543,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
                   </strong>
                 </Link>
               ) : (
-                <Link href="/#roadmap">
+                <Link href="/#beam-roadmap">
                   <span>全部通关 →</span>
                   <strong>回到探险地图</strong>
                 </Link>

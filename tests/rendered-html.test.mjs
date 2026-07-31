@@ -67,6 +67,40 @@ const lessonSlugs = [
   "reliable-scheduler",
 ];
 
+const basicLessonSlugs = {
+  elixir: [
+    "meet-iex",
+    "values-and-types",
+    "collections",
+    "names-and-operators",
+    "pattern-matching",
+    "choices-and-guards",
+    "functions-and-arity",
+    "capture-enum-pipe",
+    "modules-and-mix",
+  ],
+  erlang: [
+    "meet-erl",
+    "terms-and-types",
+    "text-and-binaries",
+    "variables-and-matching",
+    "lists-and-patterns",
+    "functions-and-arity",
+    "clauses-and-guards",
+    "recursion",
+    "modules-and-beam",
+  ],
+};
+
+test("keeps both From Scratch paths complete and independent", () => {
+  assert.equal(Object.keys(basicLessonSlugs).length, 2);
+
+  for (const [language, slugs] of Object.entries(basicLessonSlugs)) {
+    assert.equal(slugs.length, 9, language);
+    assert.equal(new Set(slugs).size, slugs.length, language);
+  }
+});
+
 test("server-renders the complete Chinese tutorial homepage", async () => {
   const response = await render("/");
   assert.equal(response.status, 200);
@@ -78,9 +112,17 @@ test("server-renders the complete Chinese tutorial homepage", async () => {
   assert.match(html, /动手学/);
   assert.match(html, /Erlang/);
   assert.match(html, /Elixir/);
-  assert.match(html, /13<\/strong><span>学习小站/);
-  assert.match(html, /49<\/strong><span>次练习与自查/);
-  assert.match(html, /先猜，再运行/);
+  assert.match(html, /2<\/strong><span>条从零路线/);
+  assert.match(html, /18<\/strong><span>节基础语法/);
+  assert.match(html, /11<\/strong><span>站 BEAM 主线/);
+  assert.match(html, /2<\/strong><span>站可选复习/);
+  assert.match(html, /FROM SCRATCH/);
+  assert.match(html, /INTERMEDIATE/);
+  assert.match(html, /ADVANCED/);
+  assert.match(html, /从值和类型开始/);
+  assert.match(html, /让进程合作/);
+  assert.match(html, /让系统扛住故障/);
+  assert.match(html, /先猜结果，再运行代码/);
   assert.match(html, />怎么学</);
   assert.match(html, />消息实验</);
   assert.match(html, /做一个任务调度器/);
@@ -106,9 +148,124 @@ test("server-renders the complete Chinese tutorial homepage", async () => {
     html,
     /<meta(?=[^>]*property="og:image")(?=[^>]*content="https?:\/\/[^"]+\/og\.png")[^>]*>/i,
   );
-  assert.match(html, /href="\/learn\/install-toolchain"/);
+  assert.match(html, /href="\/from-scratch\/elixir"/);
+  assert.match(html, /href="\/from-scratch\/erlang"/);
+  assert.match(html, /href="\/learn\/start-line"/);
+  assert.match(html, /href="\/learn\/shared-semantics"/);
+  assert.match(html, /写法不同，骨架相通/);
+  assert.match(html, /class="optional-review-badge">可选复习/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
   assert.doesNotMatch(html, /Your site is taking shape|Starter Project/i);
+});
+
+test("renders two independent From Scratch path overviews", async () => {
+  const overviewResponse = await render("/from-scratch");
+  assert.equal(overviewResponse.status, 200);
+  const overview = await overviewResponse.text();
+
+  assert.match(overview, /先学会读代码/);
+  assert.match(overview, /再走进 BEAM/);
+  assert.match(overview, /不必两条都学完/);
+  assert.match(overview, /2<\/strong><span>条独立路线/);
+  assert.match(overview, /18<\/strong><span>节基础课/);
+  assert.match(overview, /第 0 步：安装 Erlang \/ Elixir \/ Mix/);
+  assert.match(overview, /href="\/learn\/install-toolchain"/);
+  assert.match(overview, /href="\/from-scratch\/elixir"/);
+  assert.match(overview, /href="\/from-scratch\/erlang"/);
+  assert.match(overview, /href="\/learn\/start-line"/);
+
+  for (const [language, slugs] of Object.entries(basicLessonSlugs)) {
+    const response = await render(`/from-scratch/${language}`);
+    assert.equal(response.status, 200, language);
+    const html = await response.text();
+
+    assert.match(html, /一课只解决一个问题/);
+    assert.match(html, /还没安装？看安装步骤/);
+    assert.match(html, /走上 BEAM 起跑线/);
+    assert.match(html, /课程依据/);
+    for (const slug of slugs) {
+      assert.match(
+        html,
+        new RegExp(`href="\\/from-scratch\\/${language}\\/${slug}"`),
+      );
+    }
+  }
+});
+
+test("renders all 18 beginner lessons with the slow-reading template", async () => {
+  for (const [language, slugs] of Object.entries(basicLessonSlugs)) {
+    for (const slug of slugs) {
+      const response = await render(`/from-scratch/${language}/${slug}`);
+      assert.equal(response.status, 200, `${language}/${slug}`);
+      const html = await response.text();
+
+      assert.match(html, /这一课只做一件事/, `${language}/${slug}`);
+      assert.match(html, /符号拆解/, `${language}/${slug}`);
+      assert.match(html, /先猜，再运行/, `${language}/${slug}`);
+      assert.match(html, /按行读/, `${language}/${slug}`);
+      assert.match(html, /轮到你改一处/, `${language}/${slug}`);
+      assert.match(html, /目标结果/, `${language}/${slug}`);
+      assert.match(html, /想一想/, `${language}/${slug}`);
+      assert.match(html, /记住三句/, `${language}/${slug}`);
+      assert.match(html, /aria-current="page"/, `${language}/${slug}`);
+      assert.match(html, /aria-pressed="false"/, `${language}/${slug}`);
+      assert.match(html, /标记学完/, `${language}/${slug}`);
+    }
+  }
+
+  const badLanguage = await render("/from-scratch/ruby");
+  assert.equal(badLanguage.status, 404);
+  const badLesson = await render("/from-scratch/elixir/not-a-lesson");
+  assert.equal(badLesson.status, 404);
+});
+
+test("explains arity, trim and capture shorthand before using them as magic", async () => {
+  const elixirChoices = await (
+    await render("/from-scratch/elixir/choices-and-guards")
+  ).text();
+  assert.match(elixirChoices, /打开分支块/);
+  assert.match(elixirChoices, /结束整个 <code[^>]*>case<\/code>/);
+
+  const elixirFunctions = await (
+    await render("/from-scratch/elixir/functions-and-arity")
+  ).text();
+  assert.match(elixirFunctions, /String\.trim\/1/);
+  assert.match(elixirFunctions, /String\.trim\(text\)/);
+  assert.match(elixirFunctions, /是除以 1 吗/);
+  assert.match(elixirFunctions, /不是。这里的/);
+  assert.match(elixirFunctions, /fn number -&gt; number \* 2 end/);
+  assert.match(elixirFunctions, /匿名函数调用时/);
+  assert.match(elixirFunctions, /把花括号中表达式的结果放进字符串/);
+
+  const elixirCapture = await (
+    await render("/from-scratch/elixir/capture-enum-pipe")
+  ).text();
+  assert.match(elixirCapture, /不是一个独立变量/);
+  assert.match(elixirCapture, /fn number -&gt; number \* 2 end/);
+  assert.match(elixirCapture, /&amp;\(&amp;1 \* 2\)/);
+  assert.match(elixirCapture, /&amp;String\.trim\/1/);
+  assert.match(elixirCapture, /管道把左边结果放到右边的第一个参数/);
+
+  const erlangFunctions = await (
+    await render("/from-scratch/erlang/functions-and-arity")
+  ).text();
+  assert.match(erlangFunctions, /string:trim\/1/);
+  assert.match(erlangFunctions, /string:trim\(Text\)/);
+  assert.match(erlangFunctions, /叫 arity，不是除法/);
+  assert.match(erlangFunctions, /冒号连接模块与函数/);
+
+  const erlangText = await (
+    await render("/from-scratch/erlang/text-and-binaries")
+  ).text();
+  assert.match(erlangText, /得到 <code[^>]*>6<\/code>/);
+  assert.match(erlangText, /6 个字节，不是 2 个汉字/);
+
+  const erlangRecursion = await (
+    await render("/from-scratch/erlang/recursion")
+  ).text();
+  assert.match(erlangRecursion, /fun Loop\(\[\]\) -&gt;/);
+  assert.match(erlangRecursion, /Double\(\[1, 2, 3\]\)/);
+  assert.match(erlangRecursion, /function_clause/);
 });
 
 test("homepage previews requested resources and links to the full directory", async () => {
@@ -244,10 +401,66 @@ test("start line introduces Mix as a project build tool", async () => {
   assert.match(html, /mix test/);
   assert.match(html, /Mix 不等于 BEAM、OTP 或 Hex/);
   assert.match(html, /href="\/learn\/install-toolchain"/);
+  assert.match(html, /值、模式、函数(?:或|和)模块还陌生/);
+  assert.doesNotMatch(html, /看到 <code>\/1<\/code>、<code>&amp;1<\/code>/);
+  assert.match(html, /href="\/from-scratch\/elixir"/);
+  assert.match(html, /href="\/from-scratch\/erlang"/);
   assert.match(
     html,
     /https:\/\/hexdocs\.pm\/elixir\/introduction-to-mix\.html/,
   );
+});
+
+test("recommended BEAM navigation skips optional language reviews", async () => {
+  const cases = [
+    {
+      slug: "beam-mental-model",
+      previous: "start-line",
+      next: "shared-semantics",
+    },
+    {
+      slug: "elixir-foundations",
+      previous: "beam-mental-model",
+      next: "shared-semantics",
+    },
+    {
+      slug: "erlang-foundations",
+      previous: "beam-mental-model",
+      next: "shared-semantics",
+    },
+    {
+      slug: "shared-semantics",
+      previous: "beam-mental-model",
+      next: "processes-and-mailboxes",
+    },
+  ];
+
+  for (const item of cases) {
+    const response = await render(`/learn/${item.slug}`);
+    assert.equal(response.status, 200, item.slug);
+    const html = await response.text();
+    const pagination = html.match(
+      /<nav class="lesson-pagination"[\s\S]*?<\/nav>/,
+    )?.[0];
+
+    assert.ok(pagination, `${item.slug} pagination`);
+    assert.match(
+      pagination,
+      new RegExp(`href="\\/learn\\/${item.previous}"`),
+      `${item.slug} previous`,
+    );
+    assert.match(
+      pagination,
+      new RegExp(`href="\\/learn\\/${item.next}"`),
+      `${item.slug} next`,
+    );
+  }
+
+  const optionalReview = await (
+    await render("/learn/elixir-foundations")
+  ).text();
+  assert.match(optionalReview, /可选复习/);
+  assert.match(optionalReview, /href="\/#beam-roadmap"/);
 });
 
 test("puts a three-platform installation guide before the start line", async () => {
@@ -258,10 +471,8 @@ test("puts a three-platform installation guide before the start line", async () 
   assert.match(html, /装好工具/);
   assert.match(html, /Mix 已包含在 Elixir 里/);
   assert.match(html, /只走你电脑这一条路/);
-  assert.match(
-    html,
-    /13(?:<!-- -->)? 站 · (?:<!-- -->)?49(?:<!-- -->)? 个小关卡/,
-  );
+  assert.match(html, /11(?:<!-- -->)? 站主线/);
+  assert.match(html, /2(?:<!-- -->)? 站可选复习/);
   assert.match(html, />macOS</);
   assert.match(html, />Linux</);
   assert.match(html, />Windows</);
@@ -282,7 +493,13 @@ test("puts a three-platform installation guide before the start line", async () 
   );
   assert.match(html, /href="https:\/\/elixir-lang\.org\/install\/"/);
   assert.match(html, /href="https:\/\/www\.erlang\.org\/downloads"/);
-  assert.match(html, /href="\/learn\/start-line"/);
+  assert.match(html, /href="\/from-scratch"/);
+  assert.match(html, /选择一条从零路线/);
+
+  const startLine = await (await render("/learn/start-line")).text();
+  assert.match(startLine, /如果值、模式、函数(?:或|和)模块还陌生/);
+  assert.match(startLine, /Elixir 和 Erlang 任选一条/);
+  assert.doesNotMatch(startLine, /看到 .*&amp;1.*模式匹配/s);
 });
 
 test("renders an embedded Elixir playground with safe fallback guidance", async () => {
@@ -394,6 +611,8 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
     keywordData,
     contentStyleGuide,
     playgroundSource,
+    basicPathData,
+    basicProgressSource,
   ] =
     await Promise.all([
       readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
@@ -408,6 +627,11 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
       readFile(new URL("../docs/content-style-guide.md", import.meta.url), "utf8"),
       readFile(
         new URL("../app/components/ElixirPlayground.tsx", import.meta.url),
+        "utf8",
+      ),
+      readFile(new URL("../app/basic-path-data.ts", import.meta.url), "utf8"),
+      readFile(
+        new URL("../app/components/BasicProgress.tsx", import.meta.url),
         "utf8",
       ),
     ]);
@@ -472,7 +696,59 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
   assert.match(contentStyleGuide, /比喻只用于引出概念，不能代替技术定义/);
   assert.match(contentStyleGuide, /把报错写成可以观察和处理的结果/);
   assert.match(contentStyleGuide, /注释只解释意图、数据流、消息去向和失败边界/);
+  assert.equal((basicPathData.match(/\n    number: "\d\d",/g) ?? []).length, 18);
+  assert.match(basicPathData, /String\.trim\/1/);
+  assert.match(basicPathData, /`&1` 不是一个独立变量/);
+  assert.match(basicPathData, /string:trim\/1/);
+  assert.match(basicPathData, /Erlang 没有单独的 string 类型/);
+  assert.match(basicProgressSource, /beam-path-basics-progress\.v1/);
+  assert.doesNotMatch(basicProgressSource, /beam-path-progress\.v1/);
+  assert.match(basicProgressSource, /`\$\{language\}:\$\{slug\}`/);
+  const elixirBasicsStart = basicPathData.indexOf(
+    "const elixirLessons: BasicLesson[]",
+  );
+  const elixirArityLesson = basicPathData.indexOf(
+    'slug: "functions-and-arity"',
+    elixirBasicsStart,
+  );
+  const elixirCaptureLesson = basicPathData.indexOf(
+    'slug: "capture-enum-pipe"',
+    elixirBasicsStart,
+  );
+  const erlangBasicsStart = basicPathData.indexOf(
+    "const erlangLessons: BasicLesson[]",
+  );
+  const erlangArityLesson = basicPathData.indexOf(
+    'slug: "functions-and-arity"',
+    erlangBasicsStart,
+  );
+  const erlangVariablesLesson = basicPathData.indexOf(
+    'slug: "variables-and-matching"',
+    erlangBasicsStart,
+  );
+  assert.doesNotMatch(
+    basicPathData.slice(elixirBasicsStart, elixirArityLesson),
+    /\/\d/,
+  );
+  assert.doesNotMatch(
+    basicPathData.slice(elixirBasicsStart, elixirCaptureLesson),
+    /&1/,
+  );
+  assert.doesNotMatch(
+    basicPathData.slice(erlangBasicsStart, erlangArityLesson),
+    /\/\d/,
+  );
+  assert.doesNotMatch(
+    basicPathData.slice(erlangBasicsStart, erlangVariablesLesson),
+    /^\s*[A-Z][A-Za-z0-9_]*\s*=/m,
+  );
   assert.match(courseData, /stations:\s*courseModules\.length/);
+  assert.equal((courseData.match(/optionalReview:\s*true/g) ?? []).length, 2);
+  assert.match(courseData, /mainlineStations:\s*recommendedCourseModules\.length/);
+  assert.match(
+    courseData,
+    /\.find\(\(courseModule\) => !courseModule\.optionalReview\)/,
+  );
   assert.equal(elixirLessonBlocks.length, 13);
   assert.equal(erlangLessonBlocks.length, 13);
   assert.equal(experimentCommands.length, 13);

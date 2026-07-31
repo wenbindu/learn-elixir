@@ -4,6 +4,7 @@ import { CourseMap } from "./components/CourseMap";
 import { MessageLab } from "./components/MessageLab";
 import { SiteFooter } from "./components/SiteFooter";
 import { SiteHeader } from "./components/SiteHeader";
+import { basicPaths, basicPathStats } from "./basic-path-data";
 import { courseModules, courseStats, stages } from "./course-data";
 import { getResourceDirectory } from "./resource-data";
 
@@ -12,14 +13,14 @@ export const metadata: Metadata = {
     absolute: "BEAM Path — 学 Erlang 和 Elixir",
   },
   description:
-    "从一段能运行的代码开始。猜结果，改代码，看输出。逐步认识 Erlang、Elixir、BEAM 和 OTP。",
+    "Elixir、Erlang 两条零基础语法路线。从类型和函数开始，再学习 BEAM、进程、OTP 与监督树。",
 };
 
 const pillars = [
   {
     number: "01",
     title: "先跑代码",
-    metric: `${courseStats.stations} 次跑代码`,
+    metric: "每课一段短代码",
     description:
       "每个新概念都有一小段代码，可以放进 IEx 或 erl 运行。页面动画会把消息传递画出来。",
     accent: "blue",
@@ -90,49 +91,49 @@ export default async function Home() {
                 </span>
               </h1>
               <p className="hero-lead">
-                从第一条消息开始。看进程怎样合作，也看它们出错后怎样恢复。
+                先从值、类型和函数开始。语法读顺以后，再看进程怎样合作。
                 <strong>
-                  先猜，再运行。遇到报错，读一读；它常会指出问题在哪。
+                  Elixir 和 Erlang 各有一条从零路线。任选一条，不必一起学。
                 </strong>
               </p>
 
               <div className="route-picker" aria-label="选择学习入口">
                 <Link
                   className="route-card route-card--primary"
-                  href="/learn/install-toolchain"
+                  href="/from-scratch/elixir"
                 >
-                  <span>零基础</span>
-                  <strong>先把本地工具装好</strong>
-                  <small>第 00 站 · Erlang、Elixir 与 Mix</small>
+                  <span>FROM SCRATCH</span>
+                  <strong>Elixir 从零开始</strong>
+                  <small>9 课 · 最后读懂 &amp;1 与管道</small>
                 </Link>
-                <Link className="route-card" href="/learn/elixir-foundations">
-                  <span>已有编程基础</span>
-                  <strong>先用 Elixir 动手</strong>
-                  <small>第 03 站 · 几分钟看到输出</small>
+                <Link className="route-card" href="/from-scratch/erlang">
+                  <span>FROM SCRATCH</span>
+                  <strong>Erlang 从零开始</strong>
+                  <small>9 课 · 从 term 走到模块</small>
                 </Link>
-                <Link className="route-card" href="/learn/otp-behaviours">
-                  <span>已有 Elixir 基础</span>
-                  <strong>看进程怎样合作</strong>
-                  <small>第 07 站 · 认识 OTP 和 behaviour</small>
+                <Link className="route-card" href="/learn/start-line">
+                  <span>已懂基础语法</span>
+                  <strong>进入 BEAM 主线</strong>
+                  <small>进程 · 消息 · OTP · 监督树</small>
                 </Link>
               </div>
 
               <div className="hero-metrics">
                 <div>
-                  <strong>{courseStats.stations}</strong>
-                  <span>学习小站</span>
+                  <strong>{basicPathStats.paths}</strong>
+                  <span>条从零路线</span>
                 </div>
                 <div>
-                  <strong>{courseStats.checkpoints}</strong>
-                  <span>次练习与自查</span>
+                  <strong>{basicPathStats.lessons}</strong>
+                  <span>节基础语法</span>
                 </div>
                 <div>
-                  <strong>3 分钟</strong>
-                  <span>先试玩</span>
+                  <strong>{courseStats.mainlineStations}</strong>
+                  <span>站 BEAM 主线</span>
                 </div>
                 <div>
-                  <strong>2 → 1</strong>
-                  <span>两种语言 · 一个 VM</span>
+                  <strong>{courseStats.optionalReviewStations}</strong>
+                  <span>站可选复习</span>
                 </div>
               </div>
             </div>
@@ -194,6 +195,90 @@ export default async function Home() {
                   <i />
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="learning-paths-section" id="roadmap">
+          <div className="section-shell">
+            <div className="section-heading section-heading--split">
+              <div>
+                <span className="section-kicker">三层学习路线</span>
+                <h2>先认字，再做事</h2>
+              </div>
+              <p>
+                From Scratch 讲两门语言怎样写。进阶讲 BEAM 怎样运行。
+                高级再处理故障、容量和多个节点。
+              </p>
+            </div>
+
+            <div className="learning-tier-grid">
+              <article className="learning-tier learning-tier--scratch">
+                <div className="learning-tier-head">
+                  <span>01</span>
+                  <div>
+                    <small>FROM SCRATCH</small>
+                    <h3>从值和类型开始</h3>
+                  </div>
+                  <b>现在就能学</b>
+                </div>
+                <p>
+                  两门语言分开讲。每条 9 课。先写长形式，再看缩写。
+                  学完任意一条，就能进入 BEAM 主线。
+                </p>
+                <div className="learning-language-links">
+                  {basicPaths.map((path) => (
+                    <Link
+                      className={`learning-language-link learning-language-link--${path.id}`}
+                      href={`/from-scratch/${path.id}`}
+                      key={path.id}
+                    >
+                      <span>{path.language}</span>
+                      <strong>{path.shortTitle}</strong>
+                      <small>{path.lessons.length} 课 · 从 {path.shell} 开始</small>
+                      <b aria-hidden="true">→</b>
+                    </Link>
+                  ))}
+                </div>
+              </article>
+
+              <article className="learning-tier learning-tier--intermediate">
+                <div className="learning-tier-head">
+                  <span>02</span>
+                  <div>
+                    <small>INTERMEDIATE</small>
+                    <h3>让进程合作</h3>
+                  </div>
+                  <b>BEAM 主线</b>
+                </div>
+                <p>
+                  认识进程、mailbox、消息和 OTP。两种语言从这里开始放在一起看。
+                </p>
+                <div className="learning-tier-links">
+                  <Link href="/learn/start-line">起跑线 →</Link>
+                  <Link href="/learn/processes-and-mailboxes">消息与超时 →</Link>
+                  <Link href="/learn/otp-behaviours">OTP 消息章法 →</Link>
+                </div>
+              </article>
+
+              <article className="learning-tier learning-tier--advanced">
+                <div className="learning-tier-head">
+                  <span>03</span>
+                  <div>
+                    <small>ADVANCED</small>
+                    <h3>让系统扛住故障</h3>
+                  </div>
+                  <b>完成主线后</b>
+                </div>
+                <p>
+                  处理监督、背压、节点失联和互操作。最后做一支可靠任务小队。
+                </p>
+                <div className="learning-tier-links">
+                  <Link href="/learn/supervision-trees">监督树 →</Link>
+                  <Link href="/learn/distributed-operations">节点失联 →</Link>
+                  <Link href="/learn/reliable-scheduler">综合练习 →</Link>
+                </div>
+              </article>
             </div>
           </div>
         </section>
@@ -268,37 +353,37 @@ export default async function Home() {
         <section className="bridge-section">
           <div className="section-shell bridge-grid">
             <div className="bridge-copy">
-              <span className="section-kicker">两种语言</span>
-              <h2>先写 Elixir，再读 Erlang</h2>
+              <span className="section-kicker">汇合处</span>
+              <h2>写法不同，骨架相通</h2>
               <p>
-                不必先学完一门，再从头学另一门。先分别熟悉两种写法。
-                到了进程和消息，再把它们放在一起练。
+                学过一门，不必把另一门从头重学。先认出相同的值、模式和函数，
+                再看它们怎样在 BEAM 上使用进程与消息。
               </p>
               <ol className="bridge-steps">
                 <li>
                   <span>1</span>
                   <div>
-                    <strong>Elixir：先写出结果</strong>
-                    <p>模式匹配、多子句函数、Enum、Mix 与 ExUnit。</p>
+                    <strong>拿熟悉的写法当尺子</strong>
+                    <p>先用学过的语言看清数据和函数。</p>
                   </div>
                 </li>
                 <li>
                   <span>2</span>
                   <div>
-                    <strong>Erlang：读另一种写法</strong>
-                    <p>term、模块、binary、递归、Rebar3 与 EUnit。</p>
+                    <strong>对照另一种写法</strong>
+                    <p>找相同的 atom、tuple、模式和模块。</p>
                   </div>
                 </li>
                 <li>
                   <span>3</span>
                   <div>
-                    <strong>BEAM / OTP：让进程合作</strong>
-                    <p>消息、behaviour、监督树、容量与分布式。</p>
+                    <strong>共用一套运行时本领</strong>
+                    <p>进程、消息和监督，从这里一起学。</p>
                   </div>
                 </li>
               </ol>
               <Link className="text-link" href="/learn/shared-semantics">
-                对照两种写法
+                看两种语言怎样对暗号
                 <span aria-hidden="true">→</span>
               </Link>
             </div>
@@ -339,16 +424,18 @@ export default async function Home() {
           </div>
         </section>
 
-        <section className="roadmap-section" id="roadmap">
+        <section className="roadmap-section" id="beam-roadmap">
           <div className="section-shell">
             <div className="section-heading section-heading--split">
               <div>
-                <span className="section-kicker">学习地图</span>
-                <h2>从第一段代码，到可靠系统</h2>
+                <span className="section-kicker">进阶与高级 · BEAM 主线</span>
+                <h2>从进程消息，到可靠系统</h2>
               </div>
               <p>
-                这里有 {courseStats.stations} 站。可以按顺序走，也可以先找眼下想学的内容。
-                每站都有代码、实验和自查。
+                主线有 {courseStats.mainlineStations} 站，另有{" "}
+                {courseStats.optionalReviewStations} 站语言复习。地图会全部列出；
+                可选站不会挡住“下一站”。如果值、模式、函数或模块还陌生，
+                先走上面的 From Scratch 路线。Elixir 和 Erlang 任选一条。
               </p>
             </div>
             <CourseMap modules={courseModules} stages={stages} />

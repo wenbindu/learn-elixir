@@ -4,7 +4,8 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "BEAM Path — 学 Erlang 和 Elixir",
     short_name: "BEAM Path",
-    description: "从一段能运行的代码开始。猜结果，改代码，看输出。逐步认识 Erlang、Elixir、BEAM 和 OTP。",
+    description:
+      "Elixir、Erlang 两条零基础语法路线。从类型和函数开始，再学习 BEAM、进程、OTP 与监督树。",
     start_url: "/",
     display: "standalone",
     background_color: "#07182d",

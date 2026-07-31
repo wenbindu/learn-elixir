@@ -1,13 +1,15 @@
 # BEAM Path
 
-一个中文 Erlang + Elixir 学习站。课程从可运行代码开始，把两门语言放在同一条
-BEAM / OTP 路线上。每章包含简短讲解、双语代码、实验和故障观察。
+一个中文 Erlang + Elixir 学习站。Elixir、Erlang 各有一条独立的零基础语法路线，
+学完任意一条，再汇入 BEAM / OTP 主线。每章包含简短讲解、可运行代码和小练习。
 
 ## 已包含
 
-- 13 个模块、49 个检查点，覆盖安装、入门、语言基础、并发、OTP、监督树、容量、分布式与互操作
+- 2 条 From Scratch 路线、18 节单语基础课，从类型、集合和模式匹配讲到函数、模块与项目
+- 11 站 BEAM 主线、2 站可选语言复习，共 49 个检查点；覆盖安装、并发、OTP、监督树、容量、分布式与互操作
 - macOS、Linux、Windows 三套安装准备，说明 Erlang/OTP、Elixir 的顺序以及 Mix 随 Elixir 提供
-- 首页三条学习入口，以及可搜索、可筛选的课程地图
+- 首页按 From Scratch、进阶、高级分层，并保留可搜索、可筛选的 BEAM 课程地图
+- 专门拆解 `String.trim/1`、`string:trim/1`、arity、`&1`、capture 与管道，不把缩写当作前置知识
 - Elixir / Erlang 双栏代码，以及可复制到 IEx / erl 的章节实验
 - 独立的 Elixir 在线 Playground，内置管道、模式匹配与进程消息练习
 - 可搜索的 Elixir + Erlang 关键字字典，区分严格保留字、特殊形式、宏与声明
@@ -170,19 +172,21 @@ npm test
 npm run lint
 ```
 
-测试会验证首页服务端渲染、三平台安装准备、独立资源目录、关键字完整清单、
-13 个课程故事桥、课程深链接、完整章节模板与品牌图标资产。
+测试会验证首页服务端渲染、18 节 From Scratch 深链接、三平台安装准备、独立资源目录、
+关键字完整清单、11 站主线与 2 站可选复习的故事桥、完整章节模板与品牌图标资产。
 
 ## 主要目录
 
 ```text
 app/
   components/              课程地图、进度、自测、代码复制、并发模拟器
+  from-scratch/            两条零基础路线的总览、单语目录与课程模板
   learn/[slug]/page.tsx    课程模块路由
   keywords/page.tsx        Elixir + Erlang 可搜索关键字字典
   playground/page.tsx      第三方沙箱驱动的 Elixir 在线练习
   resources/page.tsx       Markdown 驱动的关联资源目录
-  course-data.ts           13 个课程模块与三平台安装数据
+  basic-path-data.ts       Elixir / Erlang 共 18 节基础课数据
+  course-data.ts           11 站主线、2 站可选复习与三平台安装数据
   resource-data.ts         资源配置解析与构建时校验
   page.tsx                 首页
   globals.css              响应式设计系统

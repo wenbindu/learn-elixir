@@ -23,7 +23,9 @@ export function SiteFooter() {
         <div className="footer-links">
           <div>
             <span>继续学习</span>
-            <Link href="/learn/install-toolchain">从零开始</Link>
+            <Link href="/from-scratch/elixir">Elixir 从零</Link>
+            <Link href="/from-scratch/erlang">Erlang 从零</Link>
+            <Link href="/learn/start-line">BEAM 起跑线</Link>
             <Link href="/learn/processes-and-mailboxes">消息实验</Link>
             <Link href="/playground">在线写代码</Link>
             <Link href="/keywords">关键字字典</Link>

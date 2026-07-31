@@ -5,7 +5,7 @@ import "./globals.css";
 
 const siteTitle = "BEAM Path — 学 Erlang 和 Elixir";
 const siteDescription =
-  "从一段能运行的代码开始。猜结果，改代码，看输出。逐步认识 Erlang、Elixir、BEAM 和 OTP。";
+  "Elixir、Erlang 两条零基础语法路线。从类型和函数开始，再学习 BEAM、进程、OTP 与监督树。";
 const deploymentHost =
   process.env.NEXT_PUBLIC_SITE_URL ??
   process.env.VERCEL_PROJECT_PRODUCTION_URL ??
@@ -27,6 +27,8 @@ export const metadata: Metadata = {
   keywords: [
     "Elixir 教程",
     "Erlang 教程",
+    "Elixir 基础语法",
+    "Erlang 基础语法",
     "BEAM",
     "OTP",
     "GenServer",

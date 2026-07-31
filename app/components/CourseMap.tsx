@@ -80,7 +80,13 @@ export function CourseMap({ modules, stages }: CourseMapProps) {
     });
   }, [filter, modules, query]);
 
-  const percent = Math.round((completed.length / modules.length) * 100);
+  const mainlineModules = modules.filter((module) => !module.optionalReview);
+  const completedMainline = mainlineModules.filter((module) =>
+    completed.includes(module.slug),
+  );
+  const percent = Math.round(
+    (completedMainline.length / mainlineModules.length) * 100,
+  );
 
   function exportProgress() {
     const payload = {
@@ -156,9 +162,9 @@ export function CourseMap({ modules, stages }: CourseMapProps) {
 
       <div className="progress-panel">
         <div>
-          <span>你已经走到这里</span>
+          <span>主线进度 · 可选复习不计入</span>
           <strong>
-            {completed.length} / {modules.length} 个小站
+            {completedMainline.length} / {mainlineModules.length} 个主线小站
           </strong>
         </div>
         <div className="progress-track" aria-label={`课程进度 ${percent}%`}>
@@ -212,6 +218,9 @@ export function CourseMap({ modules, stages }: CourseMapProps) {
                     <div className="module-card-top">
                       <span className="module-number">{module.number}</span>
                       <div className="module-badges">
+                        {module.optionalReview ? (
+                          <span className="optional-review-badge">可选复习</span>
+                        ) : null}
                         {module.languages.map((language) => (
                           <span key={language}>{language}</span>
                         ))}

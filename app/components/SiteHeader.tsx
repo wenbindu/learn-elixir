@@ -26,14 +26,15 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
         </Link>
 
         <nav className="main-nav" aria-label="主导航">
-          <Link href="/#roadmap">学习路径</Link>
+          <Link href="/from-scratch">从零学</Link>
+          <Link href="/#beam-roadmap">BEAM 主线</Link>
           <Link href="/#lab">消息实验</Link>
           <Link href="/playground">在线练习</Link>
           <Link href="/keywords">关键字字典</Link>
           <Link href="/resources">学习工具箱</Link>
         </nav>
 
-        <Link className="header-cta" href="/learn/install-toolchain">
+        <Link className="header-cta" href="/from-scratch">
           开始学习
           <span aria-hidden="true">→</span>
         </Link>

@@ -16,6 +16,7 @@ export type CourseModule = {
   lessons: number;
   level: string;
   languages: string[];
+  optionalReview?: boolean;
   why: string;
   storyBridge: {
     label: string;
@@ -236,7 +237,7 @@ elixir --version
 mix --version`,
           commandLabel: "Ubuntu 安装与检查",
           note:
-            "两条 `export` 都只对当前终端生效，确认成功后要把两条都写进自己的 shell 配置。按当前官方入门指南，至少核对到 Elixir 1.18 与 OTP 27；Debian 12 默认包通常不足。Debian 13 可用 `sudo apt install erlang elixir`；Fedora 用 `sudo dnf install elixir erlang`；Arch 用 `sudo pacman -S erlang elixir`。不要混用几套路线。",
+            "两条 `export` 都只对当前终端生效，确认成功后要把两条都写进自己的 shell 配置。发行版仓库中的 Erlang 与 Elixir 可能比官网慢几个版本。若只想先体验，可以使用仓库提供的版本；若课程或项目要求指定版本，请使用上方官方脚本，或从 Elixir 官方页选择版本管理器。不要把脚本、系统仓库和版本管理器混在同一套安装里。",
           links: [
             {
               label: "Elixir 官方 Linux 说明",
@@ -411,7 +412,7 @@ mix help`,
     ],
     prerequisites: [
       "已走完安装准备，终端能找到 `erl`、`elixir` 和 `mix`",
-      "知道变量和函数大致是什么；说不清楚也可以边做边认识",
+      "已经走完任意一条 From Scratch 路线；如果值、模式、函数或模块还陌生，先回去补基础",
     ],
     concepts: [
       {
@@ -689,6 +690,7 @@ send(pid, {:add, 1}); send(pid, {:add, 2}); send(pid, {:add, 3})`,
     slug: "elixir-foundations",
     stage: "languages",
     stageLabel: "语言",
+    optionalReview: true,
     title: "Elixir 数据流水线",
     subtitle: "先修剪，再筛选，再分类；每个小函数只做好一件事。",
     summary: "整理一份带空行和多余空格的日志，并为每一步写测试。",
@@ -839,6 +841,7 @@ mix test --trace`,
     slug: "erlang-foundations",
     stage: "languages",
     stageLabel: "语言",
+    optionalReview: true,
     title: "读懂 Erlang",
     subtitle: "从大小写开始，再读懂逗号、分号和句点给出的路标。",
     summary: "用 Erlang 重做日志工具，并让两种实现通过同一组样例。",
@@ -1001,7 +1004,7 @@ rebar3 eunit`,
       "能用 spec 写下双方约定的数据形状，再用测试检查约定有没有走样",
     ],
     prerequisites: [
-      "完成 Elixir 与 Erlang 基础，并能读懂两边的简单函数",
+      "完成任意一条 From Scratch 基础路线；另一种语言可以边对照边读",
       "会给同样的输入检查同样的输出",
     ],
     concepts: [
@@ -2135,12 +2138,19 @@ mix test --only fault_injection --trace`,
   },
 ];
 
+export const recommendedCourseModules = courseModules.filter(
+  (courseModule) => !courseModule.optionalReview,
+);
+
 export const courseStats = {
   stations: courseModules.length,
   checkpoints: courseModules.reduce(
     (total, courseModule) => total + courseModule.lessons,
     0,
   ),
+  mainlineStations: recommendedCourseModules.length,
+  optionalReviewStations:
+    courseModules.length - recommendedCourseModules.length,
 };
 
 export function getModule(slug: string) {
@@ -2149,11 +2159,17 @@ export function getModule(slug: string) {
 
 export function getAdjacentModules(slug: string) {
   const index = courseModules.findIndex((module) => module.slug === slug);
+  if (index < 0) {
+    return { previous: undefined, next: undefined };
+  }
+
   return {
-    previous: index > 0 ? courseModules[index - 1] : undefined,
-    next:
-      index >= 0 && index < courseModules.length - 1
-        ? courseModules[index + 1]
-        : undefined,
+    previous: courseModules
+      .slice(0, index)
+      .reverse()
+      .find((courseModule) => !courseModule.optionalReview),
+    next: courseModules
+      .slice(index + 1)
+      .find((courseModule) => !courseModule.optionalReview),
   };
 }
