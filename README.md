@@ -1,6 +1,6 @@
 # BEAM Path
 
-一个中文 Erlang + Elixir 学习站。Elixir、Erlang 各有一条独立的零基础语法路线，
+一个中英双语的 Erlang + Elixir 学习站。Elixir、Erlang 各有一条独立的零基础语法路线，
 学完任意一条，再汇入 BEAM / OTP 主线。每章包含简短讲解、可运行代码和小练习。
 
 ## 已包含
@@ -10,6 +10,7 @@
 - macOS、Linux、Windows 三套安装准备，说明 Erlang/OTP、Elixir 的顺序以及 Mix 随 Elixir 提供
 - 首页按 From Scratch、进阶、高级分层，并保留可搜索、可筛选的 BEAM 课程地图
 - 右上角用紧凑开关切换浅色与深色主题，并在本机保存选择
+- 中文、英文使用明确的 `/zh`、`/en` URL 前缀；语言切换会保留当前页面、查询参数和锚点
 - 专门拆解 `String.trim/1`、`string:trim/1`、arity、`&1`、capture 与管道，不把缩写当作前置知识
 - Elixir / Erlang 双栏代码，以及可复制到 IEx / erl 的章节实验
 - 独立的 Elixir 在线 Playground，内置管道、模式匹配与进程消息练习
@@ -56,14 +57,36 @@
 ./scripts/start-local.sh foreground
 ```
 
-脚本会在依赖缺失时自动执行 `npm ci`，随后启动带热更新的 Next.js 开发服务器。
-默认地址是 <http://127.0.0.1:3000>。监听地址和端口保存在
+脚本会在依赖缺失时自动执行 `npm ci`，随后用 Webpack 启动带热更新的 Next.js
+开发服务器，避免 Turbopack 在路由目录重构后进入重复编译。这个设置只影响本地开发；
+Vercel 生产构建仍使用 Next.js 默认构建流程。
+默认地址是 <http://127.0.0.1:3000>。本地没有 Vercel 地理位置请求头，访问根路径 `/`
+会跳到英文首页 <http://127.0.0.1:3000/en>；中文首页是
+<http://127.0.0.1:3000/zh>。监听地址和端口保存在
 [`config/local.env`](config/local.env)，修改后执行 `restart` 即可。
+
+## 语言 URL 与自动跳转
+
+所有可分享页面都有固定语言前缀，例如：
+
+- 中文：`/zh/from-scratch/elixir`、`/zh/learn/start-line`
+- 英文：`/en/from-scratch/elixir`、`/en/learn/start-line`
+
+访问没有语言前缀的路径时，站点按以下顺序选择语言并跳转：
+
+1. 若浏览器已有 `beam-path-locale` 语言 cookie，优先使用该选择。
+2. 否则读取 Vercel 提供的 `x-vercel-ip-country` 国家或地区代码。
+3. `CN`、`HK`、`MO`、`TW` 跳到中文；其他地区或无法判断时跳到英文。
+
+右上角语言选择器会写入 cookie，并把当前路径换成另一种语言；查询参数和 `#` 锚点也会
+保留。已经带 `/zh` 或 `/en` 的地址不会再按地区改写，便于收藏和分享。
 
 ## 添加关联资源
 
-资源只在 [`content/resources.md`](content/resources.md) 中维护。
-[`/resources`](http://127.0.0.1:3000/resources) 页面和首页常用入口都读取该文件，
+中文资源在 [`content/resources.md`](content/resources.md) 中维护，英文资源在
+[`content/resources.en.md`](content/resources.en.md) 中维护。
+[`/zh/resources`](http://127.0.0.1:3000/zh/resources) 与
+[`/en/resources`](http://127.0.0.1:3000/en/resources) 页面和各自首页入口会读取对应文件，
 无需修改 React 代码。
 
 在对应的 `## 分类` 下增加一行：
@@ -115,14 +138,16 @@
    Output Directory: 默认
    ```
 
-4. 当前站点没有必需的环境变量，直接点击 **Deploy** 即可。
+4. 当前站点没有必需的环境变量；语言识别使用 Vercel 自动提供的请求头，直接点击
+   **Deploy** 即可。
 5. 先使用 Vercel 自动分配的 `*.vercel.app` 地址验收；确认正常后，再到
    **Project → Settings → Domains** 添加正式域名。
 
 Vercel 会为分支和 Pull Request 创建 Preview Deployment，`main` 分支用于生产部署。
 根布局已经挂载 `@vercel/analytics` 和 `@vercel/speed-insights`；部署完成后可在
 Vercel Project 的 Analytics 与 Speed Insights 页面查看数据。
-如果希望 Open Graph 链接始终使用指定域名，可选地配置：
+Vercel 会自动提供生产域名变量，正常部署不需要另加环境变量。如果确实需要覆盖
+Open Graph、sitemap 与 robots 使用的站点地址，可以选配：
 
 ```text
 NEXT_PUBLIC_SITE_URL=https://你的域名
@@ -154,7 +179,7 @@ npx vercel@latest deploy --prod
 npx vercel@latest env ls
 npx vercel@latest env pull .env.local
 
-# 添加环境变量
+# 可选：覆盖 metadata、sitemap 与 robots 使用的站点地址
 npx vercel@latest env add NEXT_PUBLIC_SITE_URL production
 
 # 添加或检查域名
@@ -173,26 +198,32 @@ npm test
 npm run lint
 ```
 
-测试会验证首页服务端渲染、18 节 From Scratch 深链接、三平台安装准备、独立资源目录、
-关键字完整清单、11 站主线与 2 站可选复习的故事桥、完整章节模板与品牌图标资产。
+测试会验证中英文首页与深链接、18 节 From Scratch 课程、三平台安装准备、独立资源目录、
+关键字完整清单、11 站主线与 2 站可选复习、语言跳转、metadata 与品牌图标资产。
 
 ## 主要目录
 
 ```text
 app/
   components/              课程地图、进度、自测、代码复制、并发模拟器
-  from-scratch/            两条零基础路线的总览、单语目录与课程模板
-  learn/[slug]/page.tsx    课程模块路由
-  keywords/page.tsx        Elixir + Erlang 可搜索关键字字典
-  playground/page.tsx      第三方沙箱驱动的 Elixir 在线练习
-  resources/page.tsx       Markdown 驱动的关联资源目录
+  [locale]/                /zh 与 /en 的页面布局和路由
+    from-scratch/          两条零基础路线的总览、单语目录与课程模板
+    learn/[slug]/page.tsx  课程模块路由
+    keywords/page.tsx      Elixir + Erlang 可搜索关键字字典
+    playground/page.tsx    第三方沙箱驱动的 Elixir 在线练习
+    resources/page.tsx     Markdown 驱动的关联资源目录
+    page.tsx               本地化首页
+  i18n/                    语言、英文课程数据与 metadata 工具
   basic-path-data.ts       Elixir / Erlang 共 18 节基础课数据
   course-data.ts           11 站主线、2 站可选复习与三平台安装数据
   resource-data.ts         资源配置解析与构建时校验
-  page.tsx                 首页
+  manifest.ts              中性英文默认 PWA manifest
+  sitemap.ts               中英文 URL 与 hreflang 对照
+  robots.ts                爬虫规则与 sitemap 地址
   globals.css              响应式设计系统
 content/
-  resources.md             关联资源的唯一维护入口
+  resources.md             中文关联资源
+  resources.en.md          英文关联资源
 public/
   brand-icon.png           原始品牌图标
   favicon.ico              Chrome favicon
@@ -200,6 +231,7 @@ config/
   local.env                本地监听地址与端口
 scripts/
   start-local.sh           本地开发启动脚本
+proxy.ts                   根路径语言识别与重定向
 tests/
   rendered-html.test.mjs   SSR 与需求回归测试
 docs/

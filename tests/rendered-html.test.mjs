@@ -45,10 +45,40 @@ after(async () => {
   if (app) await app.close();
 });
 
-async function render(pathname = "/") {
+async function render(pathname = "/en", options = {}) {
+  const headers = new Headers(options.headers);
+  if (!headers.has("accept")) headers.set("accept", "text/html");
+
   return fetch(new URL(pathname, origin), {
-    headers: { accept: "text/html" },
+    redirect: "manual",
+    ...options,
+    headers,
   });
+}
+
+function mainMarkup(html) {
+  const main = html.match(/<main\b[\s\S]*?<\/main>/i)?.[0];
+  assert.ok(main, "page includes a main landmark");
+  return main;
+}
+
+function assertEnglishMain(html, pathname) {
+  assert.match(html, /<html[^>]*lang="en"/i, pathname);
+  assert.doesNotMatch(
+    mainMarkup(html),
+    /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/u,
+    `${pathname} main content should not contain Chinese text`,
+  );
+}
+
+function assertRedirectLocation(response, expectedPath, message) {
+  const location = response.headers.get("location");
+  assert.ok(location, `${message ?? expectedPath} has a Location header`);
+  assert.equal(
+    new URL(location, origin).href,
+    new URL(expectedPath, origin).href,
+    message,
+  );
 }
 
 const lessonSlugs = [
@@ -101,8 +131,68 @@ test("keeps both From Scratch paths complete and independent", () => {
   }
 });
 
+test("redirects unprefixed routes by locale cookie, country, then English fallback", async () => {
+  for (const country of ["CN", "HK", "MO", "TW"]) {
+    const response = await render("/", {
+      headers: { "x-vercel-ip-country": country },
+    });
+    assert.equal(response.status, 307, country);
+    assertRedirectLocation(response, "/zh", country);
+  }
+
+  for (const country of ["US", "SG"]) {
+    const response = await render("/", {
+      headers: { "x-vercel-ip-country": country },
+    });
+    assert.equal(response.status, 307, country);
+    assertRedirectLocation(response, "/en", country);
+  }
+
+  const unknown = await render("/");
+  assert.equal(unknown.status, 307);
+  assertRedirectLocation(unknown, "/en", "unknown country");
+
+  const cookieWins = await render("/learn/start-line", {
+    headers: {
+      cookie: "beam-path-locale=en",
+      "x-vercel-ip-country": "CN",
+    },
+  });
+  assert.equal(cookieWins.status, 307);
+  assertRedirectLocation(cookieWins, "/en/learn/start-line", "English cookie");
+
+  const ChineseCookieWins = await render("/resources", {
+    headers: {
+      cookie: "beam-path-locale=zh",
+      "x-vercel-ip-country": "US",
+    },
+  });
+  assert.equal(ChineseCookieWins.status, 307);
+  assertRedirectLocation(ChineseCookieWins, "/zh/resources", "Chinese cookie");
+
+  const query = await render("/keywords?q=receive&kind=reserved", {
+    headers: { "x-vercel-ip-country": "TW" },
+  });
+  assert.equal(query.status, 307);
+  assertRedirectLocation(
+    query,
+    "/zh/keywords?q=receive&kind=reserved",
+    "query string",
+  );
+});
+
+test("serves explicit locale URLs without redirecting", async () => {
+  for (const pathname of ["/zh", "/en", "/zh/resources", "/en/resources"]) {
+    const response = await render(pathname, {
+      headers: { "x-vercel-ip-country": pathname.startsWith("/zh") ? "US" : "CN" },
+    });
+    assert.equal(response.status, 200, pathname);
+    assert.equal(response.headers.get("location"), null, pathname);
+  }
+});
+
 test("server-renders the complete Chinese tutorial homepage", async () => {
-  const response = await render("/");
+  const response = await render("/zh");
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
@@ -148,18 +238,108 @@ test("server-renders the complete Chinese tutorial homepage", async () => {
     html,
     /<meta(?=[^>]*property="og:image")(?=[^>]*content="https?:\/\/[^"]+\/og\.png")[^>]*>/i,
   );
-  assert.match(html, /href="\/from-scratch\/elixir"/);
-  assert.match(html, /href="\/from-scratch\/erlang"/);
-  assert.match(html, /href="\/learn\/start-line"/);
-  assert.match(html, /href="\/learn\/shared-semantics"/);
+  assert.match(html, /href="\/zh\/from-scratch\/elixir"/);
+  assert.match(html, /href="\/zh\/from-scratch\/erlang"/);
+  assert.match(html, /href="\/zh\/learn\/start-line"/);
+  assert.match(html, /href="\/zh\/learn\/shared-semantics"/);
   assert.match(html, /写法不同，骨架相通/);
   assert.match(html, /class="optional-review-badge">可选复习/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
   assert.doesNotMatch(html, /Your site is taking shape|Starter Project/i);
 });
 
+test("server-renders the English homepage and keeps internal navigation in English", async () => {
+  const response = await render("/en");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+
+  assertEnglishMain(html, "/en");
+  assert.match(html, /<title>BEAM Path — Learn Erlang and Elixir<\/title>/i);
+  assert.match(html, /Learn by doing/);
+  assert.match(html, /Different syntax\. Shared bones\./);
+  assert.match(html, /Guess first\. Then run the code\./);
+  assert.match(html, /href="\/en\/from-scratch\/elixir"/);
+  assert.match(html, /href="\/en\/from-scratch\/erlang"/);
+  assert.match(html, /href="\/en\/learn\/start-line"/);
+  assert.match(html, /href="\/en\/resources"/);
+  assert.doesNotMatch(
+    html,
+    /href="\/(?:from-scratch|learn|resources|keywords|playground)(?:\/|"|#)/,
+  );
+});
+
+test("renders representative English learning and reference pages", async () => {
+  const pages = [
+    {
+      pathname: "/en/from-scratch/elixir/values-and-types",
+      phrases: [
+        /Meet six kinds of values/,
+        /One job for this lesson/,
+        /Guess, then run/,
+        /Remember these three lines/,
+      ],
+      href: /href="\/en\/from-scratch\/elixir\/collections"/,
+    },
+    {
+      pathname: "/en/learn/processes-and-mailboxes",
+      phrases: [
+        /Messages and timeouts/,
+        /Why this station matters/,
+        /One job, two ways to write it/,
+        /Remember three things/,
+      ],
+      href: /href="\/en\/learn\/otp-behaviours"/,
+    },
+    {
+      pathname: "/en/keywords",
+      phrases: [
+        /Not sure what it means\?/,
+        /Searchable dictionary/,
+        /Strictly reserved words/,
+        /A keyword list is not a list of reserved words/,
+      ],
+      href: /href="\/en\/playground"/,
+    },
+    {
+      pathname: "/en/playground",
+      phrases: [
+        /Write a little\./,
+        /Run it now\./,
+        /Codapi runs this code/,
+        /Install local tools/,
+      ],
+      href: /href="\/en\/learn\/install-toolchain"/,
+    },
+    {
+      pathname: "/en/resources",
+      phrases: [
+        /Need a source\?/,
+        /Searchable directory/,
+        /Choose a source for the problem/,
+        /Open the install guide/,
+      ],
+      href: /href="\/en\/learn\/install-toolchain"/,
+    },
+  ];
+
+  for (const page of pages) {
+    const response = await render(page.pathname);
+    assert.equal(response.status, 200, page.pathname);
+    const html = await response.text();
+
+    assertEnglishMain(html, page.pathname);
+    for (const phrase of page.phrases) assert.match(html, phrase, page.pathname);
+    assert.match(html, page.href, page.pathname);
+    assert.doesNotMatch(
+      html,
+      /href="\/(?:from-scratch|learn|resources|keywords|playground)(?:\/|"|#)/,
+      `${page.pathname} contains an unlocalized internal link`,
+    );
+  }
+});
+
 test("renders a compact accessible light and dark theme switch", async () => {
-  for (const pathname of ["/", "/learn/start-line"]) {
+  for (const pathname of ["/zh", "/zh/learn/start-line"]) {
     const response = await render(pathname);
     assert.equal(response.status, 200, pathname);
     const html = await response.text();
@@ -179,8 +359,94 @@ test("renders a compact accessible light and dark theme switch", async () => {
   }
 });
 
+test("renders an accessible language selector and preserves the current location", async () => {
+  for (const [pathname, label, selected] of [
+    ["/zh/learn/start-line", "选择网站语言", "zh"],
+    ["/en/learn/start-line", "Choose site language", "en"],
+  ]) {
+    const response = await render(pathname);
+    assert.equal(response.status, 200, pathname);
+    const html = await response.text();
+
+    assert.match(
+      html,
+      new RegExp(`<select(?=[^>]*aria-label="${label}")[^>]*>`),
+      pathname,
+    );
+    assert.match(html, /<option value="zh"[^>]*>中文<\/option>/, pathname);
+    assert.match(
+      html,
+      /<option value="en"[^>]*>(?:EN|English)<\/option>/,
+      pathname,
+    );
+    assert.match(
+      html,
+      new RegExp(`<option value="${selected}"[^>]*selected=""`),
+      pathname,
+    );
+  }
+
+  const [switcherSource, localesSource] = await Promise.all([
+    readFile(new URL("../app/components/LocaleSwitcher.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/i18n/locales.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(switcherSource, /localeCookieName/);
+  assert.match(switcherSource, /Max-Age=31536000/);
+  assert.match(switcherSource, /SameSite=Lax/);
+  assert.match(switcherSource, /localePathname\(window\.location\.pathname/);
+  assert.match(switcherSource, /window\.location\.search/);
+  assert.match(switcherSource, /window\.location\.hash/);
+  assert.match(localesSource, /segments\[1\] = locale/);
+  assert.match(localesSource, /localeCookieName = "beam-path-locale"/);
+});
+
+test("publishes canonical and language-alternate links for both locales", async () => {
+  for (const { pathname, localizedPath, defaultPath } of [
+    { pathname: "/zh", localizedPath: "/zh", defaultPath: "/" },
+    { pathname: "/en", localizedPath: "/en", defaultPath: "/" },
+    {
+      pathname: "/zh/learn/start-line",
+      localizedPath: "/zh/learn/start-line",
+      defaultPath: "/learn/start-line",
+    },
+    {
+      pathname: "/en/learn/start-line",
+      localizedPath: "/en/learn/start-line",
+      defaultPath: "/learn/start-line",
+    },
+  ]) {
+    const response = await render(pathname);
+    assert.equal(response.status, 200, pathname);
+    const html = await response.text();
+    const escapedLocalizedPath = localizedPath.replaceAll("/", "\\/");
+    const escapedDefaultPath = defaultPath.replaceAll("/", "\\/");
+    const unprefixed = defaultPath === "/" ? "" : escapedDefaultPath;
+
+    assert.match(
+      html,
+      new RegExp(`<link(?=[^>]*rel="canonical")(?=[^>]*href="https?:\\/\\/[^\"]+${escapedLocalizedPath}")[^>]*>`),
+      `${pathname} canonical`,
+    );
+    for (const [language, path] of [
+      ["zh-CN", `/zh${unprefixed}`],
+      ["en", `/en${unprefixed}`],
+      [
+        "x-default",
+        escapedDefaultPath === "\\/" ? "\\/?" : escapedDefaultPath,
+      ],
+    ]) {
+      assert.match(
+        html,
+        new RegExp(`<link(?=[^>]*rel="alternate")(?=[^>]*hrefLang="${language}"|[^>]*hreflang="${language}")(?=[^>]*href="https?:\\/\\/[^\"]+${path}")[^>]*>`, "i"),
+        `${pathname} ${language}`,
+      );
+    }
+  }
+});
+
 test("renders two independent From Scratch path overviews", async () => {
-  const overviewResponse = await render("/from-scratch");
+  const overviewResponse = await render("/zh/from-scratch");
   assert.equal(overviewResponse.status, 200);
   const overview = await overviewResponse.text();
 
@@ -190,13 +456,13 @@ test("renders two independent From Scratch path overviews", async () => {
   assert.match(overview, /2<\/strong><span>条独立路线/);
   assert.match(overview, /18<\/strong><span>节基础课/);
   assert.match(overview, /第 0 步：安装 Erlang \/ Elixir \/ Mix/);
-  assert.match(overview, /href="\/learn\/install-toolchain"/);
-  assert.match(overview, /href="\/from-scratch\/elixir"/);
-  assert.match(overview, /href="\/from-scratch\/erlang"/);
-  assert.match(overview, /href="\/learn\/start-line"/);
+  assert.match(overview, /href="\/zh\/learn\/install-toolchain"/);
+  assert.match(overview, /href="\/zh\/from-scratch\/elixir"/);
+  assert.match(overview, /href="\/zh\/from-scratch\/erlang"/);
+  assert.match(overview, /href="\/zh\/learn\/start-line"/);
 
   for (const [language, slugs] of Object.entries(basicLessonSlugs)) {
-    const response = await render(`/from-scratch/${language}`);
+    const response = await render(`/zh/from-scratch/${language}`);
     assert.equal(response.status, 200, language);
     const html = await response.text();
 
@@ -207,7 +473,7 @@ test("renders two independent From Scratch path overviews", async () => {
     for (const slug of slugs) {
       assert.match(
         html,
-        new RegExp(`href="\\/from-scratch\\/${language}\\/${slug}"`),
+        new RegExp(`href="\\/zh\\/from-scratch\\/${language}\\/${slug}"`),
       );
     }
   }
@@ -216,7 +482,7 @@ test("renders two independent From Scratch path overviews", async () => {
 test("renders all 18 beginner lessons with the slow-reading template", async () => {
   for (const [language, slugs] of Object.entries(basicLessonSlugs)) {
     for (const slug of slugs) {
-      const response = await render(`/from-scratch/${language}/${slug}`);
+      const response = await render(`/zh/from-scratch/${language}/${slug}`);
       assert.equal(response.status, 200, `${language}/${slug}`);
       const html = await response.text();
 
@@ -238,14 +504,14 @@ test("renders all 18 beginner lessons with the slow-reading template", async () 
     }
   }
 
-  const badLanguage = await render("/from-scratch/ruby");
+  const badLanguage = await render("/zh/from-scratch/ruby");
   assert.equal(badLanguage.status, 404);
-  const badLesson = await render("/from-scratch/elixir/not-a-lesson");
+  const badLesson = await render("/zh/from-scratch/elixir/not-a-lesson");
   assert.equal(badLesson.status, 404);
 });
 
 test("keeps Elixir lesson two readable as six distinct value groups", async () => {
-  const response = await render("/from-scratch/elixir/values-and-types");
+  const response = await render("/zh/from-scratch/elixir/values-and-types");
   assert.equal(response.status, 200);
   const html = await response.text();
 
@@ -267,13 +533,13 @@ test("keeps Elixir lesson two readable as six distinct value groups", async () =
 
 test("explains arity, trim and capture shorthand before using them as magic", async () => {
   const elixirChoices = await (
-    await render("/from-scratch/elixir/choices-and-guards")
+    await render("/zh/from-scratch/elixir/choices-and-guards")
   ).text();
   assert.match(elixirChoices, /打开分支块/);
   assert.match(elixirChoices, /结束整个 <code[^>]*>case<\/code>/);
 
   const elixirFunctions = await (
-    await render("/from-scratch/elixir/functions-and-arity")
+    await render("/zh/from-scratch/elixir/functions-and-arity")
   ).text();
   assert.match(elixirFunctions, /String\.trim\/1/);
   assert.match(elixirFunctions, /String\.trim\(text\)/);
@@ -284,7 +550,7 @@ test("explains arity, trim and capture shorthand before using them as magic", as
   assert.match(elixirFunctions, /把花括号中表达式的结果放进字符串/);
 
   const elixirCapture = await (
-    await render("/from-scratch/elixir/capture-enum-pipe")
+    await render("/zh/from-scratch/elixir/capture-enum-pipe")
   ).text();
   assert.match(elixirCapture, /不是一个独立变量/);
   assert.match(elixirCapture, /fn number -&gt; number \* 2 end/);
@@ -293,7 +559,7 @@ test("explains arity, trim and capture shorthand before using them as magic", as
   assert.match(elixirCapture, /管道把左边结果放到右边的第一个参数/);
 
   const erlangFunctions = await (
-    await render("/from-scratch/erlang/functions-and-arity")
+    await render("/zh/from-scratch/erlang/functions-and-arity")
   ).text();
   assert.match(erlangFunctions, /string:trim\/1/);
   assert.match(erlangFunctions, /string:trim\(Text\)/);
@@ -301,13 +567,13 @@ test("explains arity, trim and capture shorthand before using them as magic", as
   assert.match(erlangFunctions, /冒号连接模块与函数/);
 
   const erlangText = await (
-    await render("/from-scratch/erlang/text-and-binaries")
+    await render("/zh/from-scratch/erlang/text-and-binaries")
   ).text();
   assert.match(erlangText, /得到 <code[^>]*>6<\/code>/);
   assert.match(erlangText, /6 个字节，不是 2 个汉字/);
 
   const erlangRecursion = await (
-    await render("/from-scratch/erlang/recursion")
+    await render("/zh/from-scratch/erlang/recursion")
   ).text();
   assert.match(erlangRecursion, /fun Loop\(\[\]\) -&gt;/);
   assert.match(erlangRecursion, /Double\(\[1, 2, 3\]\)/);
@@ -315,7 +581,7 @@ test("explains arity, trim and capture shorthand before using them as magic", as
 });
 
 test("homepage previews requested resources and links to the full directory", async () => {
-  const response = await render("/");
+  const response = await render("/zh");
   const html = await response.text();
 
   for (const href of [
@@ -330,12 +596,12 @@ test("homepage previews requested resources and links to the full directory", as
   assert.match(html, /HexDocs/);
   assert.match(html, /Erlang Forums/);
   assert.match(html, /Exercism/);
-  assert.match(html, /href="\/resources"/);
+  assert.match(html, /href="\/zh\/resources"/);
   assert.match(html, /打开学习工具箱/);
 });
 
 test("renders the Markdown-driven resource directory", async () => {
-  const response = await render("/resources");
+  const response = await render("/zh/resources");
   assert.equal(response.status, 200);
 
   const html = await response.text();
@@ -373,12 +639,12 @@ test("renders the Markdown-driven resource directory", async () => {
     ).length,
     14,
   );
-  assert.match(html, /href="\/learn\/install-toolchain"/);
+  assert.match(html, /href="\/zh\/learn\/install-toolchain"/);
   assert.match(html, /打开安装准备/);
 });
 
 test("renders a shareable lesson route with the full teaching template", async () => {
-  const response = await render("/learn/processes-and-mailboxes");
+  const response = await render("/zh/learn/processes-and-mailboxes");
   assert.equal(response.status, 200);
 
   const html = await response.text();
@@ -400,13 +666,13 @@ test("renders a shareable lesson route with the full teaching template", async (
   assert.ok(html.indexOf("标记完成") > html.indexOf("去看原版资料"));
   assert.match(html, /发出请求前，先生成本次调用专用的 reference/);
   assert.match(html, /只接收带有同一 reference 的回复/);
-  assert.match(html, /href="\/learn\/otp-behaviours"/);
+  assert.match(html, /href="\/zh\/learn\/otp-behaviours"/);
 });
 
 test("gives every lesson a story bridge with an explicit analogy boundary", async () => {
   const pages = await Promise.all(
     lessonSlugs.map(async (slug) => {
-      const response = await render(`/learn/${slug}`);
+      const response = await render(`/zh/learn/${slug}`);
       assert.equal(response.status, 200, slug);
       return response.text();
     }),
@@ -439,7 +705,7 @@ test("gives every lesson a story bridge with an explicit analogy boundary", asyn
 });
 
 test("start line introduces Mix as a project build tool", async () => {
-  const response = await render("/learn/start-line");
+  const response = await render("/zh/learn/start-line");
   assert.equal(response.status, 200);
 
   const html = await response.text();
@@ -449,11 +715,11 @@ test("start line introduces Mix as a project build tool", async () => {
   assert.match(html, /mix new beam_probe/);
   assert.match(html, /mix test/);
   assert.match(html, /Mix 不等于 BEAM、OTP 或 Hex/);
-  assert.match(html, /href="\/learn\/install-toolchain"/);
+  assert.match(html, /href="\/zh\/learn\/install-toolchain"/);
   assert.match(html, /值、模式、函数(?:或|和)模块还陌生/);
   assert.doesNotMatch(html, /看到 <code>\/1<\/code>、<code>&amp;1<\/code>/);
-  assert.match(html, /href="\/from-scratch\/elixir"/);
-  assert.match(html, /href="\/from-scratch\/erlang"/);
+  assert.match(html, /href="\/zh\/from-scratch\/elixir"/);
+  assert.match(html, /href="\/zh\/from-scratch\/erlang"/);
   assert.match(
     html,
     /https:\/\/hexdocs\.pm\/elixir\/introduction-to-mix\.html/,
@@ -485,7 +751,7 @@ test("recommended BEAM navigation skips optional language reviews", async () => 
   ];
 
   for (const item of cases) {
-    const response = await render(`/learn/${item.slug}`);
+    const response = await render(`/zh/learn/${item.slug}`);
     assert.equal(response.status, 200, item.slug);
     const html = await response.text();
     const pagination = html.match(
@@ -495,25 +761,25 @@ test("recommended BEAM navigation skips optional language reviews", async () => 
     assert.ok(pagination, `${item.slug} pagination`);
     assert.match(
       pagination,
-      new RegExp(`href="\\/learn\\/${item.previous}"`),
+      new RegExp(`href="\\/zh\\/learn\\/${item.previous}"`),
       `${item.slug} previous`,
     );
     assert.match(
       pagination,
-      new RegExp(`href="\\/learn\\/${item.next}"`),
+      new RegExp(`href="\\/zh\\/learn\\/${item.next}"`),
       `${item.slug} next`,
     );
   }
 
   const optionalReview = await (
-    await render("/learn/elixir-foundations")
+    await render("/zh/learn/elixir-foundations")
   ).text();
   assert.match(optionalReview, /可选复习/);
-  assert.match(optionalReview, /href="\/#beam-roadmap"/);
+  assert.match(optionalReview, /href="\/zh#beam-roadmap"/);
 });
 
 test("puts a three-platform installation guide before the start line", async () => {
-  const response = await render("/learn/install-toolchain");
+  const response = await render("/zh/learn/install-toolchain");
   assert.equal(response.status, 200);
 
   const html = await response.text();
@@ -542,17 +808,17 @@ test("puts a three-platform installation guide before the start line", async () 
   );
   assert.match(html, /href="https:\/\/elixir-lang\.org\/install\/"/);
   assert.match(html, /href="https:\/\/www\.erlang\.org\/downloads"/);
-  assert.match(html, /href="\/from-scratch"/);
+  assert.match(html, /href="\/zh\/from-scratch"/);
   assert.match(html, /选择一条从零路线/);
 
-  const startLine = await (await render("/learn/start-line")).text();
+  const startLine = await (await render("/zh/learn/start-line")).text();
   assert.match(startLine, /如果值、模式、函数(?:或|和)模块还陌生/);
   assert.match(startLine, /Elixir 和 Erlang 任选一条/);
   assert.doesNotMatch(startLine, /看到 .*&amp;1.*模式匹配/s);
 });
 
 test("renders an embedded Elixir playground with safe fallback guidance", async () => {
-  const response = await render("/playground");
+  const response = await render("/zh/playground");
   assert.equal(response.status, 200);
 
   const html = await response.text();
@@ -566,12 +832,12 @@ test("renders an embedded Elixir playground with safe fallback guidance", async 
   assert.match(html, /不要放密码/);
   assert.match(html, /输出和报错都在下方/);
   assert.match(html, /在新窗口打开/);
-  assert.match(html, /href="\/learn\/install-toolchain"/);
+  assert.match(html, /href="\/zh\/learn\/install-toolchain"/);
   assert.match(html, /安装本地工具/);
 });
 
 test("renders a complete Elixir and Erlang keyword dictionary", async () => {
-  const response = await render("/keywords");
+  const response = await render("/zh/keywords");
   assert.equal(response.status, 200);
 
   const html = await response.text();
@@ -654,6 +920,7 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
     courseData,
     resourceData,
     resourceMarkdown,
+    resourceMarkdownEn,
     localScript,
     localConfig,
     globalStyles,
@@ -666,11 +933,12 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
     fromScratchStyles,
   ] =
     await Promise.all([
-      readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../app/[locale]/layout.tsx", import.meta.url), "utf8"),
       readFile(new URL("../package.json", import.meta.url), "utf8"),
       readFile(new URL("../app/course-data.ts", import.meta.url), "utf8"),
       readFile(new URL("../app/resource-data.ts", import.meta.url), "utf8"),
       readFile(new URL("../content/resources.md", import.meta.url), "utf8"),
+      readFile(new URL("../content/resources.en.md", import.meta.url), "utf8"),
       readFile(new URL("../scripts/start-local.sh", import.meta.url), "utf8"),
       readFile(new URL("../config/local.env", import.meta.url), "utf8"),
       readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
@@ -741,7 +1009,8 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
   assert.match(layout, /<SpeedInsights\s*\/>/);
   assert.doesNotMatch(courseData, /export const resources/);
   assert.match(resourceData, /import "server-only"/);
-  assert.match(resourceData, /content", "resources\.md"/);
+  assert.match(resourceData, /locale === "zh" \? "resources\.md" : "resources\.en\.md"/);
+  assert.match(resourceData, /content", filename/);
   assert.match(resourceData, /parseResourceMarkdown/);
   assert.match(resourceMarkdown, /https:\/\/elixir-lang\.org\/install\//);
   assert.match(resourceMarkdown, /https:\/\/www\.erlang\.org\/downloads/);
@@ -750,6 +1019,9 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
     /- \[Elixir School 中文\]\(https:\/\/elixirschool\.com\/zh-hans\/\) — 中文教程，涵盖 Elixir 语法、工具和常见主题。/,
   );
   assert.match(resourceMarkdown, /- featured: true/);
+  assert.match(resourceMarkdownEn, /https:\/\/elixirschool\.com\/en\//);
+  assert.match(resourceMarkdownEn, /https:\/\/elixir-lang\.org\/install\//);
+  assert.match(resourceMarkdownEn, /- featured: true/);
   assert.equal(
     (courseData.match(/storyBridge:\s*\{/g) ?? []).length,
     14,
@@ -824,7 +1096,7 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
   assert.equal(elixirLessonBlocks.length, 13);
   assert.equal(erlangLessonBlocks.length, 13);
   assert.equal(experimentCommands.length, 13);
-  assert.equal(playgroundBlocks.length, 3);
+  assert.equal(playgroundBlocks.length, 6);
   for (const [index, block] of elixirLessonBlocks.entries()) {
     assert.ok(
       (block.match(/^\s*#\s+\S/gm) ?? []).length >= 2,
@@ -860,7 +1132,8 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
       `Playground example ${index + 1} needs explanatory comments`,
     );
   }
-  assert.match(packageJson, /"dev": "next dev"/);
+  assert.match(packageJson, /"dev": "next dev --webpack"/);
+  assert.match(localScript, /next" dev \\\n+\s+--webpack/);
   assert.match(packageJson, /"@vercel\/analytics"/);
   assert.match(packageJson, /"@vercel\/speed-insights"/);
   assert.doesNotMatch(packageJson, /vite|vinext|wrangler/i);

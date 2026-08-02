@@ -1,7 +1,11 @@
 import Image from "next/image";
-import Link from "next/link";
+import type { Locale } from "../i18n/locales";
+import { sharedUi } from "../i18n/ui";
+import { LocalizedLink } from "./LocalizedLink";
 
-export function SiteFooter() {
+export function SiteFooter({ locale }: { locale: Locale }) {
+  const copy = sharedUi[locale].footer;
+
   return (
     <footer className="site-footer">
       <div className="footer-inner">
@@ -16,23 +20,40 @@ export function SiteFooter() {
           />
           <div>
             <strong>BEAM Path</strong>
-            <p>Erlang 和 Elixir 都运行在 BEAM 上。</p>
+            <p>{copy.tagline}</p>
           </div>
         </div>
 
         <div className="footer-links">
           <div>
-            <span>继续学习</span>
-            <Link href="/from-scratch/elixir">Elixir 从零</Link>
-            <Link href="/from-scratch/erlang">Erlang 从零</Link>
-            <Link href="/learn/start-line">BEAM 起跑线</Link>
-            <Link href="/learn/processes-and-mailboxes">消息实验</Link>
-            <Link href="/playground">在线写代码</Link>
-            <Link href="/keywords">关键字字典</Link>
-            <Link href="/resources">学习工具箱</Link>
+            <span>{copy.continue}</span>
+            <LocalizedLink href="/from-scratch/elixir" locale={locale}>
+              {copy.elixirBasics}
+            </LocalizedLink>
+            <LocalizedLink href="/from-scratch/erlang" locale={locale}>
+              {copy.erlangBasics}
+            </LocalizedLink>
+            <LocalizedLink href="/learn/start-line" locale={locale}>
+              {copy.startLine}
+            </LocalizedLink>
+            <LocalizedLink
+              href="/learn/processes-and-mailboxes"
+              locale={locale}
+            >
+              {copy.messageLab}
+            </LocalizedLink>
+            <LocalizedLink href="/playground" locale={locale}>
+              {copy.playground}
+            </LocalizedLink>
+            <LocalizedLink href="/keywords" locale={locale}>
+              {copy.keywords}
+            </LocalizedLink>
+            <LocalizedLink href="/resources" locale={locale}>
+              {copy.resources}
+            </LocalizedLink>
           </div>
           <div>
-            <span>官方入口</span>
+            <span>{copy.official}</span>
             <a href="https://elixir-lang.org/" target="_blank" rel="noreferrer">
               Elixir
             </a>
@@ -43,13 +64,13 @@ export function SiteFooter() {
         </div>
       </div>
       <div className="footer-bottom">
-        <p>每次运行，都记下一个新发现。</p>
+        <p>{copy.closing}</p>
         <a
           href="https://github.com/ViffyGwaanl/kimi-k3-learn"
           target="_blank"
           rel="noreferrer"
         >
-          教学方法参考 kimi-k3-learn
+          {copy.reference}
           <span aria-hidden="true">↗</span>
         </a>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { Locale } from "../i18n/locales";
 import { InlineCodeText } from "./InlineCodeText";
 
 type QuizCardProps = {
@@ -8,6 +9,7 @@ type QuizCardProps = {
   options: string[];
   answer: number;
   explanation: string;
+  locale: Locale;
 };
 
 export function QuizCard({
@@ -15,6 +17,7 @@ export function QuizCard({
   options,
   answer,
   explanation,
+  locale,
 }: QuizCardProps) {
   const [selected, setSelected] = useState<number | null>(null);
   const [checked, setChecked] = useState(false);
@@ -27,7 +30,7 @@ export function QuizCard({
 
   return (
     <section className="quiz-card" aria-labelledby="quick-check-title">
-      <div className="section-kicker">想一想</div>
+      <div className="section-kicker">{locale === "zh" ? "想一想" : "Think it through"}</div>
       <h2 id="quick-check-title">
         <InlineCodeText text={question} />
       </h2>
@@ -65,12 +68,20 @@ export function QuizCard({
           className={`quiz-feedback${isCorrect ? " is-correct" : " is-wrong"}`}
           role="status"
         >
-          <strong>{isCorrect ? "答对了。看看解释，确认原因。" : "这次没选对。看看解释，再试一次。"}</strong>
+          <strong>
+            {isCorrect
+              ? locale === "zh"
+                ? "答对了。看看解释，确认原因。"
+                : "That is right. Read the explanation and check why."
+              : locale === "zh"
+                ? "这次没选对。看看解释，再试一次。"
+                : "Not this time. Read the explanation, then try again."}
+          </strong>
           <p>
             <InlineCodeText text={explanation} />
           </p>
           <button type="button" onClick={reset}>
-            再答一次
+            {locale === "zh" ? "再答一次" : "Try again"}
           </button>
         </div>
       ) : (
@@ -80,7 +91,7 @@ export function QuizCard({
           disabled={selected === null}
           onClick={() => setChecked(true)}
         >
-          检查答案
+          {locale === "zh" ? "检查答案" : "Check answer"}
         </button>
       )}
     </section>

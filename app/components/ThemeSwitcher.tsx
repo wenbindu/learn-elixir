@@ -1,6 +1,8 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import type { Locale } from "../i18n/locales";
+import { sharedUi } from "../i18n/ui";
 
 type Theme = "light" | "dark";
 
@@ -61,11 +63,13 @@ function subscribe(callback: () => void) {
   };
 }
 
-export function ThemeSwitcher() {
+export function ThemeSwitcher({ locale }: { locale: Locale }) {
   const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const isDark = theme === "dark";
   const nextTheme = isDark ? "light" : "dark";
-  const actionLabel = `切换到${isDark ? "浅色" : "深色"}模式`;
+  const actionLabel = isDark
+    ? sharedUi[locale].theme.toLight
+    : sharedUi[locale].theme.toDark;
 
   function toggleTheme() {
     saveTheme(nextTheme);

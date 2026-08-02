@@ -2,80 +2,158 @@
 
 import { useMemo, useState } from "react";
 import { InlineCodeText } from "../components/InlineCodeText";
-import {
-  keywordEntries,
-  type KeywordEntry,
-  type Language,
-  type Scope,
+import type { Locale } from "../i18n/locales";
+import type {
+  KeywordEntry,
+  Language,
+  Scope,
 } from "./keyword-data";
 
-type LanguageFilter = Language | "all";
-type ScopeFilter = Scope | "all";
+type LanguageFilterId = Language | "all";
+type ScopeFilterId = Scope | "all";
+type LocalizedText = Record<Locale, string>;
 
-const languageOptions: Array<{
-  value: LanguageFilter;
-  label: string;
-  shortLabel: string;
+type KeywordDictionaryProps = {
+  locale: Locale;
+  entries: KeywordEntry[];
+};
+
+const languageOptions: ReadonlyArray<{
+  id: LanguageFilterId;
+  label: LocalizedText;
+  shortLabel: LocalizedText;
 }> = [
-  { value: "all", label: "两种语言", shortLabel: "全部" },
-  { value: "elixir", label: "只看 Elixir", shortLabel: "Elixir" },
-  { value: "erlang", label: "只看 Erlang", shortLabel: "Erlang" },
+  {
+    id: "all",
+    label: { zh: "两种语言", en: "Both languages" },
+    shortLabel: { zh: "全部", en: "All" },
+  },
+  {
+    id: "elixir",
+    label: { zh: "只看 Elixir", en: "Elixir only" },
+    shortLabel: { zh: "Elixir", en: "Elixir" },
+  },
+  {
+    id: "erlang",
+    label: { zh: "只看 Erlang", en: "Erlang only" },
+    shortLabel: { zh: "Erlang", en: "Erlang" },
+  },
 ];
 
-const scopeOptions: Array<{
-  value: ScopeFilter;
-  label: string;
-  description: string;
+const scopeOptions: ReadonlyArray<{
+  id: ScopeFilterId;
+  label: LocalizedText;
+  description: LocalizedText;
 }> = [
   {
-    value: "reserved",
-    label: "严格保留字",
-    description: "语言已预留，不能用作普通变量名或函数名",
+    id: "reserved",
+    label: { zh: "严格保留字", en: "Strictly reserved words" },
+    description: {
+      zh: "语言已预留，不能用作普通变量名或函数名",
+      en: "Reserved by the language; not available as ordinary variable or function names",
+    },
   },
   {
-    value: "special",
-    label: "Elixir 特殊形式",
-    description: "由编译器直接处理，多数不是严格保留字",
+    id: "special",
+    label: { zh: "Elixir 特殊形式", en: "Elixir special forms" },
+    description: {
+      zh: "由编译器直接处理，多数不是严格保留字",
+      en: "Handled directly by the compiler; most are not strictly reserved",
+    },
   },
   {
-    value: "common",
-    label: "常用宏与声明",
-    description: "常被叫作关键字，实际是宏、属性或指令",
+    id: "common",
+    label: { zh: "常用宏与声明", en: "Common macros and declarations" },
+    description: {
+      zh: "常被叫作关键字，实际是宏、属性或指令",
+      en: "Often called keywords, but really macros, attributes, or directives",
+    },
   },
   {
-    value: "all",
-    label: "全部术语",
-    description: "把三种类型放在一起看",
+    id: "all",
+    label: { zh: "全部术语", en: "All terms" },
+    description: {
+      zh: "把三种类型放在一起看",
+      en: "See all three kinds together",
+    },
   },
 ];
 
 const languageMeta: Record<
   Language,
-  { label: string; eyebrow: string; description: string }
+  { label: string; eyebrow: string; description: LocalizedText }
 > = {
   elixir: {
     label: "Elixir",
     eyebrow: "EX",
-    description: "15 个严格保留字、常用特殊形式和 Kernel 宏",
+    description: {
+      zh: "15 个严格保留字、常用特殊形式和 Kernel 宏",
+      en: "15 strictly reserved words, common special forms, and Kernel macros",
+    },
   },
   erlang: {
     label: "Erlang",
     eyebrow: "ERL",
-    description: "29 个严格保留字、常见模块属性和预处理指令",
+    description: {
+      zh: "29 个严格保留字、常见模块属性和预处理指令",
+      en: "29 strictly reserved words, common module attributes, and preprocessor directives",
+    },
   },
 };
 
-const scopeLabels: Record<Scope, string> = {
-  reserved: "严格保留字",
-  special: "特殊形式",
-  common: "宏 / 声明",
+const scopeLabels: Record<Scope, LocalizedText> = {
+  reserved: { zh: "严格保留字", en: "Strictly reserved" },
+  special: { zh: "特殊形式", en: "Special form" },
+  common: { zh: "宏 / 声明", en: "Macro / declaration" },
 };
 
-function normalize(value: string) {
-  return value.trim().toLocaleLowerCase("zh-CN");
+const dictionaryCopy = {
+  zh: {
+    searchLabel: "搜索术语或中文解释",
+    searchPlaceholder: "搜索 when、receive、模式匹配……",
+    clearSearchLabel: "清空搜索",
+    clear: "清空",
+    language: "语言",
+    languageFilterLabel: "按语言筛选",
+    scopeFilterLabel: "按术语类别筛选",
+    resultHint: "可按语言或分类缩小范围",
+    queryLead: "，包含“",
+    listHeadings: ["术语与类型", "作用与限制", "最小示例"],
+    analogyLabel: "帮助理解",
+    emptyTitle: "没有找到",
+    emptyBody: "试试更短的中文词或英文词，也可以恢复默认分类。",
+    reset: "恢复默认",
+  },
+  en: {
+    searchLabel: "Search terms or explanations",
+    searchPlaceholder: "Search when, receive, pattern matching...",
+    clearSearchLabel: "Clear search",
+    clear: "Clear",
+    language: "Language",
+    languageFilterLabel: "Filter by language",
+    scopeFilterLabel: "Filter by term category",
+    resultHint: "Narrow the list by language or category",
+    queryLead: " containing “",
+    listHeadings: ["Term and type", "Purpose and limits", "Tiny example"],
+    analogyLabel: "A way to picture it",
+    emptyTitle: "Nothing found",
+    emptyBody:
+      "Try a shorter English term or explanation, or restore the default filters.",
+    reset: "Restore defaults",
+  },
+} as const;
+
+function normalize(value: string, locale: Locale) {
+  return value
+    .trim()
+    .toLocaleLowerCase(locale === "zh" ? "zh-CN" : "en-US");
 }
 
-function matchesQuery(entry: KeywordEntry, query: string) {
+function matchesQuery(
+  entry: KeywordEntry,
+  query: string,
+  locale: Locale,
+) {
   if (!query) return true;
 
   return normalize(
@@ -88,26 +166,37 @@ function matchesQuery(entry: KeywordEntry, query: string) {
       entry.example,
       entry.note ?? "",
       entry.language,
-      scopeLabels[entry.scope],
+      scopeLabels[entry.scope][locale],
     ].join(" "),
+    locale,
   ).includes(query);
 }
 
-export function KeywordDictionary() {
-  const [language, setLanguage] = useState<LanguageFilter>("all");
-  const [scope, setScope] = useState<ScopeFilter>("reserved");
+function formatEntryCount(locale: Locale, count: number) {
+  if (locale === "zh") return `${count} 项`;
+  return `${count} ${count === 1 ? "entry" : "entries"}`;
+}
+
+export function KeywordDictionary({
+  locale,
+  entries,
+}: KeywordDictionaryProps) {
+  const copy = dictionaryCopy[locale];
+  const [languageId, setLanguageId] =
+    useState<LanguageFilterId>("all");
+  const [scopeId, setScopeId] = useState<ScopeFilterId>("reserved");
   const [query, setQuery] = useState("");
 
-  const normalizedQuery = normalize(query);
+  const normalizedQuery = normalize(query, locale);
   const filteredEntries = useMemo(
     () =>
-      keywordEntries.filter(
+      entries.filter(
         (entry) =>
-          (language === "all" || entry.language === language) &&
-          (scope === "all" || entry.scope === scope) &&
-          matchesQuery(entry, normalizedQuery),
+          (languageId === "all" || entry.language === languageId) &&
+          (scopeId === "all" || entry.scope === scopeId) &&
+          matchesQuery(entry, normalizedQuery, locale),
       ),
-    [language, normalizedQuery, scope],
+    [entries, languageId, locale, normalizedQuery, scopeId],
   );
 
   const groups = (["elixir", "erlang"] as const)
@@ -120,8 +209,8 @@ export function KeywordDictionary() {
     .filter((group) => group.entries.length > 0);
 
   const resetFilters = () => {
-    setLanguage("all");
-    setScope("reserved");
+    setLanguageId("all");
+    setScopeId("reserved");
     setQuery("");
   };
 
@@ -129,7 +218,7 @@ export function KeywordDictionary() {
     <div className="keyword-browser">
       <div className="keyword-controls">
         <div className="keyword-search">
-          <label htmlFor="keyword-search-input">搜索术语或中文解释</label>
+          <label htmlFor="keyword-search-input">{copy.searchLabel}</label>
           <div>
             <span aria-hidden="true">⌕</span>
             <input
@@ -137,59 +226,61 @@ export function KeywordDictionary() {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="搜索 when、receive、模式匹配……"
+              placeholder={copy.searchPlaceholder}
               autoComplete="off"
             />
             {query ? (
               <button
                 type="button"
                 onClick={() => setQuery("")}
-                aria-label="清空搜索"
+                aria-label={copy.clearSearchLabel}
               >
-                清空
+                {copy.clear}
               </button>
             ) : null}
           </div>
         </div>
 
         <div className="keyword-language-filter">
-          <span>语言</span>
-          <div aria-label="按语言筛选">
+          <span>{copy.language}</span>
+          <div aria-label={copy.languageFilterLabel}>
             {languageOptions.map((option) => (
               <button
-                className={language === option.value ? "is-active" : undefined}
+                className={
+                  languageId === option.id ? "is-active" : undefined
+                }
                 type="button"
-                aria-pressed={language === option.value}
-                onClick={() => setLanguage(option.value)}
-                title={option.label}
-                key={option.value}
+                aria-pressed={languageId === option.id}
+                onClick={() => setLanguageId(option.id)}
+                title={option.label[locale]}
+                key={option.id}
               >
-                {option.shortLabel}
+                {option.shortLabel[locale]}
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="keyword-scope-tabs" aria-label="按术语类别筛选">
+      <div className="keyword-scope-tabs" aria-label={copy.scopeFilterLabel}>
         {scopeOptions.map((option) => {
-          const count = keywordEntries.filter(
+          const count = entries.filter(
             (entry) =>
-              (option.value === "all" || entry.scope === option.value) &&
-              (language === "all" || entry.language === language),
+              (option.id === "all" || entry.scope === option.id) &&
+              (languageId === "all" || entry.language === languageId),
           ).length;
 
           return (
             <button
-              className={scope === option.value ? "is-active" : undefined}
+              className={scopeId === option.id ? "is-active" : undefined}
               type="button"
-              aria-pressed={scope === option.value}
-              onClick={() => setScope(option.value)}
-              key={option.value}
+              aria-pressed={scopeId === option.id}
+              onClick={() => setScopeId(option.id)}
+              key={option.id}
             >
               <span>
-                <strong>{option.label}</strong>
-                <small>{option.description}</small>
+                <strong>{option.label[locale]}</strong>
+                <small>{option.description[locale]}</small>
               </span>
               <b>{count}</b>
             </button>
@@ -199,14 +290,19 @@ export function KeywordDictionary() {
 
       <div className="keyword-result-summary" aria-live="polite">
         <p>
-          共 <strong>{filteredEntries.length}</strong> 项
+          {locale === "zh" ? "共 " : null}
+          <strong>{filteredEntries.length}</strong>
+          {locale === "zh"
+            ? " 项"
+            : ` ${filteredEntries.length === 1 ? "entry" : "entries"}`}
           {normalizedQuery ? (
             <>
-              ，包含“<span>{query.trim()}</span>”
+              {copy.queryLead}
+              <span>{query.trim()}</span>”
             </>
           ) : null}
         </p>
-        <span>可按语言或分类缩小范围</span>
+        <span>{copy.resultHint}</span>
       </div>
 
       {groups.length ? (
@@ -225,16 +321,20 @@ export function KeywordDictionary() {
                     {meta.eyebrow}
                   </div>
                   <div>
-                    <h2 id={`keyword-group-${group.language}`}>{meta.label}</h2>
-                    <p>{meta.description}</p>
+                    <h2 id={`keyword-group-${group.language}`}>
+                      {meta.label}
+                    </h2>
+                    <p>{meta.description[locale]}</p>
                   </div>
-                  <strong>{group.entries.length} 项</strong>
+                  <strong>
+                    {formatEntryCount(locale, group.entries.length)}
+                  </strong>
                 </div>
 
                 <div className="keyword-list-heading" aria-hidden="true">
-                  <span>术语与类型</span>
-                  <span>作用与限制</span>
-                  <span>最小示例</span>
+                  {copy.listHeadings.map((heading) => (
+                    <span key={heading}>{heading}</span>
+                  ))}
                 </div>
 
                 <div className="keyword-list">
@@ -245,7 +345,7 @@ export function KeywordDictionary() {
                     >
                       <div className="keyword-entry-term">
                         <code>{entry.term}</code>
-                        <span>{scopeLabels[entry.scope]}</span>
+                        <span>{scopeLabels[entry.scope][locale]}</span>
                         <small>{entry.role}</small>
                       </div>
                       <div className="keyword-entry-copy">
@@ -257,7 +357,7 @@ export function KeywordDictionary() {
                         </p>
                         {entry.analogy ? (
                           <div className="keyword-entry-analogy">
-                            <span>帮助理解</span>
+                            <span>{copy.analogyLabel}</span>
                             <InlineCodeText text={entry.analogy} />
                           </div>
                         ) : null}
@@ -281,10 +381,10 @@ export function KeywordDictionary() {
       ) : (
         <div className="keyword-empty">
           <span aria-hidden="true">∅</span>
-          <h2>没有找到</h2>
-          <p>试试更短的中文词或英文词，也可以恢复默认分类。</p>
+          <h2>{copy.emptyTitle}</h2>
+          <p>{copy.emptyBody}</p>
           <button type="button" onClick={resetFilters}>
-            恢复默认
+            {copy.reset}
           </button>
         </div>
       )}

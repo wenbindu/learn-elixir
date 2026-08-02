@@ -1,25 +1,55 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type {
-  ResourceEntry,
-  ResourceGroup,
-} from "../resource-types";
+import type { Locale } from "../i18n/locales";
+import type { ResourceEntry, ResourceGroup } from "../resource-types";
 
 type ResourceDirectoryBrowserProps = {
   groups: ResourceGroup[];
   resources: ResourceEntry[];
+  locale: Locale;
 };
 
-function normalize(value: string) {
-  return value.trim().toLocaleLowerCase("zh-CN");
+const browserCopy = {
+  zh: {
+    search: "搜索资源",
+    placeholder: "搜索 Elixir School、安装、练习……",
+    clearLabel: "清空资源搜索",
+    clear: "清空",
+    category: "分类",
+    categoryLabel: "按资源分类筛选",
+    all: "全部",
+    newTab: "链接会在新标签页打开",
+    count: (count: number) => `${count} 个资源`,
+    emptyTitle: "没有匹配的资源",
+    emptyBody: "试试更短的词，或者清除分类。",
+    reset: "重置筛选",
+  },
+  en: {
+    search: "Search resources",
+    placeholder: "Search Elixir School, install, practice…",
+    clearLabel: "Clear resource search",
+    clear: "Clear",
+    category: "Category",
+    categoryLabel: "Filter by resource category",
+    all: "All",
+    newTab: "Links open in a new tab",
+    count: (count: number) => `${count} ${count === 1 ? "resource" : "resources"}`,
+    emptyTitle: "No matching resources",
+    emptyBody: "Try a shorter word, or clear the category filter.",
+    reset: "Reset filters",
+  },
+} as const;
+
+function normalize(value: string, locale: Locale) {
+  return value.trim().toLocaleLowerCase(locale === "zh" ? "zh-CN" : "en-US");
 }
 
 function getHostname(href: string) {
   return new URL(href).hostname.replace(/^www\./, "");
 }
 
-function matchesQuery(resource: ResourceEntry, query: string) {
+function matchesQuery(resource: ResourceEntry, query: string, locale: Locale) {
   if (!query) return true;
 
   return normalize(
@@ -30,30 +60,33 @@ function matchesQuery(resource: ResourceEntry, query: string) {
       resource.category,
       getHostname(resource.href),
     ].join(" "),
+    locale,
   ).includes(query);
 }
 
 export function ResourceDirectoryBrowser({
   groups,
   resources,
+  locale,
 }: ResourceDirectoryBrowserProps) {
+  const copy = browserCopy[locale];
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
-  const normalizedQuery = normalize(query);
+  const normalizedQuery = normalize(query, locale);
 
   const filteredGroups = useMemo(
     () =>
       groups
-        .map((group) => ({
+        .map((group, groupIndex) => ({
           ...group,
           resources: group.resources.filter(
             (resource) =>
-              (category === "all" || resource.category === category) &&
-              matchesQuery(resource, normalizedQuery),
+              (category === "all" || category === `group-${groupIndex}`) &&
+              matchesQuery(resource, normalizedQuery, locale),
           ),
         }))
         .filter((group) => group.resources.length > 0),
-    [category, groups, normalizedQuery],
+    [category, groups, locale, normalizedQuery],
   );
 
   const resultCount = filteredGroups.reduce(
@@ -61,16 +94,16 @@ export function ResourceDirectoryBrowser({
     0,
   );
 
-  const resetFilters = () => {
+  function resetFilters() {
     setQuery("");
     setCategory("all");
-  };
+  }
 
   return (
     <div className="resource-directory-browser">
       <div className="resource-directory-controls">
         <div className="resource-directory-search">
-          <label htmlFor="resource-search-input">搜索资源</label>
+          <label htmlFor="resource-search-input">{copy.search}</label>
           <div>
             <span aria-hidden="true">⌕</span>
             <input
@@ -78,59 +111,68 @@ export function ResourceDirectoryBrowser({
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="搜索 Elixir School、安装、练习……"
+              placeholder={copy.placeholder}
               autoComplete="off"
             />
             {query ? (
               <button
                 type="button"
                 onClick={() => setQuery("")}
-                aria-label="清空资源搜索"
+                aria-label={copy.clearLabel}
               >
-                清空
+                {copy.clear}
               </button>
             ) : null}
           </div>
         </div>
 
         <div className="resource-category-filter">
-          <span>分类</span>
-          <div aria-label="按资源分类筛选">
+          <span>{copy.category}</span>
+          <div aria-label={copy.categoryLabel}>
             <button
               className={category === "all" ? "is-active" : undefined}
               type="button"
               aria-pressed={category === "all"}
               onClick={() => setCategory("all")}
             >
-              全部
+              {copy.all}
               <b>{resources.length}</b>
             </button>
-            {groups.map((group) => (
-              <button
-                className={category === group.title ? "is-active" : undefined}
-                type="button"
-                aria-pressed={category === group.title}
-                onClick={() => setCategory(group.title)}
-                key={group.title}
-              >
-                {group.title}
-                <b>{group.resources.length}</b>
-              </button>
-            ))}
+            {groups.map((group, groupIndex) => {
+              const categoryId = `group-${groupIndex}`;
+              return (
+                <button
+                  className={category === categoryId ? "is-active" : undefined}
+                  type="button"
+                  aria-pressed={category === categoryId}
+                  onClick={() => setCategory(categoryId)}
+                  key={categoryId}
+                >
+                  {group.title}
+                  <b>{group.resources.length}</b>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
 
       <div className="resource-directory-summary" aria-live="polite">
         <p>
-          共 <strong>{resultCount}</strong> 个资源
+          {locale === "zh" ? (
+            <>共 <strong>{resultCount}</strong> 个资源</>
+          ) : (
+            <><strong>{resultCount}</strong> {resultCount === 1 ? "resource" : "resources"}</>
+          )}
           {normalizedQuery ? (
-            <>
-              ，包含“<span>{query.trim()}</span>”
-            </>
+            <span>
+              {locale === "zh"
+                ? `，包含“${query.trim()}”`
+                : ` containing “${query.trim()}”`}
+            </span>
           ) : null}
         </p>
-        <span>链接会在新标签页打开</span>
+        <span>{copy.newTab}</span>
       </div>
 
       {filteredGroups.length ? (
@@ -144,11 +186,9 @@ export function ResourceDirectoryBrowser({
               <div className="resource-directory-group-heading">
                 <div>
                   <span>{String(groupIndex + 1).padStart(2, "0")}</span>
-                  <h2 id={`resource-category-${groupIndex}`}>
-                    {group.title}
-                  </h2>
+                  <h2 id={`resource-category-${groupIndex}`}>{group.title}</h2>
                 </div>
-                <strong>{group.resources.length} 个资源</strong>
+                <strong>{copy.count(group.resources.length)}</strong>
               </div>
 
               <div className="resource-directory-grid">
@@ -183,10 +223,10 @@ export function ResourceDirectoryBrowser({
       ) : (
         <div className="resource-directory-empty">
           <span aria-hidden="true">∅</span>
-          <h2>没有匹配的资源</h2>
-          <p>试试更短的词，或者清除分类。</p>
+          <h2>{copy.emptyTitle}</h2>
+          <p>{copy.emptyBody}</p>
           <button type="button" onClick={resetFilters}>
-            重置筛选
+            {copy.reset}
           </button>
         </div>
       )}

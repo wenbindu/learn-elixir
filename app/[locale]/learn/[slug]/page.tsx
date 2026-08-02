@@ -1,60 +1,206 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CopyBlock } from "../../components/CopyBlock";
-import { InlineCodeText } from "../../components/InlineCodeText";
-import { ProgressButton } from "../../components/ProgressButton";
-import { QuizCard } from "../../components/QuizCard";
-import { SiteFooter } from "../../components/SiteFooter";
-import { SiteHeader } from "../../components/SiteHeader";
+import { CopyBlock } from "../../../components/CopyBlock";
+import { InlineCodeText } from "../../../components/InlineCodeText";
+import { LocalizedLink } from "../../../components/LocalizedLink";
+import { ProgressButton } from "../../../components/ProgressButton";
+import { QuizCard } from "../../../components/QuizCard";
+import { SiteFooter } from "../../../components/SiteFooter";
+import { SiteHeader } from "../../../components/SiteHeader";
 import {
-  courseModules,
-  courseStats,
-  getAdjacentModules,
-  getModule,
-  stages,
-} from "../../course-data";
+  getAdjacentCourseModules,
+  getCourseCatalog,
+  getCourseModule,
+} from "../../../i18n/catalog";
+import { isLocale, locales, type Locale } from "../../../i18n/locales";
+import { localeAlternates } from "../../../i18n/metadata";
+
+const lessonPageCopy = {
+  zh: {
+    courseDirectory: "课程目录",
+    mapTitle: "BEAM 探险地图",
+    sidebarStats: (mainline: number, optional: number) =>
+      `${mainline} 站主线 · ${optional} 站可选复习`,
+    optionalReview: "可选复习",
+    sidebarNote: "进度只在这台设备。换设备前，去首页保存。",
+    station: (number: string) => `第 ${number} 站`,
+    expandMap: "展开探险地图",
+    home: "首页",
+    mainline: "BEAM 主线",
+    syntaxEyebrow: "还没学过语法？",
+    syntaxTitle: "如果值、模式、函数或模块还陌生，先从一门语言学起。",
+    syntaxText: "Elixir 和 Erlang 任选一条。学完任意一条，再回来走 BEAM 主线。",
+    elixirBasics: "Elixir 从零 →",
+    erlangBasics: "Erlang 从零 →",
+    checkpoints: "小关卡",
+    splitSessions: "可以分几次",
+    whyKicker: "为什么学这一站",
+    whyTitle: "它要解决什么",
+    storyMark: "故",
+    storyKicker: (label: string) => `借一个故事 · ${label}`,
+    backToCode: "回到代码",
+    metaphorEnds: "比喻到这里",
+    outcomesKicker: "走完这一站",
+    outcomesTitle: "你会做到",
+    beforeStart: "出发前",
+    conceptsKicker: "先认词",
+    conceptsTitle: "三个关键词",
+    installKicker: "按系统安装",
+    installTitle: "只走你电脑这一条路",
+    mixIncluded: "Mix 已包含在 Elixir 里",
+    twoWaysKicker: "同一件事，两种写法",
+    twoWaysTitle: "先看做什么，再看怎么写",
+    handsOn: "动手",
+    labTime: "约 15–25 分钟",
+    terminalLabel: "复制到终端，按回车",
+    expected: "你会看到",
+    breakIt: "故意弄坏",
+    canSee: "这次能看清",
+    cannotShow: "这次还不能说明",
+    yourTurn: "轮到你",
+    hint: (number: number) => `提示 ${number}`,
+    hintTitles: ["先迈一步", "再缩小一点", "离答案很近了"],
+    lastHintTitle: "从终点往回想",
+    lastHintText:
+      "先挑一条“过关信号”，为它写一个最小测试。如果电脑看不出结果，就把这句话改成一个真正能观察到的现象。",
+    acceptance: "过关条件",
+    takeawayKicker: "带走",
+    takeawayTitle: "记住三句话",
+    readMore: "再读一点",
+    originalSources: "去看原版资料",
+    completionEyebrow: "本站结束",
+    completionTitle: "实验做过，答案也想过，就把这一站收好。",
+    paginationLabel: "相邻模块",
+    previous: "← 上一站",
+    nextStep: "下一步 →",
+    chooseBasics: "选择一条从零路线",
+    next: "下一站 →",
+    allComplete: "全部通关 →",
+    backToMap: "回到探险地图",
+  },
+  en: {
+    courseDirectory: "Course directory",
+    mapTitle: "BEAM Adventure Map",
+    sidebarStats: (mainline: number, optional: number) =>
+      `${mainline} mainline stations · ${optional} optional reviews`,
+    optionalReview: "Optional review",
+    sidebarNote: "Progress stays on this device. Save it from the home page before switching devices.",
+    station: (number: string) => `Station ${number}`,
+    expandMap: "Open the adventure map",
+    home: "Home",
+    mainline: "BEAM mainline",
+    syntaxEyebrow: "New to the syntax?",
+    syntaxTitle: "If values, patterns, functions, or modules are still new, begin with one language.",
+    syntaxText: "Choose Elixir or Erlang. Finish either path, then come back to the BEAM mainline.",
+    elixirBasics: "Elixir from scratch →",
+    erlangBasics: "Erlang from scratch →",
+    checkpoints: "checkpoints",
+    splitSessions: "split it into sessions",
+    whyKicker: "Why this station matters",
+    whyTitle: "The problem it solves",
+    storyMark: "S",
+    storyKicker: (label: string) => `A story to help · ${label}`,
+    backToCode: "Back to the code",
+    metaphorEnds: "Where the metaphor ends",
+    outcomesKicker: "After this station",
+    outcomesTitle: "You will be able to",
+    beforeStart: "Before you start",
+    conceptsKicker: "Meet the words",
+    conceptsTitle: "Three key ideas",
+    installKicker: "Install for your system",
+    installTitle: "Follow only the path for your computer",
+    mixIncluded: "Mix is included with Elixir",
+    twoWaysKicker: "One job, two ways to write it",
+    twoWaysTitle: "See what it does before how it is written",
+    handsOn: "Hands on",
+    labTime: "About 15–25 minutes",
+    terminalLabel: "Copy into the terminal and press Enter",
+    expected: "What you should see",
+    breakIt: "Break it on purpose",
+    canSee: "What this shows",
+    cannotShow: "What this does not show yet",
+    yourTurn: "Your turn",
+    hint: (number: number) => `Hint ${number}`,
+    hintTitles: ["Take the first step", "Make it a little smaller", "You are close"],
+    lastHintTitle: "Work backward from the finish",
+    lastHintText:
+      "Choose one success signal and write the smallest test for it. If the computer cannot show the result, rewrite the signal as something you can truly observe.",
+    acceptance: "Ready to move on when",
+    takeawayKicker: "Take these with you",
+    takeawayTitle: "Remember three things",
+    readMore: "Read a little more",
+    originalSources: "Visit the original sources",
+    completionEyebrow: "Station complete",
+    completionTitle: "You ran the experiment and thought through the answer. Save this station.",
+    paginationLabel: "Nearby modules",
+    previous: "← Previous station",
+    nextStep: "Next step →",
+    chooseBasics: "Choose a From Scratch path",
+    next: "Next station →",
+    allComplete: "All stations complete →",
+    backToMap: "Return to the adventure map",
+  },
+} as const satisfies Record<Locale, object>;
 
 type LessonPageProps = {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 };
 
+export const dynamicParams = false;
+
 export function generateStaticParams() {
-  return courseModules.map((courseModule) => ({ slug: courseModule.slug }));
+  return locales.flatMap((locale) =>
+    getCourseCatalog(locale).courseModules.map((courseModule) => ({
+      locale,
+      slug: courseModule.slug,
+    })),
+  );
 }
 
 export async function generateMetadata({
   params,
 }: LessonPageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const courseModule = getModule(slug);
-  if (!courseModule) return {};
+  const { locale, slug } = await params;
+  if (!isLocale(locale)) notFound();
+
+  const courseModule = getCourseModule(locale, slug);
+  if (!courseModule) notFound();
 
   return {
     title: courseModule.title,
     description: courseModule.summary,
+    alternates: localeAlternates(locale, `/learn/${slug}`),
   };
 }
 
 export default async function LessonPage({ params }: LessonPageProps) {
-  const { slug } = await params;
-  const courseModule = getModule(slug);
+  const { locale, slug } = await params;
+  if (!isLocale(locale)) notFound();
+
+  const courseModule = getCourseModule(locale, slug);
   if (!courseModule) notFound();
 
-  const { previous, next } = getAdjacentModules(courseModule.slug);
+  const { courseModules, courseStats, stages } = getCourseCatalog(locale);
+  const { previous, next } = getAdjacentCourseModules(
+    locale,
+    courseModule.slug,
+  );
+  const copy = lessonPageCopy[locale];
 
   return (
     <>
-      <SiteHeader compact />
+      <SiteHeader compact locale={locale} />
       <main className="lesson-page">
         <div className="lesson-layout">
-          <aside className="lesson-sidebar" aria-label="课程目录">
+          <aside className="lesson-sidebar" aria-label={copy.courseDirectory}>
             <div className="lesson-sidebar-intro">
               <span>BEAM PATH</span>
-              <strong>BEAM 探险地图</strong>
+              <strong>{copy.mapTitle}</strong>
               <small>
-                {courseStats.mainlineStations} 站主线 ·{" "}
-                {courseStats.optionalReviewStations} 站可选复习
+                {copy.sidebarStats(
+                  courseStats.mainlineStations,
+                  courseStats.optionalReviewStations,
+                )}
               </small>
             </div>
 
@@ -65,8 +211,9 @@ export default async function LessonPage({ params }: LessonPageProps) {
                   {courseModules
                     .filter((item) => item.stage === stage.id)
                     .map((item) => (
-                      <Link
+                      <LocalizedLink
                         href={`/learn/${item.slug}`}
+                        locale={locale}
                         className={item.slug === courseModule.slug ? "is-active" : ""}
                         aria-current={
                           item.slug === courseModule.slug ? "page" : undefined
@@ -76,10 +223,12 @@ export default async function LessonPage({ params }: LessonPageProps) {
                         <b>{item.number}</b>
                         <span>{item.title}</span>
                         <small>
-                          {item.optionalReview ? "可选复习 · " : ""}
+                          {item.optionalReview
+                            ? `${copy.optionalReview} · `
+                            : ""}
                           {item.duration}
                         </small>
-                      </Link>
+                      </LocalizedLink>
                     ))}
                 </div>
               ))}
@@ -87,7 +236,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
 
             <div className="sidebar-note">
               <span className="live-dot" />
-              进度只在这台设备。换设备前，去首页保存。
+              {copy.sidebarNote}
             </div>
           </aside>
 
@@ -95,51 +244,59 @@ export default async function LessonPage({ params }: LessonPageProps) {
             <details className="lesson-mobile-nav">
               <summary>
                 <span>
-                  第 {courseModule.number} 站
-                  {courseModule.optionalReview ? " · 可选复习" : ""}
+                  {copy.station(courseModule.number)}
+                  {courseModule.optionalReview
+                    ? ` · ${copy.optionalReview}`
+                    : ""}
                 </span>
-                展开探险地图
+                {copy.expandMap}
               </summary>
               <div>
                 {courseModules.map((item) => (
-                  <Link
+                  <LocalizedLink
                     href={`/learn/${item.slug}`}
+                    locale={locale}
                     className={item.slug === courseModule.slug ? "is-active" : ""}
                     key={item.slug}
                   >
                     <span>{item.number}</span>
                     {item.title}
                     {item.optionalReview ? (
-                      <small className="lesson-nav-optional">可选复习</small>
+                      <small className="lesson-nav-optional">
+                        {copy.optionalReview}
+                      </small>
                     ) : null}
-                  </Link>
+                  </LocalizedLink>
                 ))}
               </div>
             </details>
 
             <div className="lesson-breadcrumb">
-              <Link href="/">首页</Link>
+              <LocalizedLink href="/" locale={locale}>
+                {copy.home}
+              </LocalizedLink>
               <span>/</span>
-              <Link href="/#beam-roadmap">BEAM 主线</Link>
+              <LocalizedLink href="/#beam-roadmap" locale={locale}>
+                {copy.mainline}
+              </LocalizedLink>
               <span>/</span>
-              <strong>第 {courseModule.number} 站</strong>
+              <strong>{copy.station(courseModule.number)}</strong>
             </div>
 
             {courseModule.slug === "start-line" ? (
               <aside className="syntax-path-note">
                 <div>
-                  <span>还没学过语法？</span>
-                  <strong>
-                    如果值、模式、函数或模块还陌生，先从一门语言学起。
-                  </strong>
-                  <p>
-                    Elixir 和 Erlang 任选一条。学完任意一条，再回来走 BEAM
-                    主线。
-                  </p>
+                  <span>{copy.syntaxEyebrow}</span>
+                  <strong>{copy.syntaxTitle}</strong>
+                  <p>{copy.syntaxText}</p>
                 </div>
                 <div>
-                  <Link href="/from-scratch/elixir">Elixir 从零 →</Link>
-                  <Link href="/from-scratch/erlang">Erlang 从零 →</Link>
+                  <LocalizedLink href="/from-scratch/elixir" locale={locale}>
+                    {copy.elixirBasics}
+                  </LocalizedLink>
+                  <LocalizedLink href="/from-scratch/erlang" locale={locale}>
+                    {copy.erlangBasics}
+                  </LocalizedLink>
                 </div>
               </aside>
             ) : null}
@@ -150,7 +307,9 @@ export default async function LessonPage({ params }: LessonPageProps) {
                 <div className="lesson-labels">
                   <span>{courseModule.stageLabel}</span>
                   <span>{courseModule.level}</span>
-                  {courseModule.optionalReview ? <span>可选复习</span> : null}
+                  {courseModule.optionalReview ? (
+                    <span>{copy.optionalReview}</span>
+                  ) : null}
                   {courseModule.languages.map((language) => (
                     <span key={language}>{language}</span>
                   ))}
@@ -161,18 +320,18 @@ export default async function LessonPage({ params }: LessonPageProps) {
               <div className="lesson-hero-bottom">
                 <div>
                   <span>{courseModule.lessons}</span>
-                  <small>小关卡</small>
+                  <small>{copy.checkpoints}</small>
                 </div>
                 <div>
                   <span>{courseModule.duration}</span>
-                  <small>可以分几次</small>
+                  <small>{copy.splitSessions}</small>
                 </div>
               </div>
             </header>
 
             <section className="lesson-block lesson-block--why">
-              <div className="section-kicker">为什么学这一站</div>
-              <h2>它要解决什么</h2>
+              <div className="section-kicker">{copy.whyKicker}</div>
+              <h2>{copy.whyTitle}</h2>
               <p>
                 <InlineCodeText text={courseModule.why} />
               </p>
@@ -180,11 +339,11 @@ export default async function LessonPage({ params }: LessonPageProps) {
 
             <aside className="lesson-story-bridge">
               <div className="lesson-story-mark" aria-hidden="true">
-                故
+                {copy.storyMark}
               </div>
               <div className="lesson-story-copy">
                 <div className="section-kicker">
-                  借一个故事 · {courseModule.storyBridge.label}
+                  {copy.storyKicker(courseModule.storyBridge.label)}
                 </div>
                 <h2>{courseModule.storyBridge.title}</h2>
                 <p>
@@ -192,7 +351,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
                 </p>
                 <div className="lesson-story-notes">
                   <div>
-                    <strong>回到代码</strong>
+                    <strong>{copy.backToCode}</strong>
                     <p>
                       <InlineCodeText
                         text={courseModule.storyBridge.connection}
@@ -200,7 +359,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
                     </p>
                   </div>
                   <div>
-                    <strong>比喻到这里</strong>
+                    <strong>{copy.metaphorEnds}</strong>
                     <p>
                       <InlineCodeText text={courseModule.storyBridge.boundary} />
                     </p>
@@ -212,8 +371,8 @@ export default async function LessonPage({ params }: LessonPageProps) {
             <section className="lesson-block">
               <div className="lesson-two-column">
                 <div>
-                  <div className="section-kicker">走完这一站</div>
-                  <h2>你会做到</h2>
+                  <div className="section-kicker">{copy.outcomesKicker}</div>
+                  <h2>{copy.outcomesTitle}</h2>
                   <ul className="check-list">
                     {courseModule.outcomes.map((outcome) => (
                       <li key={outcome}>
@@ -224,7 +383,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
                   </ul>
                 </div>
                 <div className="prerequisite-card">
-                  <span>出发前</span>
+                  <span>{copy.beforeStart}</span>
                   <ul>
                     {courseModule.prerequisites.map((prerequisite) => (
                       <li key={prerequisite}>
@@ -237,8 +396,8 @@ export default async function LessonPage({ params }: LessonPageProps) {
             </section>
 
             <section className="lesson-block">
-              <div className="section-kicker">先认词</div>
-              <h2>三个关键词</h2>
+              <div className="section-kicker">{copy.conceptsKicker}</div>
+              <h2>{copy.conceptsTitle}</h2>
               <div className="concept-grid">
                 {courseModule.concepts.map((concept, index) => (
                   <article key={concept.term}>
@@ -259,8 +418,10 @@ export default async function LessonPage({ params }: LessonPageProps) {
               >
                 <div className="installation-heading">
                   <div>
-                    <div className="section-kicker">按系统安装</div>
-                    <h2 id="installation-guides-title">只走你电脑这一条路</h2>
+                    <div className="section-kicker">{copy.installKicker}</div>
+                    <h2 id="installation-guides-title">
+                      {copy.installTitle}
+                    </h2>
                   </div>
                   <p>
                     <InlineCodeText text={courseModule.installation.intro} />
@@ -270,7 +431,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
                 <aside className="installation-mix-note">
                   <span aria-hidden="true">✓</span>
                   <div>
-                    <strong>Mix 已包含在 Elixir 里</strong>
+                    <strong>{copy.mixIncluded}</strong>
                     <p>
                       <InlineCodeText
                         text={courseModule.installation.mixNote}
@@ -317,6 +478,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
                           code={guide.command}
                           language="shell"
                           label={guide.commandLabel}
+                          locale={locale}
                         />
                         <p>
                           <InlineCodeText text={guide.note} />
@@ -331,8 +493,8 @@ export default async function LessonPage({ params }: LessonPageProps) {
             <section className="lesson-block">
               <div className="section-heading-inline">
                 <div>
-                  <div className="section-kicker">同一件事，两种写法</div>
-                  <h2>先看做什么，再看怎么写</h2>
+                  <div className="section-kicker">{copy.twoWaysKicker}</div>
+                  <h2>{copy.twoWaysTitle}</h2>
                 </div>
                 <p>
                   <InlineCodeText text={courseModule.codeCaption} />
@@ -343,11 +505,13 @@ export default async function LessonPage({ params }: LessonPageProps) {
                   code={courseModule.elixirCode}
                   language="elixir"
                   label="Elixir"
+                  locale={locale}
                 />
                 <CopyBlock
                   code={courseModule.erlangCode}
                   language="erlang"
                   label="Erlang"
+                  locale={locale}
                 />
               </div>
             </section>
@@ -357,11 +521,11 @@ export default async function LessonPage({ params }: LessonPageProps) {
                 <div>
                   <span className="experiment-index">LAB</span>
                   <div>
-                    <div className="section-kicker">动手</div>
+                    <div className="section-kicker">{copy.handsOn}</div>
                     <h2>{courseModule.experiment.title}</h2>
                   </div>
                 </div>
-                <span className="experiment-time">约 15–25 分钟</span>
+                <span className="experiment-time">{copy.labTime}</span>
               </div>
               <p className="experiment-intro">
                 <InlineCodeText text={courseModule.experiment.intro} />
@@ -381,11 +545,12 @@ export default async function LessonPage({ params }: LessonPageProps) {
               <CopyBlock
                 code={courseModule.experiment.command}
                 language="shell"
-                label="复制到终端，按回车"
+                label={copy.terminalLabel}
+                locale={locale}
               />
 
               <div className="expected-panel">
-                <span>你会看到</span>
+                <span>{copy.expected}</span>
                 <ul>
                   {courseModule.experiment.expected.map((item) => (
                     <li key={item}>
@@ -401,7 +566,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
                     !
                   </span>
                   <div>
-                    <strong>故意弄坏</strong>
+                    <strong>{copy.breakIt}</strong>
                     <p>
                       <InlineCodeText text={courseModule.experiment.breakIt} />
                     </p>
@@ -411,13 +576,13 @@ export default async function LessonPage({ params }: LessonPageProps) {
 
               <div className="evidence-grid">
                 <div>
-                  <span>这次能看清</span>
+                  <span>{copy.canSee}</span>
                   <p>
                     <InlineCodeText text={courseModule.experiment.canProve} />
                   </p>
                 </div>
                 <div>
-                  <span>这次还不能说明</span>
+                  <span>{copy.cannotShow}</span>
                   <p>
                     <InlineCodeText
                       text={courseModule.experiment.cannotProve}
@@ -432,10 +597,11 @@ export default async function LessonPage({ params }: LessonPageProps) {
               options={courseModule.quiz.options}
               answer={courseModule.quiz.answer}
               explanation={courseModule.quiz.explanation}
+              locale={locale}
             />
 
             <section className="lesson-block challenge-block">
-              <div className="section-kicker">轮到你</div>
+              <div className="section-kicker">{copy.yourTurn}</div>
               <h2>{courseModule.challenge.title}</h2>
               <p className="challenge-brief">
                 <InlineCodeText text={courseModule.challenge.brief} />
@@ -445,12 +611,8 @@ export default async function LessonPage({ params }: LessonPageProps) {
                 {courseModule.challenge.hints.map((hint, index) => (
                   <details key={hint}>
                     <summary>
-                      <span>提示 {index + 1}</span>
-                      {index === 0
-                        ? "先迈一步"
-                        : index === 1
-                          ? "再缩小一点"
-                          : "离答案很近了"}
+                      <span>{copy.hint(index + 1)}</span>
+                      {copy.hintTitles[index]}
                     </summary>
                     <p>
                       <InlineCodeText text={hint} />
@@ -459,17 +621,15 @@ export default async function LessonPage({ params }: LessonPageProps) {
                 ))}
                 <details>
                   <summary>
-                    <span>提示 4</span>
-                    从终点往回想
+                    <span>{copy.hint(4)}</span>
+                    {copy.lastHintTitle}
                   </summary>
-                  <p>
-                    先挑一条“过关信号”，为它写一个最小测试。如果电脑看不出结果，就把这句话改成一个真正能观察到的现象。
-                  </p>
+                  <p>{copy.lastHintText}</p>
                 </details>
               </div>
 
               <div className="acceptance-card">
-                <span>过关条件</span>
+                <span>{copy.acceptance}</span>
                 <ul>
                   {courseModule.challenge.acceptance.map((item, index) => (
                     <li key={item}>
@@ -487,8 +647,8 @@ export default async function LessonPage({ params }: LessonPageProps) {
 
             <section className="lesson-block takeaway-block">
               <div>
-                <div className="section-kicker">带走</div>
-                <h2>记住三句话</h2>
+                <div className="section-kicker">{copy.takeawayKicker}</div>
+                <h2>{copy.takeawayTitle}</h2>
               </div>
               <ol>
                 {courseModule.takeaways.map((takeaway, index) => (
@@ -501,8 +661,8 @@ export default async function LessonPage({ params }: LessonPageProps) {
             </section>
 
             <section className="lesson-block references-block">
-              <div className="section-kicker">再读一点</div>
-              <h2>去看原版资料</h2>
+              <div className="section-kicker">{copy.readMore}</div>
+              <h2>{copy.originalSources}</h2>
               <div>
                 {courseModule.references.map((reference) => (
                   <a
@@ -520,46 +680,52 @@ export default async function LessonPage({ params }: LessonPageProps) {
 
             <section className="lesson-completion">
               <div>
-                <span>本站结束</span>
-                <strong>实验做过，答案也想过，就把这一站收好。</strong>
+                <span>{copy.completionEyebrow}</span>
+                <strong>{copy.completionTitle}</strong>
               </div>
-              <ProgressButton slug={courseModule.slug} />
+              <ProgressButton slug={courseModule.slug} locale={locale} />
             </section>
 
-            <nav className="lesson-pagination" aria-label="相邻模块">
+            <nav
+              className="lesson-pagination"
+              aria-label={copy.paginationLabel}
+            >
               {previous ? (
-                <Link href={`/learn/${previous.slug}`}>
-                  <span>← 上一站</span>
+                <LocalizedLink
+                  href={`/learn/${previous.slug}`}
+                  locale={locale}
+                >
+                  <span>{copy.previous}</span>
                   <strong>
                     {previous.number} · {previous.title}
                   </strong>
-                </Link>
+                </LocalizedLink>
               ) : (
                 <span />
               )}
               {courseModule.slug === "install-toolchain" ? (
-                <Link href="/from-scratch">
-                  <span>下一步 →</span>
-                  <strong>选择一条从零路线</strong>
-                </Link>
+                <LocalizedLink href="/from-scratch" locale={locale}>
+                  <span>{copy.nextStep}</span>
+                  <strong>{copy.chooseBasics}</strong>
+                </LocalizedLink>
               ) : next ? (
-                <Link href={`/learn/${next.slug}`}>
-                  <span>下一站 →</span>
+                <LocalizedLink href={`/learn/${next.slug}`} locale={locale}>
+                  <span>{copy.next}</span>
                   <strong>
                     {next.number} · {next.title}
                   </strong>
-                </Link>
+                </LocalizedLink>
               ) : (
-                <Link href="/#beam-roadmap">
-                  <span>全部通关 →</span>
-                  <strong>回到探险地图</strong>
-                </Link>
+                <LocalizedLink href="/#beam-roadmap" locale={locale}>
+                  <span>{copy.allComplete}</span>
+                  <strong>{copy.backToMap}</strong>
+                </LocalizedLink>
               )}
             </nav>
           </article>
         </div>
       </main>
-      <SiteFooter />
+      <SiteFooter locale={locale} />
     </>
   );
 }

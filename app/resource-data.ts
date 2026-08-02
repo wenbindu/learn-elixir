@@ -10,8 +10,8 @@ import {
   type ResourceGroup,
   type ResourceLink,
 } from "./resource-types";
+import type { Locale } from "./i18n/locales";
 
-const RESOURCE_FILE = path.join(process.cwd(), "content", "resources.md");
 const DEFAULT_TITLE = "BEAM 学习工具箱";
 const RESOURCE_LINE_PATTERN =
   /^- \[([^\]]*)\]\(([^)]*)\)\s+—\s*(.*)$/;
@@ -284,7 +284,13 @@ export function parseResourceMarkdown(source: string): ResourceDirectory {
   };
 }
 
-export async function getResourceDirectory(): Promise<ResourceDirectory> {
-  const source = await readFile(RESOURCE_FILE, "utf8");
+export async function getResourceDirectory(
+  locale: Locale = "zh",
+): Promise<ResourceDirectory> {
+  const filename = locale === "zh" ? "resources.md" : "resources.en.md";
+  const source = await readFile(
+    path.join(process.cwd(), "content", filename),
+    "utf8",
+  );
   return parseResourceMarkdown(source);
 }

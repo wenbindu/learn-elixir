@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import type { Locale } from "../i18n/locales";
 
 const STORAGE_KEY = "beam-path-progress.v1";
 const PROGRESS_EVENT = "beam-path-progress";
@@ -18,6 +19,7 @@ function readProgress(): string[] {
 
 type ProgressButtonProps = {
   slug: string;
+  locale: Locale;
 };
 
 function subscribe(callback: () => void) {
@@ -29,7 +31,7 @@ function subscribe(callback: () => void) {
   };
 }
 
-export function ProgressButton({ slug }: ProgressButtonProps) {
+export function ProgressButton({ slug, locale }: ProgressButtonProps) {
   const complete = useSyncExternalStore(
     subscribe,
     () => readProgress().includes(slug),
@@ -56,7 +58,9 @@ export function ProgressButton({ slug }: ProgressButtonProps) {
       <span className="progress-button-mark" aria-hidden="true">
         {complete ? "✓" : ""}
       </span>
-      {complete ? "已完成" : "标记完成"}
+      {complete
+        ? locale === "zh" ? "已完成" : "Completed"
+        : locale === "zh" ? "标记完成" : "Mark complete"}
     </button>
   );
 }

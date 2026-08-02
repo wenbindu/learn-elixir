@@ -154,6 +154,7 @@ start_server() {
   : >"${log_file}"
 
   nohup "${app_dir}/node_modules/.bin/next" dev \
+    --webpack \
     --hostname "${beam_path_host}" \
     --port "${beam_path_port}" \
     >>"${log_file}" 2>&1 &

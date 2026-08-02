@@ -8,7 +8,7 @@
 3. 从 GitHub 导入 Vercel Project
 4. 验证 Vercel 默认地址
 5. 添加自定义域名并配置 DNS
-6. 设置正式网站地址并重新部署
+6. 验证语言路由与站点地址
 7. 后续通过 Git 推送自动发布
 
 ## 1. 部署前检查
@@ -38,7 +38,10 @@ Production branch: main
 ./scripts/start-local.sh status
 ```
 
-访问 <http://127.0.0.1:3000>，检查首页、课程页面、左上角品牌图标和 favicon。
+访问 <http://127.0.0.1:3000/zh> 和 <http://127.0.0.1:3000/en>，检查两种语言的首页、
+课程页面、左上角品牌图标和 favicon。本地没有 Vercel 地理位置请求头，因此直接访问
+<http://127.0.0.1:3000> 会默认跳到 `/en`。
+本地脚本固定使用 Webpack 热更新，Vercel 生产构建不受这个开发选项影响。
 检查完成后停止开发服务器，再执行完整校验：
 
 ```bash
@@ -116,10 +119,13 @@ Next.js App Router 再根据 `app/` 目录生成页面：
 
 | 文件 | 作用 |
 | --- | --- |
-| [`app/layout.tsx`](../app/layout.tsx) | 全站根布局和 metadata |
-| [`app/page.tsx`](../app/page.tsx) | 网站首页 `/` |
-| [`app/learn/[slug]/page.tsx`](../app/learn/[slug]/page.tsx) | 课程页面 `/learn/:slug` |
+| [`app/[locale]/layout.tsx`](../app/[locale]/layout.tsx) | `/zh`、`/en` 共用布局和本地化 metadata |
+| [`app/[locale]/page.tsx`](../app/[locale]/page.tsx) | 中文、英文首页 |
+| [`app/[locale]/learn/[slug]/page.tsx`](../app/[locale]/learn/[slug]/page.tsx) | 课程页面 `/:locale/learn/:slug` |
+| [`proxy.ts`](../proxy.ts) | 无语言前缀请求的地区识别与重定向 |
 | [`app/manifest.ts`](../app/manifest.ts) | PWA manifest |
+| [`app/sitemap.ts`](../app/sitemap.ts) | 中英文 URL 与 hreflang 对照 |
+| [`app/robots.ts`](../app/robots.ts) | 爬虫规则与 sitemap 地址 |
 
 因此 Vercel 中只需将 **Root Directory** 设为 `./`，并让 Framework Preset、Build
 Command 和 Output Directory 保持默认。`.next/` 是构建过程中生成的内部目录，
@@ -128,7 +134,8 @@ Command 和 Output Directory 保持默认。`.next/` 是构建过程中生成的
 [`scripts/start-local.sh`](../scripts/start-local.sh) 只负责本地开发，不是 Vercel
 部署入口，Vercel 不会调用它。
 
-项目当前不需要必填环境变量，也不需要 `vercel.json`。点击 **Deploy** 完成第一次部署。
+项目当前不需要必填环境变量，也不需要 `vercel.json`。Vercel 会自动提供国家或地区请求头
+和生产域名变量；点击 **Deploy** 即可完成第一次部署。
 
 GitHub 与 Vercel 连接后：
 
@@ -148,8 +155,9 @@ https://beam-path.vercel.app
 
 绑定正式域名前，先检查：
 
-- 首页能够打开。
-- `/learn/install-toolchain`、`/learn/start-line` 等课程深链接能够直接访问。
+- `/zh` 与 `/en` 首页都能打开，页面语言正确。
+- `/zh/learn/install-toolchain`、`/en/learn/start-line` 等课程深链接能够直接访问。
+- 根路径 `/` 能按地区或已有语言选择跳转，无法判断时进入 `/en`。
 - 左上角品牌图标和 Chrome favicon 正常。
 - Elixir Install 与 Erlang/OTP Downloads 等外部资源链接正确。
 - 手机和桌面尺寸下没有明显布局问题。
@@ -201,35 +209,44 @@ Vercel Domains 设置中将另一个重定向到主域名。
 - [Vercel — Setting up a custom domain](https://vercel.com/docs/domains/set-up-custom-domain)
 - [Vercel — Working with SSL certificates](https://vercel.com/docs/domains/working-with-ssl)
 
-## 6. 设置正式网站地址
+## 6. 验证语言路由与站点地址
 
-域名验证成功后，进入：
+站点始终使用明确语言前缀：中文为 `/zh`，英文为 `/en`。访问没有语言前缀的路径时，
+`proxy.ts` 按以下顺序选择语言，并以临时重定向保留原路径和查询参数：
+
+1. 浏览器已有 `beam-path-locale` cookie 时，优先使用用户上次选择。
+2. 否则读取 Vercel 自动提供的 `x-vercel-ip-country` 国家或地区代码。
+3. `CN`、`HK`、`MO`、`TW` 进入中文；其他地区或无法判断时进入英文。
+
+例如，中文地区访问 `/learn/start-line?step=2` 会进入
+`/zh/learn/start-line?step=2`。用户在右上角切到英文后，站点会写入语言 cookie，并进入
+`/en/learn/start-line?step=2`；以后访问无前缀 URL 时也优先使用英文。切换器还会保留
+页面的 `#` 锚点。
+
+已经带 `/zh` 或 `/en` 的 URL 不受地区判断影响。部署后至少检查：
 
 ```text
-Vercel Project
-→ Settings
-→ Environment Variables
+https://你的域名/zh
+https://你的域名/en
+https://你的域名/zh/from-scratch/elixir
+https://你的域名/en/from-scratch/elixir
+https://你的域名/zh/learn/start-line
+https://你的域名/en/learn/start-line
 ```
 
-添加以下生产环境变量：
-
-```text
-Name: NEXT_PUBLIC_SITE_URL
-Value: https://你的正式域名
-Environment: Production
-```
-
-例如：
+语言识别不需要在 Vercel 添加环境变量。metadata、sitemap 与 robots 会自动使用
+Vercel 提供的生产域名。只有需要强制覆盖这些绝对 URL 的站点地址时，才选配：
 
 ```text
 NEXT_PUBLIC_SITE_URL=https://elixir.example.com
 ```
 
-这个变量不是站点启动的必需项，但建议在正式环境配置，使 Open Graph 等元数据使用
-最终域名。环境变量只会应用到新部署；添加或修改后，需要在 **Deployments** 页面
-重新部署最新版本，或产生一次新的 `main` 部署。
+若配置了这个可选变量，需要重新部署；普通的 Vercel 或自定义域名部署可以省略它。
 
-参考：[Vercel — Environment Variables](https://vercel.com/docs/environment-variables)
+参考：
+
+- [Vercel — Request headers](https://vercel.com/docs/headers/request-headers)
+- [Vercel — Environment Variables](https://vercel.com/docs/environment-variables)
 
 ## 7. 后续日常发布
 
@@ -322,8 +339,11 @@ Nameservers 时，才通过 `vercel dns` 管理记录。
 - [ ] Root Directory 是 `./`
 - [ ] Production Branch 是 `main`
 - [ ] `vercel.app` 地址验证通过
+- [ ] `/zh`、`/en` 和两种语言的课程深链接都能直接打开
+- [ ] 根路径在中文地区进入 `/zh`，其他或未知地区进入 `/en`
+- [ ] 手动切换语言后，无前缀 URL 优先使用语言 cookie
 - [ ] 自定义域名已经添加到正确的 Project
 - [ ] DNS 记录与 Vercel 显示的值完全一致
 - [ ] 域名状态有效且 HTTPS 证书已签发
-- [ ] `NEXT_PUBLIC_SITE_URL` 指向正式域名
-- [ ] 设置环境变量后已完成新的 Production Deployment
+- [ ] sitemap 与 robots 中的站点地址使用正式域名
+- [ ] 如果选配了 `NEXT_PUBLIC_SITE_URL`，修改后已完成新的 Production Deployment

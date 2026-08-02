@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import type { BasicPathId } from "../basic-path-data";
+import type { Locale } from "../i18n/locales";
 import styles from "../from-scratch/from-scratch.module.css";
 
 const STORAGE_KEY = "beam-path-basics-progress.v1";
@@ -10,6 +11,7 @@ const PROGRESS_EVENT = "beam-path-basics-progress";
 type BasicProgressProps = {
   language: BasicPathId;
   slug: string;
+  locale: Locale;
 };
 
 function lessonId(language: BasicPathId, slug: string) {
@@ -53,6 +55,7 @@ function useLessonComplete(language: BasicPathId, slug: string) {
 export function BasicProgressButton({
   language,
   slug,
+  locale,
 }: BasicProgressProps) {
   const id = lessonId(language, slug);
   const complete = useLessonComplete(language, slug);
@@ -77,12 +80,14 @@ export function BasicProgressButton({
       aria-pressed={complete}
     >
       <span aria-hidden="true">{complete ? "✓" : ""}</span>
-      {complete ? "已学完" : "标记学完"}
+      {complete
+        ? locale === "zh" ? "已学完" : "Lesson complete"
+        : locale === "zh" ? "标记学完" : "Mark lesson complete"}
     </button>
   );
 }
 
-export function BasicLessonStatus({ language, slug }: BasicProgressProps) {
+export function BasicLessonStatus({ language, slug, locale }: BasicProgressProps) {
   const complete = useLessonComplete(language, slug);
 
   return (
@@ -92,7 +97,9 @@ export function BasicLessonStatus({ language, slug }: BasicProgressProps) {
       }`}
       data-complete={complete}
     >
-      {complete ? "✓ 已学" : "未完成"}
+      {complete
+        ? locale === "zh" ? "✓ 已学" : "✓ Done"
+        : locale === "zh" ? "未完成" : "Not done"}
     </span>
   );
 }

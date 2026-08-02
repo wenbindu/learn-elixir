@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import type { Locale } from "../i18n/locales";
 
 type CopyBlockProps = {
   code: string;
   language: string;
   label: string;
+  locale: Locale;
 };
 
-export function CopyBlock({ code, language, label }: CopyBlockProps) {
+export function CopyBlock({ code, language, label, locale }: CopyBlockProps) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -25,7 +27,9 @@ export function CopyBlock({ code, language, label }: CopyBlockProps) {
           <span>{label}</span>
         </div>
         <button type="button" onClick={copy} aria-live="polite">
-          {copied ? "已复制" : "复制代码"}
+          {copied
+            ? locale === "zh" ? "已复制" : "Copied"
+            : locale === "zh" ? "复制代码" : "Copy code"}
         </button>
       </div>
       <pre>
@@ -34,4 +38,3 @@ export function CopyBlock({ code, language, label }: CopyBlockProps) {
     </div>
   );
 }
-

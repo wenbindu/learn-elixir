@@ -1,16 +1,27 @@
 import Image from "next/image";
-import Link from "next/link";
+import type { Locale } from "../i18n/locales";
+import { sharedUi } from "../i18n/ui";
+import { LocaleSwitcher } from "./LocaleSwitcher";
+import { LocalizedLink } from "./LocalizedLink";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 
 type SiteHeaderProps = {
   compact?: boolean;
+  locale: Locale;
 };
 
-export function SiteHeader({ compact = false }: SiteHeaderProps) {
+export function SiteHeader({ compact = false, locale }: SiteHeaderProps) {
+  const copy = sharedUi[locale].header;
+
   return (
     <header className={`site-header${compact ? " site-header--compact" : ""}`}>
       <div className="header-inner">
-        <Link className="brand" href="/" aria-label="BEAM Path 首页">
+        <LocalizedLink
+          className="brand"
+          href="/"
+          locale={locale}
+          aria-label={copy.homeLabel}
+        >
           <Image
             className="brand-icon"
             src="/brand-icon.png"
@@ -24,23 +35,42 @@ export function SiteHeader({ compact = false }: SiteHeaderProps) {
             <strong>BEAM Path</strong>
             <small>Erlang + Elixir</small>
           </span>
-        </Link>
+        </LocalizedLink>
 
-        <nav className="main-nav" aria-label="主导航">
-          <Link href="/from-scratch">从零学</Link>
-          <Link href="/#beam-roadmap">BEAM 主线</Link>
-          <Link href="/#lab">消息实验</Link>
-          <Link href="/playground">在线练习</Link>
-          <Link href="/keywords">关键字字典</Link>
-          <Link href="/resources">学习工具箱</Link>
+        <nav className="main-nav" aria-label={copy.navLabel}>
+          <LocalizedLink href="/from-scratch" locale={locale}>
+            {copy.basics}
+          </LocalizedLink>
+          <LocalizedLink href="/#beam-roadmap" locale={locale}>
+            {copy.mainline}
+          </LocalizedLink>
+          <LocalizedLink href="/#lab" locale={locale}>
+            {copy.messageLab}
+          </LocalizedLink>
+          <LocalizedLink href="/playground" locale={locale}>
+            {copy.playground}
+          </LocalizedLink>
+          <LocalizedLink href="/keywords" locale={locale}>
+            {copy.keywords}
+          </LocalizedLink>
+          <LocalizedLink href="/resources" locale={locale}>
+            {copy.resources}
+          </LocalizedLink>
         </nav>
 
-        <ThemeSwitcher />
+        <div className="header-utilities">
+          <LocaleSwitcher locale={locale} />
+          <ThemeSwitcher locale={locale} />
+        </div>
 
-        <Link className="header-cta" href="/from-scratch">
-          开始学习
+        <LocalizedLink
+          className="header-cta"
+          href="/from-scratch"
+          locale={locale}
+        >
+          {copy.start}
           <span aria-hidden="true">→</span>
-        </Link>
+        </LocalizedLink>
       </div>
     </header>
   );
