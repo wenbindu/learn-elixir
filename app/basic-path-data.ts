@@ -323,6 +323,8 @@ elem({:ok, 42}, 1)
       "名字让代码容易读。`numbers = [1, 2, 3]` 可以读成“名字 numbers 现在指向这列数字”。",
       "Elixir 的数据不会被原地改掉。对 list 做计算会产生新 list，原来的 list 仍保持不变。",
       "`for value <- list do ... end` 叫 comprehension。它从 list 依次取值，用块里的表达式产生新值，最后收集成新 list。",
+      "练习里的 52、76、91 恰好也是字符 `4`、`L`、`[` 的 Unicode 码点。因此 IEx 可能把同一个整数 list 显示成 `~c\"4L[\"`。这只是显示方式，不是数据变成了字符串。",
+      "单独输入空行或只有 `#` 注释的一行时，IEx 会回显 `nil`。它只表示这一行没有产生有用结果，不会被放进 `scores` 或 `raised`。",
     ],
     concepts: [
       {
@@ -337,12 +339,17 @@ elem({:ok, 42}, 1)
         term: "comprehension",
         explanation: "从集合依次取值，计算后收集成新集合；它不会修改原集合。",
       },
+      {
+        term: "charlist 显示",
+        explanation: "charlist 本质上仍是整数 list。整数都能解释成可打印字符时，IEx 会优先用 `~c\"...\"` 显示。",
+      },
     ],
     symbols: [
       { token: "=", reading: "这里先读作“让左边名字指向右边的值”。下一课会看到它也是匹配运算符。" },
       { token: "<-", reading: "从右边集合依次取一个值，交给左边名字。" },
       { token: "for ... do ... end", reading: "运行 comprehension，并把每次结果收集成新 list。" },
       { token: "+", reading: "把左右两个数字相加，返回一个新数字。" },
+      { token: "~c\"4L[\"", reading: "charlist 写法；它与 `[52, 76, 91]` 是同一个值。" },
     ],
     example: {
       label: "保留旧 list，产生新 list",
@@ -364,6 +371,7 @@ plus_one =
       "`number <- numbers` 从左到右取出 1、2、3，当前值暂时叫 `number`。",
       "块里的 `number + 1` 每次产生一个新数字，`for` 把它们收集成 `[2, 3, 4]`。",
       "整个过程没有修改 `numbers`，所以 tuple 中仍能看到原 list。",
+      "IEx 只负责把结果展示出来。看到 `~c\"...\"` 时，可以逐个对照字符码点；值依旧是整数 list。",
     ],
     practice: {
       task: "把分数 `[52, 76, 91]` 每项加 5，同时保留原 list。",
@@ -377,8 +385,8 @@ raised =
   end
 
 {scores, raised}`,
-      expected: "得到 `{[52, 76, 91], [57, 81, 96]}`。",
-      hint: "取值使用 `<-`；块里写 `score + 5`。",
+      expected: "逻辑结果是 `{[52, 76, 91], [57, 81, 96]}`。IEx 也可能显示成 `{~c\"4L[\", ~c\"9Q`\"}`，两种写法表示完全相同的两个整数 list。粘贴时夹在中间的 `nil` 只来自空行或注释。",
+      hint: "取值使用 `<-`；块里写 `score + 5`。若想强制按数字显示，可先单独运行 `IEx.configure(inspect: [charlists: :as_lists])`。",
       answer: `# 原始 list 保持不变
 scores = [52, 76, 91]
 
@@ -391,13 +399,14 @@ raised =
 {scores, raised}`,
     },
     check: {
-      question: "运行 `raised = for score <- scores do score + 5 end` 后，`scores` 会变成新分数吗？",
-      answer: "不会。`for` 产生并返回一个新 list，原来的 `scores` 没有被修改。",
+      question: "IEx 显示 `scores` 为 `~c\"4L[\"`，是否说明它已经变成文字？",
+      answer: "没有。`~c\"4L[\" == [52, 76, 91]` 的结果是 `true`。charlist 就是整数 list 的另一种显示法；`for` 也没有修改原来的 `scores`。",
     },
     takeaways: [
       "名字指向值，方便后面的代码使用。",
       "`<-` 从集合中依次取值。",
       "comprehension 产生新 list，不会原地修改旧 list。",
+      "`~c\"...\"` 可能只是 IEx 对整数 list 的显示选择。",
     ],
   },
   {

@@ -624,7 +624,11 @@ test("introduces beginner syntax through complete runnable examples", async () =
   ).text();
   assert.match(elixirFor, /for comprehension/);
   assert.match(elixirFor, /comprehension 产生的结果/);
-  assert.match(elixirFor, /原来的 <code[^>]*>scores<\/code> 没有被修改/);
+  assert.match(elixirFor, /没有修改原来的 <code[^>]*>scores<\/code>/);
+  assert.match(elixirFor, /Unicode 码点/);
+  assert.match(elixirFor, /charlist 本质上仍是整数 list/);
+  assert.match(elixirFor, /charlists: :as_lists/);
+  assert.match(elixirFor, /空行或只有/);
 
   const elixirChoices = await (
     await render("/zh/from-scratch/elixir/choices-and-guards")
