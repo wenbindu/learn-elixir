@@ -16,8 +16,19 @@ export type CourseModule = {
   lessons: number;
   level: string;
   languages: string[];
+  prerequisite?: boolean;
   optionalReview?: boolean;
   why: string;
+  question: string;
+  incident: {
+    title: string;
+    description: string;
+    evidence: string[];
+  };
+  patterns: Array<{
+    name: string;
+    purpose: string;
+  }>;
   storyBridge: {
     label: string;
     title: string;
@@ -90,26 +101,26 @@ export const stages: Array<{
   {
     id: "foundation",
     number: "01",
-    title: "先让代码跑起来",
-    description: "先装好工具，再认识 Erlang、Elixir、BEAM、OTP 和 Mix。",
+    title: "先排除环境问题",
+    description: "确认工具、目录和运行时都正常，再把错误交给代码处理。",
   },
   {
     id: "languages",
     number: "02",
-    title: "两种写法轮流试",
-    description: "把同一个小任务写两遍，慢慢看懂它们哪里相同、哪里不同。",
+    title: "跨过语言边界",
+    description: "语言复习是跳级检查；主课只追两种写法共用的数据协议。",
   },
   {
     id: "concurrency",
     number: "03",
-    title: "让小进程一起合作",
-    description: "从收信和回信开始，再认识 OTP、监督树与背压。",
+    title: "处理并发故障",
+    description: "从迟到回复、mailbox 堆积、重启范围和容量上限进入 OTP。",
   },
   {
     id: "production",
     number: "04",
-    title: "把作品带到更大的世界",
-    description: "让节点联网、两门语言合作，再完成一件能应对小故障的作品。",
+    title: "守住系统边界",
+    description: "处理断线、双语边界和重试风暴，再完成可靠任务系统。",
   },
 ];
 
@@ -127,8 +138,31 @@ export const courseModules: CourseModule[] = [
     lessons: 3,
     level: "零基础",
     languages: ["Erlang", "Elixir", "Mix"],
+    prerequisite: true,
     why:
       "后面的代码要靠这些工具运行。若终端找不到命令，问题还没走到代码那里。先把工具放稳，再去起跑线。",
+    question:
+      "【前置诊断】为什么这台电脑找不到 Erlang、Elixir 或 Mix：工具没装好、版本不兼容，还是 PATH 没有刷新？",
+    incident: {
+      title: "三个命令没有一起到位",
+      description:
+        "同学照着旧教程安装后，erl 能运行，elixir 或 mix 却找不到。另一台电脑三个命令都有，OTP 与 Elixir 的版本却不兼容。先诊断工具链，再碰项目代码。",
+      evidence: [
+        "新旧终端中 `erl -s erlang halt` 的结果",
+        "`elixir --version` 与 `mix --version` 的完整输出",
+        "安装目录是否在当前 PATH 中，以及官方兼容表里的版本组合",
+      ],
+    },
+    patterns: [
+      {
+        name: "Health Check",
+        purpose: "用三个版本命令确认每件必需工具都能启动。",
+      },
+      {
+        name: "Fail Fast",
+        purpose: "工具缺失或版本配对失败时，在进入项目之前就停下来。",
+      },
+    ],
     storyBridge: {
       label: "木匠开工",
       title: "工具先摆上案",
@@ -392,8 +426,31 @@ mix help`,
     lessons: 2,
     level: "零基础",
     languages: ["BEAM", "Elixir", "Erlang"],
+    prerequisite: true,
     why:
       "这五个名字不用硬背。Erlang 和 Elixir 写代码，BEAM 运行代码，OTP 提供可靠做法，Mix 管理项目。亲手跑一遍，关系就清楚了。",
+    question:
+      "【前置诊断】`mix test` 失败时，怎样先判断问题属于命令、项目目录、运行时，还是代码？",
+    incident: {
+      title: "错误发生在不同层",
+      description:
+        "一个同学在没有 mix.exs 的目录运行 `mix test`，另一个同学遇到 OTP 版本不兼容。他们都以为是代码坏了。先确定故障在哪一层，才知道下一步看哪里。",
+      evidence: [
+        "当前目录是否包含 `mix.exs`",
+        "erl、`elixir --version` 与 `mix --version` 的输出",
+        "`mix test` 的第一条错误，以及项目能否完成编译",
+      ],
+    },
+    patterns: [
+      {
+        name: "Layered Architecture",
+        purpose: "把语言、运行时、OTP 与项目工具分层检查，不让错误混在一起。",
+      },
+      {
+        name: "Fail Fast",
+        purpose: "先验证环境和项目边界，再调试业务代码。",
+      },
+    ],
     storyBridge: {
       label: "中国戏台",
       title: "同一出戏，两套剧本",
@@ -412,7 +469,7 @@ mix help`,
     ],
     prerequisites: [
       "已走完安装准备，终端能找到 `erl`、`elixir` 和 `mix`",
-      "已经走完任意一条 From Scratch 路线；如果值、模式、函数或模块还陌生，先回去补基础",
+      "已经完成任意一门语言的 Foundation；如果值、模式、函数或模块还陌生，先回去补基础",
     ],
     concepts: [
       {
@@ -556,6 +613,32 @@ mix run -e 'IO.puts("OTP #{:erlang.system_info(:otp_release)}")'`,
     languages: ["BEAM", "OTP"],
     why:
       "BEAM 用许多小进程同时工作。每个进程保管自己的数据，通过消息合作。一个进程出错时，影响通常可以留在局部。",
+    question:
+      "多个发送者同时更新计数时，谁拥有状态，怎样发现 mailbox 里一直没有被处理的消息？",
+    incident: {
+      title: "计数器还活着，读取请求却不回",
+      description:
+        "计数进程仍在运行，发送者也不断投递消息，可读取结果不再变化。处理循环漏掉了一种消息形状，信箱里的未匹配消息越积越多。",
+      evidence: [
+        "计数进程的 PID 是否仍然存活",
+        "mailbox 长度是否持续增长",
+        "停止变化的读取结果，以及信箱中未匹配消息的实际形状",
+      ],
+    },
+    patterns: [
+      {
+        name: "Actor Model",
+        purpose: "让一个进程拥有状态，只通过消息与外界合作。",
+      },
+      {
+        name: "Single Writer",
+        purpose: "由唯一拥有者串行处理更新，避开共享可变状态。",
+      },
+      {
+        name: "Message Filter",
+        purpose: "用明确的消息模式决定处理范围，并观察未匹配消息。",
+      },
+    ],
     storyBridge: {
       label: "古代驿站",
       title: "每座驿站都有公文匣",
@@ -700,6 +783,28 @@ send(pid, {:add, 1}); send(pid, {:add, 2}); send(pid, {:add, 3})`,
     languages: ["Elixir"],
     why:
       "长函数容易混入太多工作。先用模式认出数据，再把转换拆成小函数。管道负责把上一步结果交给下一步。",
+    question:
+      "【语言跳级复习】怎样把会遇到空行、未知级别和坏格式的日志清洗器，拆成可单独测试的流水线？",
+    incident: {
+      title: "一条 WARN 日志让整条流水线停下",
+      description:
+        "输入里混着空行、空格与 WARN。解析器只认识 INFO 和 ERROR，于是抛出 FunctionClauseError，后面的统计也没有机会运行。",
+      evidence: [
+        "能复现问题的最小输入，其中保留一条 WARN",
+        "trim、filter 与 parse 每一步的中间结果",
+        "失败测试，以及异常指出的函数子句",
+      ],
+    },
+    patterns: [
+      {
+        name: "Pipes and Filters",
+        purpose: "让每一步只做一种转换，输出再交给下一步。",
+      },
+      {
+        name: "Single Responsibility",
+        purpose: "让清理、解析与汇总各自成为可测试的小函数。",
+      },
+    ],
     storyBridge: {
       label: "古代书坊",
       title: "一册《唐诗》的四道工序",
@@ -851,6 +956,28 @@ mix test --trace`,
     languages: ["Erlang"],
     why:
       "不少 BEAM 文档和工具使用 Erlang。看懂基础写法，就能读懂错误信息、`:gen_tcp` 和 observer。先从数据、函数与标点开始。",
+    question:
+      "【语言跳级复习】怎样用 Erlang 重做同一份日志工具，并让两种实现遵守同一输入输出契约？",
+    incident: {
+      title: "两份实现通过了各自测试，却给出不同结果",
+      description:
+        "Elixir 与 Erlang 的解析器各自通过测试，遇到空行、WARN 或坏格式时却给出不同结果。原因藏在导出函数、标点、模式和输入约定里。",
+      evidence: [
+        "两种实现共用的输入样例与预期结果",
+        "导出函数列表，以及编译器给出的第一条错误",
+        "空行、INFO、WARN 与坏格式输入的并排输出",
+      ],
+    },
+    patterns: [
+      {
+        name: "Contract Test",
+        purpose: "用同一组样例约束两种语言的输入与输出。",
+      },
+      {
+        name: "Ports and Adapters",
+        purpose: "把语言特有实现藏在共同契约后面。",
+      },
+    ],
     storyBridge: {
       label: "古文句读",
       title: "先给古文断句",
@@ -988,6 +1115,32 @@ rebar3 eunit`,
     languages: ["Elixir", "Erlang", "BEAM"],
     why:
       "把同一件事并排写两次，比各背一遍更清楚。Elixir 写 `:ok`，Erlang 写 `ok`；在 BEAM 上它们是同一个 atom。字符串、模块和异常仍有真实差异。",
+    question:
+      "订单收到支付、发货、取消和重复事件时，怎样让 Elixir 与 Erlang 遵守同一套状态机协议？",
+    incident: {
+      title: "同一个 paid，在边界两边不是同一个状态",
+      description:
+        "一边使用 atom，另一边传来字符串；一边允许某次转换，另一边拒绝。重复事件到来后，两份订单状态从此分开。",
+      evidence: [
+        "完整的状态转换表",
+        "跨语言边界传递的原始 term",
+        "有效、无效与重复事件的双语契约测试",
+      ],
+    },
+    patterns: [
+      {
+        name: "State Machine",
+        purpose: "按当前状态与事件，明确规定允许的下一状态。",
+      },
+      {
+        name: "Command",
+        purpose: "把每次支付、发货或取消表达成清楚的命令 term。",
+      },
+      {
+        name: "Contract Test",
+        purpose: "让两种实现接受同一张转换表的检验。",
+      },
+    ],
     storyBridge: {
       label: "军令与虎符",
       title: "暗号要对得上",
@@ -1004,7 +1157,7 @@ rebar3 eunit`,
       "能用 spec 写下双方约定的数据形状，再用测试检查约定有没有走样",
     ],
     prerequisites: [
-      "完成任意一条 From Scratch 基础路线；另一种语言可以边对照边读",
+      "完成任意一门语言的 Foundation；另一种语言可以边对照边读",
       "会给同样的输入检查同样的输出",
     ],
     concepts: [
@@ -1126,6 +1279,32 @@ iex -S mix`,
     languages: ["Elixir", "Erlang", "BEAM"],
     why:
       "先写一次消息循环，才能看清 GenServer 做了什么。请求带编号，回复带同一编号。timeout 只结束等待，不会撤回消息。",
+    question:
+      "并发请求的回复会迟到、乱序，服务进程也可能退出时，怎样保证每个调用者拿到自己的结果？",
+    incident: {
+      title: "第二个请求收到了第一个请求的迟到回复",
+      description:
+        "第一个请求超时后，迟到回复仍留在调用者信箱里。第二个请求没有独立编号，刚好匹配了旧回复；服务退出又被误报成普通超时。",
+      evidence: [
+        "请求、reference 与回复的完整日志",
+        "超时后调用者 mailbox 中仍然存在的消息",
+        "monitor 的 DOWN 与 timeout 先后发生的时间线",
+      ],
+    },
+    patterns: [
+      {
+        name: "Correlation Identifier",
+        purpose: "给每次请求唯一 reference，只接收带同一 reference 的回复。",
+      },
+      {
+        name: "Request-Reply",
+        purpose: "明确请求者、接收者与回复消息的协议。",
+      },
+      {
+        name: "Timeout",
+        purpose: "限制等待时间，同时承认迟到消息仍需识别和处理。",
+      },
+    ],
     storyBridge: {
       label: "镖局回执",
       title: "镖号和迟到的回执",
@@ -1267,6 +1446,32 @@ Process.info(self(), :messages)`,
     languages: ["Elixir", "Erlang", "OTP"],
     why:
       "每次重写启动、系统消息和回复，容易漏掉细节。OTP behaviour 提供通用章法。API、状态归属和过载策略仍由我们决定。",
+    question:
+      "把手写循环改成 GenServer 后，怎样划分 call 与 cast，并阻止慢任务把 mailbox 塞满？",
+    incident: {
+      title: "发送者很快，服务却越来越慢",
+      description:
+        "调用者不断 cast，服务却在回调里执行慢 I/O。发送没有等待，mailbox 越积越长，后来的同步查询也开始超时。",
+      evidence: [
+        "mailbox 长度随时间的变化",
+        "call 的延迟与 timeout 次数",
+        "输入速率、完成速率与 busy 拒绝次数",
+      ],
+    },
+    patterns: [
+      {
+        name: "Template Method",
+        purpose: "由 behaviour 固定生命周期与回调骨架，业务只填必要步骤。",
+      },
+      {
+        name: "Facade",
+        purpose: "用清楚的客户端 API 隐藏原始消息形状。",
+      },
+      {
+        name: "Bounded Buffer",
+        purpose: "限制待处理工作数量，满载时明确返回 busy。",
+      },
+    ],
     storyBridge: {
       label: "唐代驿路",
       title: "公文分两种",
@@ -1419,6 +1624,32 @@ handle_call({put, Key, Value}, _From, State) ->
     languages: ["Elixir", "Erlang", "OTP"],
     why:
       "“Let it crash” 不是放任错误。无法继续的进程交给监督者重启；密码错误、库存不足等预期情况仍要正常返回。",
+    question:
+      "Registry、worker supervisor 与 dispatcher 有依赖时，怎样选择重启策略，让故障恢复充分又不过度？",
+    incident: {
+      title: "一个独立 child 退出，整个子系统都被重启",
+      description:
+        "监督树把彼此独立的 child 放进 one_for_all。一个 worker 退出后，Registry 和 dispatcher 也被重启；换成错误顺序后，依赖者又保留了过期状态。",
+      evidence: [
+        "child 的依赖关系、启动顺序与监督树结构",
+        "每次注入退出前后的 PID",
+        "重启强度，以及恢复后的状态和外部副作用检查",
+      ],
+    },
+    patterns: [
+      {
+        name: "Supervision Tree",
+        purpose: "把进程所有权、依赖和恢复边界写进层级结构。",
+      },
+      {
+        name: "Bulkhead",
+        purpose: "把互不依赖的工作拆进不同故障域，避免一处拖倒全部。",
+      },
+      {
+        name: "Restart Strategy",
+        purpose: "按依赖关系选择 one_for_one、rest_for_one 或 one_for_all。",
+      },
+    ],
     storyBridge: {
       label: "《三国演义》行军营寨",
       title: "粮草营出了问题",
@@ -1571,6 +1802,32 @@ Supervisor.which_children(Jobs.Supervisor)`,
     languages: ["Elixir", "Erlang", "BEAM"],
     why:
       "进程适合保管状态、表达生命周期和隔离错误。普通计算不必都经过 GenServer，无限 Task 也会耗尽连接与内存。工具要按状态和容量来选。",
+    question:
+      "突发一万条 URL 检查请求时，怎样限制运行数与等待数，并清楚返回 timeout、失败或 busy？",
+    incident: {
+      title: "无限 Task 吃光连接，mailbox 仍继续增长",
+      description:
+        "系统为每个 URL 立刻启动 Task。连接与内存很快耗尽，请求却仍在无形排队，调用者只能等到 timeout。",
+      evidence: [
+        "活跃 Task 数与连接数的峰值",
+        "队列或 mailbox 长度，以及 P95 延迟",
+        "timeout、执行失败与满载拒绝的分类计数",
+      ],
+    },
+    patterns: [
+      {
+        name: "Bulkhead",
+        purpose: "隔离并限制并发 worker 与外部连接的占用。",
+      },
+      {
+        name: "Bounded Buffer",
+        purpose: "给等待队列设上限，容量用尽时不再暗中堆积。",
+      },
+      {
+        name: "Backpressure",
+        purpose: "通过等待、降速或拒绝，把容量信号传回上游。",
+      },
+    ],
     storyBridge: {
       label: "都江堰",
       title: "宝瓶口有多宽",
@@ -1711,6 +1968,32 @@ collect(Running, Pending, Limit) ->
     languages: ["BEAM", "OTP"],
     why:
       "分布式 Erlang 让远程发送写起来很自然，网络却仍会延迟或断开。节点名和 cookie 只帮助连接；一致性、投递、容量和安全仍要设计。",
+    question:
+      "远程 worker 在请求执行中途断线时，调用者得到什么结果，系统怎样标记 stale、重试并避免重复执行？",
+    incident: {
+      title: "节点已经失联，仪表盘仍显示绿色",
+      description:
+        "远程节点在请求中途断开，最后一次指标仍被当作健康数据展示。调用者重试后，原任务又可能已经完成，外部动作因此执行两遍。",
+      evidence: [
+        "nodeup、nodedown 与请求 reference 的时间线",
+        "最后一次样本的时间戳与 stale 标记",
+        "重试、幂等记录，以及重连后的重新注册日志",
+      ],
+    },
+    patterns: [
+      {
+        name: "Circuit Breaker",
+        purpose: "节点不可用时停止继续路由，并用探测决定何时恢复。",
+      },
+      {
+        name: "Lease",
+        purpose: "让健康与注册信息按时间失效，不把旧数据当作当前事实。",
+      },
+      {
+        name: "Idempotent Consumer",
+        purpose: "让重试或重复投递不会重复产生外部效果。",
+      },
+    ],
     storyBridge: {
       label: "长城烽火台",
       title: "烽火断了",
@@ -1856,6 +2139,32 @@ Node.ping(:"b@127.0.0.1")`,
     languages: ["Elixir", "Erlang"],
     why:
       "两门语言能在同一台 BEAM 中直接互调，但文字、record 与 struct 的形状不同。把转换集中在边界，并约好成功与失败 term。",
+    question:
+      "Elixir API 与 Erlang worker 之间，怎样固定文字、数据结构和异常协议，使 record 或 Unicode 变化不扩散？",
+    incident: {
+      title: "record 加了一个字段，Elixir 按位置读取的代码全坏了",
+      description:
+        "Erlang 改动了私有 record，Elixir 却一直按 tuple 位置取值。边界还混用 binary 与 charlist，一次小改动扩散成多处错误。",
+      evidence: [
+        "跨语言边界上的原始 term 与 guard",
+        "中文、emoji 与空文本的 Unicode 往返测试",
+        "成功、业务错误与进程退出的双语契约测试",
+      ],
+    },
+    patterns: [
+      {
+        name: "Adapter",
+        purpose: "把文字、record、struct 与错误转换集中在一个边界模块。",
+      },
+      {
+        name: "Anti-Corruption Layer",
+        purpose: "阻止某门语言的私有表示进入另一边的核心代码。",
+      },
+      {
+        name: "Data Transfer Object",
+        purpose: "用简单、稳定的 tagged term 或 map 作为交换数据。",
+      },
+    ],
     storyBridge: {
       label: "文言与白话合写一本书",
       title: "合写一本书",
@@ -2000,6 +2309,32 @@ mix test test/interoperability_test.exs`,
     languages: ["Elixir", "Erlang", "OTP"],
     why:
       "终点作品把前面的工具连起来。我们会制造队列满、任务失败、消息迟到和节点断开，再检查状态、重试、恢复与拒绝规则。",
+    question:
+      "怎样构建有界、至少一次执行的任务系统，在队列满、worker 崩溃、timeout 与节点断线时仍守住容量、幂等和重试上限？",
+    incident: {
+      title: "一个持续失败的任务触发重试风暴",
+      description:
+        "失败任务没有重试上限，也没有幂等键。它一次次回到队列，容量计数逐渐失真，外部动作还可能重复发生。",
+      evidence: [
+        "故障前后 queued、running 与 retry 数量",
+        "幂等键，以及外部副作用是否只发生一次的记录",
+        "reject、recover、give-up 指标与注入故障测试",
+      ],
+    },
+    patterns: [
+      {
+        name: "Bounded Buffer",
+        purpose: "使用有限队列，并在队列满时明确拒绝新任务。",
+      },
+      {
+        name: "Idempotent Consumer",
+        purpose: "让至少一次投递产生的重复执行保持安全。",
+      },
+      {
+        name: "Retry with Exponential Backoff",
+        purpose: "限制重试次数并逐步拉开间隔，避免重试风暴。",
+      },
+    ],
     storyBridge: {
       label: "《三国演义》粮草调度",
       title: "粮车有限",
@@ -2139,7 +2474,8 @@ mix test --only fault_injection --trace`,
 ];
 
 export const recommendedCourseModules = courseModules.filter(
-  (courseModule) => !courseModule.optionalReview,
+  (courseModule) =>
+    !courseModule.optionalReview && !courseModule.prerequisite,
 );
 
 export const courseStats = {
@@ -2149,8 +2485,12 @@ export const courseStats = {
     0,
   ),
   mainlineStations: recommendedCourseModules.length,
-  optionalReviewStations:
-    courseModules.length - recommendedCourseModules.length,
+  prerequisiteStations: courseModules.filter(
+    (courseModule) => courseModule.prerequisite,
+  ).length,
+  optionalReviewStations: courseModules.filter(
+    (courseModule) => courseModule.optionalReview,
+  ).length,
 };
 
 export function getModule(slug: string) {

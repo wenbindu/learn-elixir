@@ -9,26 +9,26 @@ export const stagesEn: Array<{
   {
     id: "foundation",
     number: "01",
-    title: "Get the code running",
-    description: "Set up the tools, then meet Erlang, Elixir, BEAM, OTP, and Mix.",
+    title: "Rule out environment failures",
+    description: "Check the tools, project directory, and runtime before blaming the code.",
   },
   {
     id: "languages",
     number: "02",
-    title: "Try two ways to write it",
-    description: "Write the same small task twice. Notice what the two languages share and where they differ.",
+    title: "Cross the language boundary",
+    description: "Use language reviews as placement checks, then focus on the shared data contract.",
   },
   {
     id: "concurrency",
     number: "03",
-    title: "Let small processes work together",
-    description: "Start with sending and receiving messages, then meet OTP, supervision trees, and backpressure.",
+    title: "Handle concurrency failures",
+    description: "Enter OTP through late replies, mailbox growth, restart scope, and capacity limits.",
   },
   {
     id: "production",
     number: "04",
-    title: "Take your project into a bigger world",
-    description: "Connect nodes, let both languages work together, and build something that can handle small failures.",
+    title: "Protect system boundaries",
+    description: "Handle disconnects, language boundaries, and retry storms, then build a reliable task system.",
   },
 ];
 
@@ -45,7 +45,28 @@ export const courseModulesEn: CourseModule[] = [
     lessons: 3,
     level: "No experience needed",
     languages: ["Erlang", "Elixir", "Mix"],
+    prerequisite: true,
     why: "The code ahead needs these tools to run. If the terminal cannot find a command, the problem has not reached your code yet. Set up the tools first, then head to the starting line.",
+    question: "[Prerequisite diagnostic] Why can this computer not find Erlang, Elixir, or Mix: is a tool missing, are the versions incompatible, or is PATH stale?",
+    incident: {
+      title: "The three commands did not arrive together",
+      description: "A learner followed an old guide. erl works, but elixir or mix cannot be found. On another computer all three commands exist, but OTP and Elixir are incompatible. Diagnose the toolchain before touching project code.",
+      evidence: [
+        "The result of `erl -s erlang halt` in old and newly opened terminals",
+        "The complete output of `elixir --version` and `mix --version`",
+        "Whether the install directory is in the current PATH, plus the version pair in the official compatibility table",
+      ],
+    },
+    patterns: [
+      {
+        name: "Health Check",
+        purpose: "Use three version commands to confirm that every required tool can start.",
+      },
+      {
+        name: "Fail Fast",
+        purpose: "Stop before project work when a tool is missing or the version pair fails.",
+      },
+    ],
     storyBridge: {
       label: "A carpenter gets ready",
       title: "Put the tools on the bench first",
@@ -257,7 +278,28 @@ mix help`,
     lessons: 2,
     level: "Beginner",
     languages: ["BEAM", "Elixir", "Erlang"],
+    prerequisite: true,
     why: "You do not need to memorize five names. Erlang and Elixir express code. BEAM runs it. OTP supplies reliable patterns. Mix manages a project. Run each one once and their jobs become clear.",
+    question: "[Prerequisite diagnostic] When `mix test` fails, how can you first tell whether the problem belongs to the command, project directory, runtime, or code?",
+    incident: {
+      title: "The errors happened on different layers",
+      description: "One learner runs `mix test` outside a directory with mix.exs. Another has an incompatible OTP version. Both conclude that the code is broken. Locate the failing layer before choosing what to inspect next.",
+      evidence: [
+        "Whether the current directory contains `mix.exs`",
+        "The output from erl, `elixir --version`, and `mix --version`",
+        "The first error from `mix test` and whether the project can compile",
+      ],
+    },
+    patterns: [
+      {
+        name: "Layered Architecture",
+        purpose: "Check the language, runtime, OTP, and project-tool layers separately.",
+      },
+      {
+        name: "Fail Fast",
+        purpose: "Verify the environment and project boundary before debugging business code.",
+      },
+    ],
     storyBridge: {
       label: "A theater stage",
       title: "Two scripts, one play",
@@ -273,7 +315,7 @@ mix help`,
     ],
     prerequisites: [
       "Finish the setup lesson so the terminal can find `erl`, `elixir`, and `mix`",
-      "Finish either From Scratch path. If values, patterns, functions, or modules still feel unfamiliar, review those basics first",
+      "Finish Foundation in either language. If values, patterns, functions, or modules still feel unfamiliar, review those lessons first",
     ],
     concepts: [
       {
@@ -398,6 +440,30 @@ mix run -e 'IO.puts("OTP #{:erlang.system_info(:otp_release)}")'`,
     level: "Beginner",
     languages: ["BEAM", "OTP"],
     why: "BEAM lets many small processes work at once. Each process owns its data and works with others through messages. When one process fails, the effect can usually stay in one small area.",
+    question: "When several senders update a counter at once, who owns the state, and how can we spot messages that the mailbox never handles?",
+    incident: {
+      title: "The counter is alive, but read requests get no answer",
+      description: "The counter process is still running and senders keep delivering messages, but the reported value stops changing. Its loop forgot one message shape, so unmatched messages keep collecting in the mailbox.",
+      evidence: [
+        "Whether the counter PID is still alive",
+        "Whether the mailbox length keeps growing",
+        "The value that stopped changing and the actual shape of unmatched mailbox messages",
+      ],
+    },
+    patterns: [
+      {
+        name: "Actor Model",
+        purpose: "Let one process own the state and cooperate with the outside through messages.",
+      },
+      {
+        name: "Single Writer",
+        purpose: "Let one owner serialize updates instead of sharing mutable state.",
+      },
+      {
+        name: "Message Filter",
+        purpose: "Use explicit message patterns to define what is handled and observe what is not.",
+      },
+    ],
     storyBridge: {
       label: "Old relay stations",
       title: "Every station has its own message box",
@@ -522,6 +588,26 @@ send(pid, {:add, 1}); send(pid, {:add, 2}); send(pid, {:add, 3})`,
     level: "Beginner exploration",
     languages: ["Elixir"],
     why: "Long functions easily collect too many jobs. First use patterns to recognize data, then split each change into a small function. A pipeline passes one result to the next step.",
+    question: "[Optional language review] How can we split a log cleaner that meets blank lines, unknown levels, and malformed input into independently testable stages?",
+    incident: {
+      title: "One WARN line stopped the whole pipeline",
+      description: "The input mixes blank lines, spaces, and WARN entries. The parser only knows INFO and ERROR, so it raises FunctionClauseError before the summary can run.",
+      evidence: [
+        "The smallest input that reproduces the failure, including one WARN line",
+        "The intermediate result after each trim, filter, and parse stage",
+        "The failing test and the function clause named by the exception",
+      ],
+    },
+    patterns: [
+      {
+        name: "Pipes and Filters",
+        purpose: "Give each stage one transformation, then pass its output to the next stage.",
+      },
+      {
+        name: "Single Responsibility",
+        purpose: "Make cleaning, parsing, and summarizing separate testable functions.",
+      },
+    ],
     storyBridge: {
       label: "An old print shop",
       title: "Four steps for one book",
@@ -651,6 +737,26 @@ mix test --trace`,
     level: "Beginner exploration",
     languages: ["Erlang"],
     why: "Many BEAM documents and tools use Erlang. Once you can read its basic forms, error messages, `:gen_tcp`, and Observer become easier to understand. Start with data, functions, and punctuation.",
+    question: "[Optional language review] How can we rebuild the same log tool in Erlang and make both implementations obey one input-output contract?",
+    incident: {
+      title: "Both implementations passed their own tests but returned different results",
+      description: "The Elixir and Erlang parsers each pass their own tests, yet disagree on blank lines, WARN, and malformed input. The cause hides in exports, punctuation, patterns, and input assumptions.",
+      evidence: [
+        "Shared input fixtures and expected results for both implementations",
+        "The exported function list and the compiler's first error",
+        "Side-by-side output for blank, INFO, WARN, and malformed inputs",
+      ],
+    },
+    patterns: [
+      {
+        name: "Contract Test",
+        purpose: "Use the same fixtures to constrain both languages' inputs and outputs.",
+      },
+      {
+        name: "Ports and Adapters",
+        purpose: "Keep language-specific implementations behind a shared contract.",
+      },
+    ],
     storyBridge: {
       label: "Punctuation in an old text",
       title: "Mark where the sentences break",
@@ -764,7 +870,31 @@ rebar3 eunit`,
     lessons: 4,
     level: "Two-language challenge",
     languages: ["Elixir", "Erlang", "BEAM"],
-    why: "Writing the same task side by side is clearer than memorizing each language alone. Elixir writes `:ok`; Erlang writes `ok`. On BEAM, they are the same atom. Strings, modules, and exceptions still have real differences.",
+    why: "Comparing the same task in both languages is clearer than memorizing each one alone. Elixir writes `:ok`; Erlang writes `ok`. On BEAM, they are the same atom. Strings, modules, and exceptions still have real differences.",
+    question: "When an order receives pay, ship, cancel, and duplicate events, how can Elixir and Erlang follow the same state-machine protocol?",
+    incident: {
+      title: "The same paid value is not the same state on both sides",
+      description: "One side uses an atom while the other sends a string. One implementation permits a transition that the other rejects. After a duplicate event, the two copies of the order state diverge.",
+      evidence: [
+        "The complete state-transition table",
+        "The raw terms exchanged across the language boundary",
+        "Bilingual contract tests for valid, invalid, and duplicate events",
+      ],
+    },
+    patterns: [
+      {
+        name: "State Machine",
+        purpose: "Define the allowed next state from the current state and event.",
+      },
+      {
+        name: "Command",
+        purpose: "Represent each pay, ship, or cancel event as an explicit command term.",
+      },
+      {
+        name: "Contract Test",
+        purpose: "Run both implementations against the same transition table.",
+      },
+    ],
     storyBridge: {
       label: "A matching seal",
       title: "Both halves must fit",
@@ -778,7 +908,7 @@ rebar3 eunit`,
       "Use specs to record an agreed data shape and tests to catch changes to that agreement",
     ],
     prerequisites: [
-      "Finish either From Scratch path. You can read the other language beside it as you go",
+      "Finish Foundation in either language. You can read the other language beside it as you go",
       "Know how to check that the same input produces the same output",
     ],
     concepts: [
@@ -885,6 +1015,30 @@ iex -S mix`,
     level: "Intermediate exploration",
     languages: ["Elixir", "Erlang", "BEAM"],
     why: "Write one message loop by hand so you can see what GenServer adds. Give every request a number and return that number with the reply. A timeout only stops waiting; it does not pull a message back.",
+    question: "When concurrent replies can be late or out of order and the service process can exit, how do we make sure each caller gets its own result?",
+    incident: {
+      title: "The second request received the first request's late reply",
+      description: "After the first request times out, its late reply remains in the caller's mailbox. The second request has no unique identifier and matches that old reply; a service exit is also mistaken for an ordinary timeout.",
+      evidence: [
+        "A complete log of requests, references, and replies",
+        "Messages still present in the caller's mailbox after timeout",
+        "A timeline showing whether monitor DOWN or timeout happened first",
+      ],
+    },
+    patterns: [
+      {
+        name: "Correlation Identifier",
+        purpose: "Give every request a unique reference and accept only a reply with that reference.",
+      },
+      {
+        name: "Request-Reply",
+        purpose: "Define the requester, receiver, and reply-message protocol explicitly.",
+      },
+      {
+        name: "Timeout",
+        purpose: "Limit waiting while recognizing that a late message can still arrive and must be handled.",
+      },
+    ],
     storyBridge: {
       label: "A delivery receipt",
       title: "A tracking number and a late receipt",
@@ -1008,6 +1162,30 @@ Process.info(self(), :messages)`,
     level: "Intermediate exploration",
     languages: ["Elixir", "Erlang", "OTP"],
     why: "Rewriting startup, system messages, and replies every time makes details easy to miss. An OTP behaviour supplies a common pattern. We still decide the API, state owner, and overload policy.",
+    question: "After replacing a hand-written loop with GenServer, how should call and cast be divided, and how can slow work be kept from filling the mailbox?",
+    incident: {
+      title: "Senders are fast, but the service gets slower and slower",
+      description: "Callers keep casting while the service performs slow I/O inside a callback. Sending never waits, the mailbox grows, and later synchronous queries begin to time out.",
+      evidence: [
+        "Mailbox length over time",
+        "Call latency and timeout count",
+        "Input rate, completion rate, and busy rejection count",
+      ],
+    },
+    patterns: [
+      {
+        name: "Template Method",
+        purpose: "Let the behaviour fix the lifecycle and callback skeleton while business code fills the required steps.",
+      },
+      {
+        name: "Facade",
+        purpose: "Hide raw message shapes behind a clear client API.",
+      },
+      {
+        name: "Bounded Buffer",
+        purpose: "Cap pending work and return busy explicitly when capacity is full.",
+      },
+    ],
     storyBridge: {
       label: "A relay-road rulebook",
       title: "Two kinds of official letter",
@@ -1143,6 +1321,30 @@ handle_call({put, Key, Value}, _From, State) ->
     level: "Intermediate exploration",
     languages: ["Elixir", "Erlang", "OTP"],
     why: "“Let it crash” does not mean ignoring errors. A process that cannot continue lets a supervisor restart it. Expected cases such as a wrong password or low stock should still return normal results.",
+    question: "When Registry, a worker supervisor, and a dispatcher depend on one another, which restart strategy recovers enough without restarting too much?",
+    incident: {
+      title: "One independent child exited, and the whole subsystem restarted",
+      description: "A supervisor puts independent children under one_for_all. When one worker exits, Registry and the dispatcher restart too; with the wrong order, a dependent process instead keeps stale state.",
+      evidence: [
+        "The child dependency graph, start order, and supervision-tree structure",
+        "PIDs before and after each injected exit",
+        "Restart intensity plus state and external-effect checks after recovery",
+      ],
+    },
+    patterns: [
+      {
+        name: "Supervision Tree",
+        purpose: "Encode process ownership, dependencies, and recovery boundaries as a hierarchy.",
+      },
+      {
+        name: "Bulkhead",
+        purpose: "Split independent work into separate failure domains so one failure does not restart everything.",
+      },
+      {
+        name: "Restart Strategy",
+        purpose: "Choose one_for_one, rest_for_one, or one_for_all from the dependency relationship.",
+      },
+    ],
     storyBridge: {
       label: "A chain of camps",
       title: "The supply camp has a problem",
@@ -1276,6 +1478,30 @@ Supervisor.which_children(Jobs.Supervisor)`,
     level: "Capacity challenge",
     languages: ["Elixir", "Erlang", "BEAM"],
     why: "Processes are good for owning state, expressing a lifetime, and isolating errors. Plain calculations do not all need GenServer. Unlimited Tasks can exhaust connections and memory. Choose tools by state and capacity.",
+    question: "When ten thousand URL checks arrive in a burst, how do we limit running and waiting work while returning timeout, failure, or busy clearly?",
+    incident: {
+      title: "Unlimited Tasks consumed every connection while the mailbox kept growing",
+      description: "The system starts a Task for every URL immediately. Connections and memory are soon exhausted, but requests keep queuing invisibly and callers can only wait for timeout.",
+      evidence: [
+        "Peak active Task and connection counts",
+        "Queue or mailbox length together with P95 latency",
+        "Separate counts for timeout, execution failure, and capacity rejection",
+      ],
+    },
+    patterns: [
+      {
+        name: "Bulkhead",
+        purpose: "Isolate and cap concurrent workers and external connections.",
+      },
+      {
+        name: "Bounded Buffer",
+        purpose: "Limit the waiting queue instead of letting work pile up invisibly.",
+      },
+      {
+        name: "Backpressure",
+        purpose: "Send capacity information upstream through waiting, slowing, or rejection.",
+      },
+    ],
     storyBridge: {
       label: "A controlled river gate",
       title: "How wide should the gate be?",
@@ -1397,6 +1623,30 @@ collect(Running, Pending, Limit) ->
     level: "Network challenge",
     languages: ["BEAM", "OTP"],
     why: "Distributed Erlang makes remote sends look natural, but a network can still delay or disconnect. Node names and cookies only help connections. We must still design consistency, delivery, capacity, and security.",
+    question: "If a remote worker disconnects midway through a request, what result does the caller get, and how does the system mark stale data, retry, and avoid duplicate execution?",
+    incident: {
+      title: "The node was gone, but the dashboard stayed green",
+      description: "A remote node disconnects midway through a request, yet its last metric still appears healthy. If the caller retries, the original task may also have completed and the external action can happen twice.",
+      evidence: [
+        "A timeline of nodeup, nodedown, and request references",
+        "The last sample timestamp and its stale marker",
+        "Retry and idempotency records plus registration logs after reconnect",
+      ],
+    },
+    patterns: [
+      {
+        name: "Circuit Breaker",
+        purpose: "Stop routing to an unavailable node and probe to decide when it can recover.",
+      },
+      {
+        name: "Lease",
+        purpose: "Expire health and registration facts over time instead of treating old data as current.",
+      },
+      {
+        name: "Idempotent Consumer",
+        purpose: "Keep a retry or duplicate delivery from repeating an external effect.",
+      },
+    ],
     storyBridge: {
       label: "A line of signal towers",
       title: "The signal goes dark",
@@ -1512,6 +1762,30 @@ Node.ping(:"b@127.0.0.1")`,
     level: "Two-language challenge",
     languages: ["Elixir", "Erlang"],
     why: "The two languages can call each other directly inside one BEAM, but text, records, and structs have different shapes. Keep conversions at the boundary and agree on success and failure terms.",
+    question: "Between an Elixir API and an Erlang worker, how do we fix the text, data-shape, and error protocol so record or Unicode changes do not spread?",
+    incident: {
+      title: "One field was added to a record, and Elixir's positional reads all broke",
+      description: "Erlang changes a private record while Elixir keeps reading tuple positions. The boundary also mixes binaries and charlists, so one small change spreads into many failures.",
+      evidence: [
+        "Raw boundary terms and guards",
+        "Unicode round-trip tests for Chinese text, emoji, and empty text",
+        "Bilingual contract tests for success, business errors, and process exits",
+      ],
+    },
+    patterns: [
+      {
+        name: "Adapter",
+        purpose: "Centralize text, record, struct, and error conversions in one boundary module.",
+      },
+      {
+        name: "Anti-Corruption Layer",
+        purpose: "Keep one language's private representation out of the other side's core code.",
+      },
+      {
+        name: "Data Transfer Object",
+        purpose: "Exchange simple, stable tagged terms or maps.",
+      },
+    ],
     storyBridge: {
       label: "Two writers share a book",
       title: "Write one book together",
@@ -1628,6 +1902,30 @@ mix test test/interoperability_test.exs`,
     level: "Capstone project",
     languages: ["Elixir", "Erlang", "OTP"],
     why: "The final project joins the earlier tools. We will fill the queue, fail a task, delay a message, and disconnect a node, then check state, retries, recovery, and rejection rules.",
+    question: "How do we build a bounded, at-least-once task system that preserves capacity, idempotency, and retry limits when the queue fills, a worker crashes, a timeout fires, or a node disconnects?",
+    incident: {
+      title: "One persistently failing job caused a retry storm",
+      description: "A failing job has no retry limit and no idempotency key. It returns to the queue again and again, capacity counters drift, and an external action may happen more than once.",
+      evidence: [
+        "Queued, running, and retry counts before and after each fault",
+        "The idempotency key and a record proving the external effect happened once",
+        "Reject, recover, and give-up metrics plus injected-fault tests",
+      ],
+    },
+    patterns: [
+      {
+        name: "Bounded Buffer",
+        purpose: "Use a finite queue and reject new jobs explicitly when it is full.",
+      },
+      {
+        name: "Idempotent Consumer",
+        purpose: "Make duplicate execution from at-least-once delivery safe.",
+      },
+      {
+        name: "Retry with Exponential Backoff",
+        purpose: "Cap retries and increase their delay so failures do not create a retry storm.",
+      },
+    ],
     storyBridge: {
       label: "A supply convoy",
       title: "There are only so many wagons",

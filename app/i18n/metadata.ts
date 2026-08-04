@@ -5,7 +5,7 @@ export const siteCopy = {
   zh: {
     title: "BEAM Path — 学 Erlang 和 Elixir",
     description:
-      "Elixir、Erlang 两条零基础语法路线。从类型和函数开始，再学习 BEAM、进程、OTP 与监督树。",
+      "Elixir、Erlang 两条四阶段语言路线。从类型和函数走到项目，再用真实故障学习 BEAM、OTP 与监督树。",
     keywords: [
       "Elixir 教程",
       "Erlang 教程",
@@ -23,7 +23,7 @@ export const siteCopy = {
   en: {
     title: "BEAM Path — Learn Erlang and Elixir",
     description:
-      "Two beginner paths for Elixir and Erlang. Start with values and functions, then learn the BEAM, processes, OTP, and supervision trees.",
+      "Two four-stage language paths for Elixir and Erlang, followed by a problem-driven BEAM path through processes, OTP, and supervision.",
     keywords: [
       "Elixir tutorial",
       "Erlang tutorial",

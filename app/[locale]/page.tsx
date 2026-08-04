@@ -23,37 +23,37 @@ const homeCopy = {
     routePickerLabel: "选择学习入口",
     scratch: "FROM SCRATCH",
     elixirRoute: "Elixir 从零开始",
-    elixirRouteNote: "9 课 · 最后读懂 &1 与管道",
+    elixirRouteNote: (count: number) => `${count} 节 · 四阶段 · 从语法到作品`,
     erlangRoute: "Erlang 从零开始",
-    erlangRouteNote: "9 课 · 从 term 走到模块",
+    erlangRouteNote: (count: number) => `${count} 节 · 四阶段 · 从 term 到作品`,
     knowsSyntax: "已懂基础语法",
     beamRoute: "进入 BEAM 主线",
     beamRouteNote: "进程 · 消息 · OTP · 监督树",
     pathMetric: "条从零路线",
-    lessonMetric: "节基础语法",
+    lessonMetric: "节语言短课",
     mainlineMetric: "站 BEAM 主线",
     reviewMetric: "站可选复习",
     runtimeLabel: "BEAM 进程与监督关系示意图",
-    tiersKicker: "三层学习路线",
-    tiersTitle: "先认字，再做事",
+    tiersKicker: "三条清楚的路",
+    tiersTitle: "先写好语言，再处理系统故障",
     tiersLead:
-      "From Scratch 讲两门语言怎样写。进阶讲 BEAM 怎样运行。高级再处理故障、容量和多个节点。",
-    scratchTitle: "从值和类型开始",
+      "语言线负责代码、测试和项目工具。BEAM 主线负责并发、失败与恢复。最后把它们装进一个可靠任务系统。",
+    scratchTitle: "选一门语言，走到作品",
     availableNow: "现在就能学",
     scratchDescription:
-      "两门语言分开讲。每条 9 课。先写长形式，再看缩写。学完任意一条，就能进入 BEAM 主线。",
+      "Elixir 和 Erlang 分开讲。每条分成 Scratch、Foundation、Intermediate、Project 四段。Foundation 学完，就能进入 BEAM 主线。",
     lessonCount: (count: number, shell: string) => `${count} 课 · 从 ${shell} 开始`,
-    intermediateTitle: "让进程合作",
+    intermediateTitle: "解决并发系统的问题",
     beamMainline: "BEAM 主线",
     intermediateDescription:
-      "认识进程、mailbox、消息和 OTP。两种语言从这里开始放在一起看。",
+      "每站从一个故障开始：回复错配、mailbox 堆积、重启范围、资源耗尽。代码可在 Elixir 与 Erlang 之间切换。",
     startLine: "起跑线 →",
     messages: "消息与超时 →",
     otp: "OTP 消息章法 →",
-    advancedTitle: "让系统扛住故障",
-    afterMainline: "完成主线后",
+    advancedTitle: "交付一个可靠任务系统",
+    afterMainline: "主线终点",
     advancedDescription:
-      "处理监督、背压、节点失联和互操作。最后做一支可靠任务小队。",
+      "把有界队列、监督树、幂等、重试与节点断线放进同一个项目。用故障实验验收，不靠口头保证。",
     supervision: "监督树 →",
     nodes: "节点失联 →",
     capstoneLink: "综合练习 →",
@@ -118,10 +118,10 @@ const homeCopy = {
     ],
     sharedIdeas: "共同概念",
     concepts: ["数据 term", "小进程 process", "收信箱 mailbox", "调度器 scheduler"],
-    roadmapKicker: "进阶与高级 · BEAM 主线",
-    roadmapTitle: "从进程消息，到可靠系统",
+    roadmapKicker: "问题课 · BEAM 主线",
+    roadmapTitle: "从一个具体故障，走到可靠系统",
     roadmapLead: (main: number, review: number) =>
-      `主线有 ${main} 站，另有 ${review} 站语言复习。地图会全部列出；可选站不会挡住“下一站”。如果值、模式、函数或模块还陌生，先走上面的 From Scratch 路线。Elixir 和 Erlang 任选一条。`,
+      `主线有 ${main} 站，另有 ${review} 站语言跳级复习。每站只追一个工程问题，再用实验、模式和双语代码回答。若基础语法还陌生，先完成任意一门语言的 Foundation。`,
     labKicker: "试 3 分钟",
     labTitle: "发消息，等回信",
     labLead:
@@ -155,37 +155,39 @@ const homeCopy = {
     routePickerLabel: "Choose a learning path",
     scratch: "FROM SCRATCH",
     elixirRoute: "Elixir from scratch",
-    elixirRouteNote: "9 lessons · finish with &1 and pipelines",
+    elixirRouteNote: (count: number) =>
+      `${count} lessons · four stages · syntax to project`,
     erlangRoute: "Erlang from scratch",
-    erlangRouteNote: "9 lessons · from terms to modules",
+    erlangRouteNote: (count: number) =>
+      `${count} lessons · four stages · terms to project`,
     knowsSyntax: "I know the basics",
     beamRoute: "Enter the BEAM path",
     beamRouteNote: "Processes · messages · OTP · supervisors",
     pathMetric: "beginner paths",
-    lessonMetric: "syntax lessons",
+    lessonMetric: "language lessons",
     mainlineMetric: "BEAM stations",
     reviewMetric: "optional reviews",
     runtimeLabel: "Diagram of BEAM processes and supervision",
-    tiersKicker: "Three learning levels",
-    tiersTitle: "Read the words. Then build.",
+    tiersKicker: "Three clear paths",
+    tiersTitle: "Learn the language. Then handle system failure.",
     tiersLead:
-      "From Scratch teaches how each language is written. The next level explains how the BEAM runs. Advanced lessons cover failure, capacity, and multiple nodes.",
-    scratchTitle: "Start with values and types",
+      "The language paths teach code, tests, and project tools. The BEAM path teaches concurrency, failure, and recovery. The capstone brings them together.",
+    scratchTitle: "Take one language all the way to a project",
     availableNow: "Ready now",
     scratchDescription:
-      "The languages are taught separately, nine lessons each. Write the long form first, then learn the shortcuts. Finish either path to join the BEAM mainline.",
+      "Elixir and Erlang stay separate across Scratch, Foundation, Intermediate, and Project. Finish Foundation in either language to enter the BEAM mainline.",
     lessonCount: (count: number, shell: string) => `${count} lessons · start in ${shell}`,
-    intermediateTitle: "Make processes cooperate",
+    intermediateTitle: "Solve concurrent-system problems",
     beamMainline: "BEAM mainline",
     intermediateDescription:
-      "Meet processes, mailboxes, messages, and OTP. From here, compare both languages side by side.",
+      "Each station starts with a failure: mismatched replies, mailbox growth, restart scope, or exhausted capacity. Switch the code between Elixir and Erlang.",
     startLine: "Start line →",
     messages: "Messages and timeouts →",
     otp: "OTP message patterns →",
-    advancedTitle: "Build for failure",
-    afterMainline: "After the mainline",
+    advancedTitle: "Ship a reliable task system",
+    afterMainline: "Mainline finish",
     advancedDescription:
-      "Handle supervision, backpressure, lost nodes, and interop. Finish by building a dependable task crew.",
+      "Combine a bounded queue, supervision, idempotency, retry, and node loss in one project. Prove it with failure experiments.",
     supervision: "Supervision trees →",
     nodes: "When nodes disappear →",
     capstoneLink: "Capstone →",
@@ -250,10 +252,10 @@ const homeCopy = {
     ],
     sharedIdeas: "Shared ideas",
     concepts: ["data terms", "small processes", "mailboxes", "schedulers"],
-    roadmapKicker: "Intermediate and advanced · BEAM mainline",
-    roadmapTitle: "From process messages to reliable systems",
+    roadmapKicker: "Problem-driven · BEAM mainline",
+    roadmapTitle: "From one concrete failure to a reliable system",
     roadmapLead: (main: number, review: number) =>
-      `The mainline has ${main} stations and ${review} optional language reviews. The map shows them all, but review stations never block “next.” If values, patterns, functions, or modules are still unfamiliar, take either From Scratch path first.`,
+      `The mainline has ${main} stations and ${review} language bridge reviews. Each station follows one engineering question, then answers it with an experiment, patterns, and switchable code. Finish Foundation in either language first if the syntax is still unfamiliar.`,
     labKicker: "Try it for 3 minutes",
     labTitle: "Send a message. Wait for a reply.",
     labLead:
@@ -300,6 +302,10 @@ export default async function Home({ params }: HomeProps) {
   const copy = homeCopy[locale];
   const basicPaths = getBasicPaths(locale);
   const basicPathStats = getBasicPathStats(locale);
+  const elixirLessonCount =
+    basicPaths.find((path) => path.id === "elixir")?.lessons.length ?? 0;
+  const erlangLessonCount =
+    basicPaths.find((path) => path.id === "erlang")?.lessons.length ?? 0;
   const { courseModules, courseStats, stages } = getCourseCatalog(locale);
   const resourceDirectory = await getResourceDirectory(locale);
   const featuredResources = resourceDirectory.resources.filter(
@@ -341,12 +347,12 @@ export default async function Home({ params }: HomeProps) {
                 >
                   <span>{copy.scratch}</span>
                   <strong>{copy.elixirRoute}</strong>
-                  <small>{copy.elixirRouteNote}</small>
+                  <small>{copy.elixirRouteNote(elixirLessonCount)}</small>
                 </LocalizedLink>
                 <LocalizedLink locale={locale} className="route-card" href="/from-scratch/erlang">
                   <span>{copy.scratch}</span>
                   <strong>{copy.erlangRoute}</strong>
-                  <small>{copy.erlangRouteNote}</small>
+                  <small>{copy.erlangRouteNote(erlangLessonCount)}</small>
                 </LocalizedLink>
                 <LocalizedLink locale={locale} className="route-card" href="/learn/start-line">
                   <span>{copy.knowsSyntax}</span>
@@ -395,7 +401,7 @@ export default async function Home({ params }: HomeProps) {
             <div className="learning-tier-grid">
               <article className="learning-tier learning-tier--scratch">
                 <div className="learning-tier-head">
-                  <span>01</span><div><small>FROM SCRATCH</small><h3>{copy.scratchTitle}</h3></div><b>{copy.availableNow}</b>
+                  <span>01</span><div><small>LANGUAGE PATH</small><h3>{copy.scratchTitle}</h3></div><b>{copy.availableNow}</b>
                 </div>
                 <p>{copy.scratchDescription}</p>
                 <div className="learning-language-links">
@@ -408,7 +414,7 @@ export default async function Home({ params }: HomeProps) {
                 </div>
               </article>
               <article className="learning-tier learning-tier--intermediate">
-                <div className="learning-tier-head"><span>02</span><div><small>INTERMEDIATE</small><h3>{copy.intermediateTitle}</h3></div><b>{copy.beamMainline}</b></div>
+                <div className="learning-tier-head"><span>02</span><div><small>BEAM PATH</small><h3>{copy.intermediateTitle}</h3></div><b>{copy.beamMainline}</b></div>
                 <p>{copy.intermediateDescription}</p>
                 <div className="learning-tier-links">
                   <LocalizedLink locale={locale} href="/learn/start-line">{copy.startLine}</LocalizedLink>
@@ -417,7 +423,7 @@ export default async function Home({ params }: HomeProps) {
                 </div>
               </article>
               <article className="learning-tier learning-tier--advanced">
-                <div className="learning-tier-head"><span>03</span><div><small>ADVANCED</small><h3>{copy.advancedTitle}</h3></div><b>{copy.afterMainline}</b></div>
+                <div className="learning-tier-head"><span>03</span><div><small>CAPSTONE</small><h3>{copy.advancedTitle}</h3></div><b>{copy.afterMainline}</b></div>
                 <p>{copy.advancedDescription}</p>
                 <div className="learning-tier-links">
                   <LocalizedLink locale={locale} href="/learn/supervision-trees">{copy.supervision}</LocalizedLink>

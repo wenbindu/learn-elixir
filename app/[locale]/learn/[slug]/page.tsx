@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { CodeLanguageSwitcher } from "../../../components/CodeLanguageSwitcher";
 import { CopyBlock } from "../../../components/CopyBlock";
 import { InlineCodeText } from "../../../components/InlineCodeText";
 import { LocalizedLink } from "../../../components/LocalizedLink";
@@ -19,8 +20,9 @@ const lessonPageCopy = {
   zh: {
     courseDirectory: "课程目录",
     mapTitle: "BEAM 探险地图",
-    sidebarStats: (mainline: number, optional: number) =>
-      `${mainline} 站主线 · ${optional} 站可选复习`,
+    sidebarStats: (prerequisite: number, mainline: number, optional: number) =>
+      `${prerequisite} 站前置 · ${mainline} 站主线 · ${optional} 站复习`,
+    prerequisite: "前置准备",
     optionalReview: "可选复习",
     sidebarNote: "进度只在这台设备。换设备前，去首页保存。",
     station: (number: string) => `第 ${number} 站`,
@@ -29,11 +31,14 @@ const lessonPageCopy = {
     mainline: "BEAM 主线",
     syntaxEyebrow: "还没学过语法？",
     syntaxTitle: "如果值、模式、函数或模块还陌生，先从一门语言学起。",
-    syntaxText: "Elixir 和 Erlang 任选一条。学完任意一条，再回来走 BEAM 主线。",
+    syntaxText: "Elixir 和 Erlang 任选一条。完成 Foundation，就可以回来走 BEAM 主线。",
     elixirBasics: "Elixir 从零 →",
     erlangBasics: "Erlang 从零 →",
     checkpoints: "小关卡",
     splitSessions: "可以分几次",
+    questionKicker: "QUESTION · 本站只追这一问",
+    incidentLabel: "先看现场",
+    evidenceLabel: "能够观察到",
     whyKicker: "为什么学这一站",
     whyTitle: "它要解决什么",
     storyMark: "故",
@@ -44,12 +49,14 @@ const lessonPageCopy = {
     outcomesTitle: "你会做到",
     beforeStart: "出发前",
     conceptsKicker: "先认词",
-    conceptsTitle: "三个关键词",
+    conceptsTitle: "这段代码里的关键词",
     installKicker: "按系统安装",
     installTitle: "只走你电脑这一条路",
     mixIncluded: "Mix 已包含在 Elixir 里",
     twoWaysKicker: "同一件事，两种写法",
     twoWaysTitle: "先看做什么，再看怎么写",
+    patternsKicker: "从代码里认出章法",
+    patternsTitle: "这里用了哪些设计模式",
     handsOn: "动手",
     labTime: "约 15–25 分钟",
     terminalLabel: "复制到终端，按回车",
@@ -81,8 +88,9 @@ const lessonPageCopy = {
   en: {
     courseDirectory: "Course directory",
     mapTitle: "BEAM Adventure Map",
-    sidebarStats: (mainline: number, optional: number) =>
-      `${mainline} mainline stations · ${optional} optional reviews`,
+    sidebarStats: (prerequisite: number, mainline: number, optional: number) =>
+      `${prerequisite} setup · ${mainline} mainline · ${optional} reviews`,
+    prerequisite: "Setup",
     optionalReview: "Optional review",
     sidebarNote: "Progress stays on this device. Save it from the home page before switching devices.",
     station: (number: string) => `Station ${number}`,
@@ -91,11 +99,14 @@ const lessonPageCopy = {
     mainline: "BEAM mainline",
     syntaxEyebrow: "New to the syntax?",
     syntaxTitle: "If values, patterns, functions, or modules are still new, begin with one language.",
-    syntaxText: "Choose Elixir or Erlang. Finish either path, then come back to the BEAM mainline.",
+    syntaxText: "Choose Elixir or Erlang. Finish Foundation, then come back to the BEAM mainline.",
     elixirBasics: "Elixir from scratch →",
     erlangBasics: "Erlang from scratch →",
     checkpoints: "checkpoints",
     splitSessions: "split it into sessions",
+    questionKicker: "QUESTION · ONE PROBLEM FOR THIS STATION",
+    incidentLabel: "Start at the scene",
+    evidenceLabel: "Evidence you can observe",
     whyKicker: "Why this station matters",
     whyTitle: "The problem it solves",
     storyMark: "S",
@@ -106,12 +117,14 @@ const lessonPageCopy = {
     outcomesTitle: "You will be able to",
     beforeStart: "Before you start",
     conceptsKicker: "Meet the words",
-    conceptsTitle: "Three key ideas",
+    conceptsTitle: "Key ideas in this code",
     installKicker: "Install for your system",
     installTitle: "Follow only the path for your computer",
     mixIncluded: "Mix is included with Elixir",
     twoWaysKicker: "One job, two ways to write it",
     twoWaysTitle: "See what it does before how it is written",
+    patternsKicker: "Name the shape in the code",
+    patternsTitle: "Design patterns used here",
     handsOn: "Hands on",
     labTime: "About 15–25 minutes",
     terminalLabel: "Copy into the terminal and press Enter",
@@ -198,6 +211,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
               <strong>{copy.mapTitle}</strong>
               <small>
                 {copy.sidebarStats(
+                  courseStats.prerequisiteStations,
                   courseStats.mainlineStations,
                   courseStats.optionalReviewStations,
                 )}
@@ -223,6 +237,9 @@ export default async function LessonPage({ params }: LessonPageProps) {
                         <b>{item.number}</b>
                         <span>{item.title}</span>
                         <small>
+                          {item.prerequisite
+                            ? `${copy.prerequisite} · `
+                            : ""}
                           {item.optionalReview
                             ? `${copy.optionalReview} · `
                             : ""}
@@ -248,6 +265,9 @@ export default async function LessonPage({ params }: LessonPageProps) {
                   {courseModule.optionalReview
                     ? ` · ${copy.optionalReview}`
                     : ""}
+                  {courseModule.prerequisite
+                    ? ` · ${copy.prerequisite}`
+                    : ""}
                 </span>
                 {copy.expandMap}
               </summary>
@@ -264,6 +284,11 @@ export default async function LessonPage({ params }: LessonPageProps) {
                     {item.optionalReview ? (
                       <small className="lesson-nav-optional">
                         {copy.optionalReview}
+                      </small>
+                    ) : null}
+                    {item.prerequisite ? (
+                      <small className="lesson-nav-optional">
+                        {copy.prerequisite}
                       </small>
                     ) : null}
                   </LocalizedLink>
@@ -310,6 +335,9 @@ export default async function LessonPage({ params }: LessonPageProps) {
                   {courseModule.optionalReview ? (
                     <span>{copy.optionalReview}</span>
                   ) : null}
+                  {courseModule.prerequisite ? (
+                    <span>{copy.prerequisite}</span>
+                  ) : null}
                   {courseModule.languages.map((language) => (
                     <span key={language}>{language}</span>
                   ))}
@@ -329,6 +357,34 @@ export default async function LessonPage({ params }: LessonPageProps) {
               </div>
             </header>
 
+            <section className="lesson-problem" aria-labelledby="lesson-question">
+              <div className="lesson-problem-question">
+                <div className="section-kicker">{copy.questionKicker}</div>
+                <h2 id="lesson-question">
+                  <InlineCodeText text={courseModule.question} />
+                </h2>
+              </div>
+              <div className="lesson-incident">
+                <div>
+                  <span>{copy.incidentLabel}</span>
+                  <h3>{courseModule.incident.title}</h3>
+                  <p>
+                    <InlineCodeText text={courseModule.incident.description} />
+                  </p>
+                </div>
+                <div className="lesson-incident-evidence">
+                  <strong>{copy.evidenceLabel}</strong>
+                  <ul>
+                    {courseModule.incident.evidence.map((item) => (
+                      <li key={item}>
+                        <InlineCodeText text={item} />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </section>
+
             <section className="lesson-block lesson-block--why">
               <div className="section-kicker">{copy.whyKicker}</div>
               <h2>{copy.whyTitle}</h2>
@@ -336,37 +392,6 @@ export default async function LessonPage({ params }: LessonPageProps) {
                 <InlineCodeText text={courseModule.why} />
               </p>
             </section>
-
-            <aside className="lesson-story-bridge">
-              <div className="lesson-story-mark" aria-hidden="true">
-                {copy.storyMark}
-              </div>
-              <div className="lesson-story-copy">
-                <div className="section-kicker">
-                  {copy.storyKicker(courseModule.storyBridge.label)}
-                </div>
-                <h2>{courseModule.storyBridge.title}</h2>
-                <p>
-                  <InlineCodeText text={courseModule.storyBridge.story} />
-                </p>
-                <div className="lesson-story-notes">
-                  <div>
-                    <strong>{copy.backToCode}</strong>
-                    <p>
-                      <InlineCodeText
-                        text={courseModule.storyBridge.connection}
-                      />
-                    </p>
-                  </div>
-                  <div>
-                    <strong>{copy.metaphorEnds}</strong>
-                    <p>
-                      <InlineCodeText text={courseModule.storyBridge.boundary} />
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </aside>
 
             <section className="lesson-block">
               <div className="lesson-two-column">
@@ -377,7 +402,9 @@ export default async function LessonPage({ params }: LessonPageProps) {
                     {courseModule.outcomes.map((outcome) => (
                       <li key={outcome}>
                         <span aria-hidden="true">✓</span>
-                        <InlineCodeText text={outcome} />
+                        <p>
+                          <InlineCodeText text={outcome} />
+                        </p>
                       </li>
                     ))}
                   </ul>
@@ -392,22 +419,6 @@ export default async function LessonPage({ params }: LessonPageProps) {
                     ))}
                   </ul>
                 </div>
-              </div>
-            </section>
-
-            <section className="lesson-block">
-              <div className="section-kicker">{copy.conceptsKicker}</div>
-              <h2>{copy.conceptsTitle}</h2>
-              <div className="concept-grid">
-                {courseModule.concepts.map((concept, index) => (
-                  <article key={concept.term}>
-                    <span>{String(index + 1).padStart(2, "0")}</span>
-                    <h3>{concept.term}</h3>
-                    <p>
-                      <InlineCodeText text={concept.definition} />
-                    </p>
-                  </article>
-                ))}
               </div>
             </section>
 
@@ -500,17 +511,14 @@ export default async function LessonPage({ params }: LessonPageProps) {
                   <InlineCodeText text={courseModule.codeCaption} />
                 </p>
               </div>
-              <div className="code-pair">
-                <CopyBlock
-                  code={courseModule.elixirCode}
-                  language="elixir"
-                  label="Elixir"
-                  locale={locale}
-                />
-                <CopyBlock
-                  code={courseModule.erlangCode}
-                  language="erlang"
-                  label="Erlang"
+              <div className="lesson-code-switcher">
+                <CodeLanguageSwitcher
+                  elixirCode={courseModule.elixirCode}
+                  erlangCode={courseModule.erlangCode}
+                  allowCompare={
+                    courseModule.slug === "shared-semantics" ||
+                    courseModule.slug === "interoperability"
+                  }
                   locale={locale}
                 />
               </div>
@@ -592,6 +600,71 @@ export default async function LessonPage({ params }: LessonPageProps) {
               </div>
             </section>
 
+            <section className="lesson-block">
+              <div className="section-kicker">{copy.conceptsKicker}</div>
+              <h2>{copy.conceptsTitle}</h2>
+              <div className="concept-grid">
+                {courseModule.concepts.map((concept, index) => (
+                  <article key={concept.term}>
+                    <span>{String(index + 1).padStart(2, "0")}</span>
+                    <h3>{concept.term}</h3>
+                    <p>
+                      <InlineCodeText text={concept.definition} />
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section className="lesson-block pattern-block">
+              <div className="section-kicker">{copy.patternsKicker}</div>
+              <h2>{copy.patternsTitle}</h2>
+              <div className="pattern-grid">
+                {courseModule.patterns.map((pattern, index) => (
+                  <article key={pattern.name}>
+                    <span>{String(index + 1).padStart(2, "0")}</span>
+                    <div>
+                      <h3>{pattern.name}</h3>
+                      <p>
+                        <InlineCodeText text={pattern.purpose} />
+                      </p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <aside className="lesson-story-bridge">
+              <div className="lesson-story-mark" aria-hidden="true">
+                {copy.storyMark}
+              </div>
+              <div className="lesson-story-copy">
+                <div className="section-kicker">
+                  {copy.storyKicker(courseModule.storyBridge.label)}
+                </div>
+                <h2>{courseModule.storyBridge.title}</h2>
+                <p>
+                  <InlineCodeText text={courseModule.storyBridge.story} />
+                </p>
+                <div className="lesson-story-notes">
+                  <div>
+                    <strong>{copy.backToCode}</strong>
+                    <p>
+                      <InlineCodeText
+                        text={courseModule.storyBridge.connection}
+                      />
+                    </p>
+                  </div>
+                  <div>
+                    <strong>{copy.metaphorEnds}</strong>
+                    <p>
+                      <InlineCodeText text={courseModule.storyBridge.boundary} />
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </aside>
+
             <QuizCard
               question={courseModule.quiz.question}
               options={courseModule.quiz.options}
@@ -654,7 +727,9 @@ export default async function LessonPage({ params }: LessonPageProps) {
                 {courseModule.takeaways.map((takeaway, index) => (
                   <li key={takeaway}>
                     <span>{index + 1}</span>
-                    <InlineCodeText text={takeaway} />
+                    <p>
+                      <InlineCodeText text={takeaway} />
+                    </p>
                   </li>
                 ))}
               </ol>

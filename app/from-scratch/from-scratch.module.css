@@ -507,6 +507,116 @@
   font-family: var(--font-mono);
 }
 
+.stageRoadmap {
+  display: grid;
+  gap: 48px;
+}
+
+.stageGroup {
+  min-width: 0;
+}
+
+.stageHeader {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 17px;
+  padding: 0 4px 18px;
+  border-bottom: 1px solid var(--scratch-border, var(--line));
+}
+
+.stageHeader > span {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 14px;
+  color: var(--scratch-link, #1f67b5);
+  background: var(--scratch-blue-surface, var(--blue-soft));
+  font-family: var(--font-mono);
+  font-size: var(--text-control);
+  font-weight: 780;
+}
+
+.stageHeader small {
+  color: var(--scratch-link, #1f67b5);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  font-weight: 760;
+  letter-spacing: 0.07em;
+}
+
+.stageHeader h3 {
+  margin: 5px 0 0;
+  font-size: 25px;
+  letter-spacing: -0.035em;
+}
+
+.stageHeader p {
+  margin: 5px 0 0;
+  color: var(--scratch-ink-soft, var(--ink-soft));
+  font-size: var(--text-control);
+  line-height: 1.65;
+}
+
+.stageHeader > strong {
+  padding: 6px 10px;
+  border: 1px solid var(--scratch-border, var(--line));
+  border-radius: 999px;
+  color: var(--scratch-muted, var(--muted));
+  background: var(--scratch-surface, var(--surface));
+  font-size: var(--text-caption);
+  white-space: nowrap;
+}
+
+.beamBridge {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 28px;
+  align-items: center;
+  margin-top: 14px;
+  padding: 24px 26px;
+  border: 1px solid var(--scratch-green-border, var(--success-line));
+  border-radius: 17px;
+  background: var(--scratch-green-surface, var(--success-surface));
+}
+
+.beamBridge small {
+  color: var(--scratch-green-strong, var(--success-text));
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  font-weight: 780;
+  letter-spacing: 0.07em;
+}
+
+.beamBridge h3 {
+  margin: 6px 0 0;
+  font-size: 22px;
+  letter-spacing: -0.03em;
+}
+
+.beamBridge p {
+  max-width: 720px;
+  margin: 6px 0 0;
+  color: var(--scratch-green-ink, var(--ink-soft));
+  font-size: var(--text-control);
+  line-height: 1.7;
+}
+
+.beamBridge a {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  padding: 0 14px;
+  border-radius: 10px;
+  color: #fff;
+  background: var(--navy-900);
+  font-size: var(--text-control);
+  font-weight: 740;
+  white-space: nowrap;
+}
+
 .lessonRoadmap {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -709,6 +819,22 @@
   overflow-y: auto;
   max-height: calc(100vh - 245px);
   padding: 9px;
+}
+
+.sidebarStage + .sidebarStage {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--scratch-border, var(--line));
+}
+
+.sidebarStage > strong {
+  display: block;
+  padding: 7px 9px 5px;
+  color: var(--scratch-muted, var(--muted));
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .lessonSidebar nav a {
@@ -1025,12 +1151,16 @@
 
 .stepsList li {
   display: grid;
-  grid-template-columns: 36px 1fr;
+  grid-template-columns: 36px minmax(0, 1fr);
   gap: 13px;
   padding: 14px 0;
   border-bottom: 1px solid var(--line);
   color: var(--ink-soft);
   counter-increment: basics-step;
+}
+
+.stepsList li > span {
+  min-width: 0;
 }
 
 .stepsList li::before {
@@ -1128,7 +1258,7 @@
 
 .takeawaySection li {
   display: grid;
-  grid-template-columns: 29px 1fr;
+  grid-template-columns: 29px minmax(0, 1fr);
   gap: 10px;
   align-items: start;
   padding: 11px 12px;
@@ -1136,6 +1266,11 @@
   border-radius: 10px;
   color: #315d52;
   background: rgb(255 255 255 / 0.72);
+}
+
+.takeawayCopy {
+  min-width: 0;
+  margin: 0;
 }
 
 .takeawaySection li > span {
@@ -1411,6 +1546,35 @@
   .startPanel {
     gap: 24px;
     padding: 23px;
+  }
+
+  .stageRoadmap {
+    gap: 38px;
+  }
+
+  .stageHeader {
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .stageHeader > span {
+    width: 42px;
+    height: 42px;
+  }
+
+  .stageHeader > strong {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .beamBridge {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 22px;
+  }
+
+  .beamBridge a {
+    justify-content: center;
   }
 
   .lessonLayout {

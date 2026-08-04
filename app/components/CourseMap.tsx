@@ -39,7 +39,7 @@ const courseMapCopy = {
     searchLabel: "搜索学习内容",
     searchPlaceholder: "搜索：模式匹配、mailbox、Supervisor…",
     filtersLabel: "课程筛选",
-    progressKicker: "主线进度 · 可选复习不计入",
+    progressKicker: "主线进度 · 前置与可选复习不计入",
     progressCount: (completed: number, total: number) =>
       `${completed} / ${total} 个主线小站`,
     progressLabel: (percent: number) => `课程进度 ${percent}%`,
@@ -48,6 +48,7 @@ const courseMapCopy = {
     importError:
       "没有认出这个进度文件。请重新选择从 BEAM Path 保存的文件。",
     optionalReview: "可选复习",
+    prerequisite: "前置准备",
     lessonCount: (count: number) => `${count} 次动手与自查`,
     completed: "✓ 走过了",
     open: "去看看 →",
@@ -58,7 +59,7 @@ const courseMapCopy = {
     searchLabel: "Search learning topics",
     searchPlaceholder: "Search: pattern matching, mailbox, Supervisor...",
     filtersLabel: "Course filters",
-    progressKicker: "Mainline progress · optional reviews excluded",
+    progressKicker: "Mainline progress · setup and optional reviews excluded",
     progressCount: (completed: number, total: number) =>
       `${completed} / ${total} mainline stations`,
     progressLabel: (percent: number) => `Course progress ${percent}%`,
@@ -67,6 +68,7 @@ const courseMapCopy = {
     importError:
       "This progress file was not recognized. Choose a file previously exported from BEAM Path.",
     optionalReview: "Optional review",
+    prerequisite: "Setup",
     lessonCount: (count: number) =>
       `${count} hands-on ${
         count === 1 ? "task and check" : "tasks and checks"
@@ -123,6 +125,9 @@ export function CourseMap({ locale, modules, stages }: CourseMapProps) {
           module.title,
           module.subtitle,
           module.summary,
+          module.question,
+          module.incident.title,
+          module.patterns.map((pattern) => pattern.name).join(" "),
           module.languages.join(" "),
         ]
           .join(" ")
@@ -139,7 +144,9 @@ export function CourseMap({ locale, modules, stages }: CourseMapProps) {
     });
   }, [filterId, modules, query]);
 
-  const mainlineModules = modules.filter((module) => !module.optionalReview);
+  const mainlineModules = modules.filter(
+    (module) => !module.optionalReview && !module.prerequisite,
+  );
   const completedMainline = mainlineModules.filter((module) =>
     completed.includes(module.slug),
   );
@@ -286,14 +293,19 @@ export function CourseMap({ locale, modules, stages }: CourseMapProps) {
                             {copy.optionalReview}
                           </span>
                         ) : null}
+                        {module.prerequisite ? (
+                          <span className="prerequisite-badge">
+                            {copy.prerequisite}
+                          </span>
+                        ) : null}
                         {module.languages.map((language) => (
                           <span key={language}>{language}</span>
                         ))}
                       </div>
                     </div>
                     <h4>{module.title}</h4>
-                    <p>
-                      <InlineCodeText text={module.summary} />
+                    <p className="module-card-question">
+                      <InlineCodeText text={module.question} />
                     </p>
                     <div className="module-card-meta">
                       <span>{copy.lessonCount(module.lessons)}</span>

@@ -108,6 +108,28 @@ const basicLessonSlugs = {
     "functions-and-arity",
     "capture-enum-pipe",
     "modules-and-mix",
+    "operators-and-truthiness",
+    "nested-collections",
+    "unicode-and-text",
+    "named-functions-and-clauses",
+    "recursion-and-folds",
+    "control-flow",
+    "structs-and-module-metadata",
+    "project-and-first-tests",
+    "result-contracts",
+    "files-and-paths",
+    "lazy-data-pipelines",
+    "protocols",
+    "behaviours-and-callbacks",
+    "typespecs-and-dialyzer",
+    "testing-workflows",
+    "tooling-and-escripts",
+    "project-brief",
+    "parse-real-input",
+    "design-module-api",
+    "types-docs-and-tests",
+    "package-and-observe",
+    "project-acceptance",
   ],
   erlang: [
     "meet-erl",
@@ -119,6 +141,28 @@ const basicLessonSlugs = {
     "clauses-and-guards",
     "recursion",
     "modules-and-beam",
+    "operators-and-truthiness",
+    "nested-collections",
+    "unicode-and-text",
+    "named-functions-and-clauses",
+    "recursion-and-folds",
+    "control-flow",
+    "module-attributes-and-records",
+    "rebar3-and-eunit",
+    "result-contracts",
+    "files-and-io",
+    "higher-order-data-pipelines",
+    "records-and-boundaries",
+    "behaviours-and-callbacks",
+    "typespecs-and-dialyzer",
+    "eunit-and-common-test",
+    "rebar3-profiles-and-escripts",
+    "project-brief",
+    "parse-real-input",
+    "design-module-api",
+    "types-docs-and-tests",
+    "package-and-observe",
+    "project-acceptance",
   ],
 };
 
@@ -126,7 +170,7 @@ test("keeps both From Scratch paths complete and independent", () => {
   assert.equal(Object.keys(basicLessonSlugs).length, 2);
 
   for (const [language, slugs] of Object.entries(basicLessonSlugs)) {
-    assert.equal(slugs.length, 9, language);
+    assert.equal(slugs.length, 31, language);
     assert.equal(new Set(slugs).size, slugs.length, language);
   }
 });
@@ -203,15 +247,16 @@ test("server-renders the complete Chinese tutorial homepage", async () => {
   assert.match(html, /Erlang/);
   assert.match(html, /Elixir/);
   assert.match(html, /2<\/strong><span>条从零路线/);
-  assert.match(html, /18<\/strong><span>节基础语法/);
-  assert.match(html, /11<\/strong><span>站 BEAM 主线/);
+  assert.match(html, /62<\/strong><span>节语言短课/);
+  assert.match(html, /9<\/strong><span>站 BEAM 主线/);
   assert.match(html, /2<\/strong><span>站可选复习/);
   assert.match(html, /FROM SCRATCH/);
-  assert.match(html, /INTERMEDIATE/);
-  assert.match(html, /ADVANCED/);
-  assert.match(html, /从值和类型开始/);
-  assert.match(html, /让进程合作/);
-  assert.match(html, /让系统扛住故障/);
+  assert.match(html, /LANGUAGE PATH/);
+  assert.match(html, /BEAM PATH/);
+  assert.match(html, /CAPSTONE/);
+  assert.match(html, /选一门语言，走到作品/);
+  assert.match(html, /解决并发系统的问题/);
+  assert.match(html, /交付一个可靠任务系统/);
   assert.match(html, /先猜结果，再运行代码/);
   assert.match(html, />怎么学</);
   assert.match(html, />消息实验</);
@@ -244,6 +289,7 @@ test("server-renders the complete Chinese tutorial homepage", async () => {
   assert.match(html, /href="\/zh\/learn\/shared-semantics"/);
   assert.match(html, /写法不同，骨架相通/);
   assert.match(html, /class="optional-review-badge">可选复习/);
+  assert.match(html, /class="prerequisite-badge">前置准备/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
   assert.doesNotMatch(html, /Your site is taking shape|Starter Project/i);
 });
@@ -274,18 +320,31 @@ test("renders representative English learning and reference pages", async () => 
       pathname: "/en/from-scratch/elixir/values-and-types",
       phrases: [
         /Meet six kinds of values/,
-        /One job for this lesson/,
-        /Guess, then run/,
+        /What you will make/,
+        /Start with the whole example/,
         /Remember these three lines/,
       ],
       href: /href="\/en\/from-scratch\/elixir\/collections"/,
     },
     {
+      pathname: "/en/from-scratch/elixir/project-acceptance",
+      phrases: [
+        /Prove the project is done/,
+        /PROJECT[\s\S]*LESSON[\s\S]*31/,
+        /acceptance matrix/,
+        /Remember these three lines/,
+      ],
+      href: /href="\/en\/learn\/start-line"/,
+    },
+    {
       pathname: "/en/learn/processes-and-mailboxes",
       phrases: [
         /Messages and timeouts/,
+        /QUESTION · ONE PROBLEM FOR THIS STATION/,
+        /late or out of order/,
         /Why this station matters/,
         /One job, two ways to write it/,
+        /Design patterns used here/,
         /Remember three things/,
       ],
       href: /href="\/en\/learn\/otp-behaviours"/,
@@ -450,11 +509,11 @@ test("renders two independent From Scratch path overviews", async () => {
   assert.equal(overviewResponse.status, 200);
   const overview = await overviewResponse.text();
 
-  assert.match(overview, /先学会读代码/);
-  assert.match(overview, /再走进 BEAM/);
+  assert.match(overview, /先跑一个小例子/);
+  assert.match(overview, /再读懂它/);
   assert.match(overview, /不必两条都学完/);
   assert.match(overview, /2<\/strong><span>条独立路线/);
-  assert.match(overview, /18<\/strong><span>节基础课/);
+  assert.match(overview, /62<\/strong><span>节语言短课/);
   assert.match(overview, /第 0 步：安装 Erlang \/ Elixir \/ Mix/);
   assert.match(overview, /href="\/zh\/learn\/install-toolchain"/);
   assert.match(overview, /href="\/zh\/from-scratch\/elixir"/);
@@ -466,7 +525,12 @@ test("renders two independent From Scratch path overviews", async () => {
     assert.equal(response.status, 200, language);
     const html = await response.text();
 
-    assert.match(html, /一课只解决一个问题/);
+    assert.match(html, /从第一次运行，走到完整作品/);
+    assert.match(html, /SCRATCH · 试跑/);
+    assert.match(html, /FOUNDATION · 基础/);
+    assert.match(html, /INTERMEDIATE · 进阶/);
+    assert.match(html, /PROJECT · 作品/);
+    assert.match(html, /现在已经够用，可以进入 BEAM/);
     assert.match(html, /还没安装？看安装步骤/);
     assert.match(html, /走上 BEAM 起跑线/);
     assert.match(html, /课程依据/);
@@ -479,18 +543,20 @@ test("renders two independent From Scratch path overviews", async () => {
   }
 });
 
-test("renders all 18 beginner lessons with the slow-reading template", async () => {
+test("renders all 62 language lessons with the example-first template", async () => {
   for (const [language, slugs] of Object.entries(basicLessonSlugs)) {
     for (const slug of slugs) {
       const response = await render(`/zh/from-scratch/${language}/${slug}`);
       assert.equal(response.status, 200, `${language}/${slug}`);
       const html = await response.text();
 
-      assert.match(html, /这一课只做一件事/, `${language}/${slug}`);
-      assert.match(html, /符号拆解/, `${language}/${slug}`);
-      assert.match(html, /先猜，再运行/, `${language}/${slug}`);
-      assert.match(html, /按行读/, `${language}/${slug}`);
-      assert.match(html, /轮到你改一处/, `${language}/${slug}`);
+      assert.match(html, /今天先做什么/, `${language}/${slug}`);
+      assert.match(html, /01 · 先看完整例子/, `${language}/${slug}`);
+      assert.match(html, /02 · 回头拆代码/, `${language}/${slug}`);
+      assert.match(html, /03 · 认清新符号/, `${language}/${slug}`);
+      assert.match(html, /04 · 代码里的概念/, `${language}/${slug}`);
+      assert.match(html, /05 · 再说清楚/, `${language}/${slug}`);
+      assert.match(html, /06 · 自己改一次/, `${language}/${slug}`);
       assert.match(html, /目标结果/, `${language}/${slug}`);
       assert.match(html, /想一想/, `${language}/${slug}`);
       assert.match(html, /记住三句/, `${language}/${slug}`);
@@ -500,6 +566,21 @@ test("renders all 18 beginner lessons with the slow-reading template", async () 
       assert.ok(
         html.indexOf("标记学完") > html.indexOf("这条路线参考"),
         `${language}/${slug} keeps the completion mark at the lesson end`,
+      );
+      const learningSteps = [
+        ...html.matchAll(
+          /data-learning-step="(task|code|syntax|practice)"/g,
+        ),
+      ].map((match) => match[1]);
+      assert.deepEqual(
+        learningSteps,
+        ["task", "code", "syntax", "practice"],
+        `${language}/${slug} keeps task, code, syntax, practice in order`,
+      );
+      assert.ok(
+        html.indexOf("01 · 先看完整例子") <
+          html.indexOf("04 · 代码里的概念"),
+        `${language}/${slug} shows runnable code before concepts`,
       );
     }
   }
@@ -531,7 +612,20 @@ test("keeps Elixir lesson two readable as six distinct value groups", async () =
   assert.ok(html.indexOf("标记学完") > html.indexOf("本课结束"));
 });
 
-test("explains arity, trim and capture shorthand before using them as magic", async () => {
+test("introduces beginner syntax through complete runnable examples", async () => {
+  const elixirValues = await (
+    await render("/zh/from-scratch/elixir/values-and-types")
+  ).text();
+  assert.match(elixirValues, /Elixir 字符串本身就是 UTF-8 binary/);
+  assert.match(elixirValues, /&lt;&lt;.*长安.*&gt;&gt;/s);
+
+  const elixirFor = await (
+    await render("/zh/from-scratch/elixir/names-and-operators")
+  ).text();
+  assert.match(elixirFor, /for comprehension/);
+  assert.match(elixirFor, /comprehension 产生的结果/);
+  assert.match(elixirFor, /原来的 <code[^>]*>scores<\/code> 没有被修改/);
+
   const elixirChoices = await (
     await render("/zh/from-scratch/elixir/choices-and-guards")
   ).text();
@@ -543,11 +637,13 @@ test("explains arity, trim and capture shorthand before using them as magic", as
   ).text();
   assert.match(elixirFunctions, /String\.trim\/1/);
   assert.match(elixirFunctions, /String\.trim\(text\)/);
-  assert.match(elixirFunctions, /是除以 1 吗/);
-  assert.match(elixirFunctions, /不是。这里的/);
-  assert.match(elixirFunctions, /fn number -&gt; number \* 2 end/);
-  assert.match(elixirFunctions, /匿名函数调用时/);
-  assert.match(elixirFunctions, /把花括号中表达式的结果放进字符串/);
+  assert.match(elixirFunctions, /斜杠后的/);
+  assert.match(elixirFunctions, /叫 arity/);
+  assert.match(elixirFunctions, /String\.to_integer\/1/);
+  assert.match(elixirFunctions, /fn text -&gt; \.\.\. end/);
+  assert.match(elixirFunctions, /try\/rescue/);
+  assert.match(elixirFunctions, /ArgumentError/);
+  assert.match(elixirFunctions, /\{:ok, 42\}/);
 
   const elixirCapture = await (
     await render("/zh/from-scratch/elixir/capture-enum-pipe")
@@ -564,7 +660,15 @@ test("explains arity, trim and capture shorthand before using them as magic", as
   assert.match(erlangFunctions, /string:trim\/1/);
   assert.match(erlangFunctions, /string:trim\(Text\)/);
   assert.match(erlangFunctions, /叫 arity，不是除法/);
-  assert.match(erlangFunctions, /冒号连接模块与函数/);
+  assert.match(erlangFunctions, /binary_to_integer\/1/);
+  assert.match(erlangFunctions, /try\/catch/);
+  assert.match(erlangFunctions, /error:badarg/);
+
+  const erlangLists = await (
+    await render("/zh/from-scratch/erlang/lists-and-patterns")
+  ).text();
+  assert.match(erlangLists, />list comprehension</);
+  assert.match(erlangLists, /及格分数/);
 
   const erlangText = await (
     await render("/zh/from-scratch/erlang/text-and-binaries")
@@ -578,6 +682,26 @@ test("explains arity, trim and capture shorthand before using them as magic", as
   assert.match(erlangRecursion, /fun Loop\(\[\]\) -&gt;/);
   assert.match(erlangRecursion, /Double\(\[1, 2, 3\]\)/);
   assert.match(erlangRecursion, /function_clause/);
+
+  const englishExamples = await Promise.all([
+    render("/en/from-scratch/elixir/names-and-operators").then((response) =>
+      response.text(),
+    ),
+    render("/en/from-scratch/elixir/functions-and-arity").then((response) =>
+      response.text(),
+    ),
+    render("/en/from-scratch/erlang/lists-and-patterns").then((response) =>
+      response.text(),
+    ),
+    render("/en/from-scratch/erlang/functions-and-arity").then((response) =>
+      response.text(),
+    ),
+  ]);
+  assert.match(englishExamples[0], /for.*comprehension/s);
+  assert.match(englishExamples[1], /try\/rescue/);
+  assert.match(englishExamples[1], /ArgumentError/);
+  assert.match(englishExamples[2], /list comprehension/);
+  assert.match(englishExamples[3], /try\/of\/catch/);
 });
 
 test("homepage previews requested resources and links to the full directory", async () => {
@@ -649,15 +773,25 @@ test("renders a shareable lesson route with the full teaching template", async (
 
   const html = await response.text();
   assert.match(html, /消息与超时/);
+  assert.match(html, /QUESTION · 本站只追这一问/);
+  assert.match(html, /并发请求的回复会迟到、乱序/);
+  assert.match(html, /第二个请求收到了第一个请求的迟到回复/);
+  assert.match(html, /能够观察到/);
   assert.match(html, /为什么学这一站/);
   assert.match(html, /借一个故事/);
   assert.match(html, /镖局回执/);
   assert.match(html, /比喻到这里/);
   assert.match(html, /同一件事，两种写法/);
+  assert.match(html, /role="tablist"/);
+  assert.match(html, /role="tab"[^>]*aria-selected="true"[^>]*>Elixir</);
+  assert.match(html, /role="tab"[^>]*aria-selected="false"[^>]*>Erlang</);
   assert.match(html, />动手</);
   assert.match(html, /故意弄坏/);
   assert.match(html, /这次能看清/);
   assert.match(html, /这次还不能说明/);
+  assert.match(html, /这里用了哪些设计模式/);
+  assert.match(html, /Correlation Identifier/);
+  assert.match(html, /Request-Reply/);
   assert.match(html, /想一想/);
   assert.match(html, /提示 4/);
   assert.match(html, /记住三句话/);
@@ -667,6 +801,35 @@ test("renders a shareable lesson route with the full teaching template", async (
   assert.match(html, /发出请求前，先生成本次调用专用的 reference/);
   assert.match(html, /只接收带有同一 reference 的回复/);
   assert.match(html, /href="\/zh\/learn\/otp-behaviours"/);
+  assert.ok(html.indexOf("QUESTION · 本站只追这一问") < html.indexOf("为什么学这一站"));
+  assert.ok(html.indexOf("这里用了哪些设计模式") < html.indexOf("借一个故事"));
+});
+
+test("offers compare mode only when a BEAM lesson needs both languages together", async () => {
+  const interop = await (await render("/zh/learn/interoperability")).text();
+  const messages = await (
+    await render("/zh/learn/processes-and-mailboxes")
+  ).text();
+
+  assert.match(interop, /role="tab"[^>]*>对照<\/button>/);
+  assert.doesNotMatch(messages, /role="tab"[^>]*>对照<\/button>/);
+});
+
+test("keeps inline code inside the learning-outcome text column", async () => {
+  for (const pathname of [
+    "/zh/learn/supervision-trees",
+    "/en/learn/supervision-trees",
+    "/zh/learn/distributed-operations",
+  ]) {
+    const response = await render(pathname);
+    assert.equal(response.status, 200, pathname);
+    const html = await response.text();
+    const outcomes = html.match(/<ul class="check-list">[\s\S]*?<\/ul>/)?.[0];
+
+    assert.ok(outcomes, `${pathname} learning outcomes`);
+    assert.match(outcomes, /<li><span[^>]*>✓<\/span><p>/, pathname);
+    assert.doesNotMatch(outcomes, /<\/span><code\b/, pathname);
+  }
 });
 
 test("gives every lesson a story bridge with an explicit analogy boundary", async () => {
@@ -786,8 +949,9 @@ test("puts a three-platform installation guide before the start line", async () 
   assert.match(html, /装好工具/);
   assert.match(html, /Mix 已包含在 Elixir 里/);
   assert.match(html, /只走你电脑这一条路/);
-  assert.match(html, /11(?:<!-- -->)? 站主线/);
-  assert.match(html, /2(?:<!-- -->)? 站可选复习/);
+  assert.match(html, /2(?:<!-- -->)? 站前置/);
+  assert.match(html, /9(?:<!-- -->)? 站主线/);
+  assert.match(html, /2(?:<!-- -->)? 站复习/);
   assert.match(html, />macOS</);
   assert.match(html, />Linux</);
   assert.match(html, />Windows</);
@@ -930,6 +1094,8 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
     basicPathData,
     basicProgressSource,
     themeSwitcherSource,
+    codeLanguageSwitcherSource,
+    codeLanguageSwitcherStyles,
     fromScratchStyles,
   ] =
     await Promise.all([
@@ -955,6 +1121,20 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
       ),
       readFile(
         new URL("../app/components/ThemeSwitcher.tsx", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL(
+          "../app/components/CodeLanguageSwitcher.tsx",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+      readFile(
+        new URL(
+          "../app/components/CodeLanguageSwitcher.module.css",
+          import.meta.url,
+        ),
         "utf8",
       ),
       readFile(
@@ -1034,11 +1214,25 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
   assert.match(contentStyleGuide, /比喻只用于引出概念，不能代替技术定义/);
   assert.match(contentStyleGuide, /把报错写成可以观察和处理的结果/);
   assert.match(contentStyleGuide, /注释只解释意图、数据流、消息去向和失败边界/);
-  assert.equal((basicPathData.match(/\n    number: "\d\d",/g) ?? []).length, 18);
+  assert.equal((basicPathData.match(/\n    number: "\d\d",/g) ?? []).length, 62);
+  assert.equal((basicPathData.match(/\n    stage: "scratch"/g) ?? []).length, 18);
+  assert.equal((basicPathData.match(/\n    stage: "foundation"/g) ?? []).length, 16);
+  assert.equal((basicPathData.match(/\n    stage: "intermediate"/g) ?? []).length, 16);
+  assert.equal((basicPathData.match(/\n    stage: "project"/g) ?? []).length, 12);
   assert.match(basicPathData, /String\.trim\/1/);
   assert.match(basicPathData, /`&1` 不是一个独立变量/);
   assert.match(basicPathData, /string:trim\/1/);
   assert.match(basicPathData, /Erlang 没有单独的 string 类型/);
+  assert.match(basicPathData, /<<"长安">> == "长安"/);
+  assert.match(basicPathData, /for number <- numbers do/);
+  assert.match(basicPathData, /try do/);
+  assert.match(basicPathData, /ArgumentError ->/);
+  assert.match(
+    basicPathData,
+    /\[Score \|\| Score <- Scores, Score >= 60\]/,
+  );
+  assert.match(basicPathData, /try binary_to_integer\(Clean\) of/);
+  assert.match(basicPathData, /error:badarg ->/);
   assert.match(basicProgressSource, /beam-path-basics-progress\.v1/);
   assert.doesNotMatch(basicProgressSource, /beam-path-progress\.v1/);
   assert.match(basicProgressSource, /`\$\{language\}:\$\{slug\}`/);
@@ -1048,6 +1242,19 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
   assert.match(themeSwitcherSource, /aria-checked=\{isDark\}/);
   assert.doesNotMatch(themeSwitcherSource, /system|matchMedia|themeOptions/);
   assert.doesNotMatch(themeSwitcherSource, /<svg\b/);
+  assert.match(
+    codeLanguageSwitcherSource,
+    /beam-path-code-language/,
+  );
+  assert.match(codeLanguageSwitcherSource, /role="tablist"/);
+  assert.match(codeLanguageSwitcherSource, /role="tabpanel"/);
+  assert.match(codeLanguageSwitcherSource, /ArrowRight/);
+  assert.match(codeLanguageSwitcherSource, /ArrowLeft/);
+  assert.match(codeLanguageSwitcherSource, /allowCompare/);
+  assert.match(
+    codeLanguageSwitcherStyles,
+    /\.compareGrid\s*\{[^}]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/s,
+  );
   const elixirBasicsStart = basicPathData.indexOf(
     "const elixirLessons: BasicLesson[]",
   );
@@ -1087,12 +1294,16 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
     /^\s*[A-Z][A-Za-z0-9_]*\s*=/m,
   );
   assert.match(courseData, /stations:\s*courseModules\.length/);
+  assert.equal((courseData.match(/prerequisite:\s*true/g) ?? []).length, 2);
   assert.equal((courseData.match(/optionalReview:\s*true/g) ?? []).length, 2);
   assert.match(courseData, /mainlineStations:\s*recommendedCourseModules\.length/);
   assert.match(
     courseData,
-    /\.find\(\(courseModule\) => !courseModule\.optionalReview\)/,
+    /!courseModule\.optionalReview && !courseModule\.prerequisite/,
   );
+  assert.equal((courseData.match(/\n    question:\n/g) ?? []).length, 13);
+  assert.equal((courseData.match(/\n    incident:\s*\{/g) ?? []).length, 13);
+  assert.equal((courseData.match(/\n    patterns:\s*\[/g) ?? []).length, 13);
   assert.equal(elixirLessonBlocks.length, 13);
   assert.equal(erlangLessonBlocks.length, 13);
   assert.equal(experimentCommands.length, 13);
@@ -1153,6 +1364,15 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
     fromScratchStyles,
     /:global\(html\[data-theme="dark"\]\) \.lessonPage/,
   );
+  assert.match(
+    fromScratchStyles,
+    /\.stepsList li\s*\{[^}]*grid-template-columns:\s*36px minmax\(0, 1fr\)/s,
+  );
+  assert.match(
+    fromScratchStyles,
+    /\.takeawaySection li\s*\{[^}]*grid-template-columns:\s*29px minmax\(0, 1fr\)/s,
+  );
+  assert.match(fromScratchStyles, /\.takeawayCopy\s*\{[^}]*min-width:\s*0/s);
   assert.doesNotMatch(globalStyles, /font-size:\s*(?:[7-9]|10)px/);
   assert.match(
     globalStyles,
@@ -1177,6 +1397,14 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
   assert.match(
     globalStyles,
     /\.acceptance-card \.inline-code-text\s*\{[^}]*white-space:\s*nowrap/s,
+  );
+  assert.match(
+    globalStyles,
+    /\.check-list li\s*\{[^}]*grid-template-columns:\s*24px minmax\(0,\s*1fr\)/s,
+  );
+  assert.match(
+    globalStyles,
+    /\.check-list \.inline-code-text\s*\{[^}]*white-space:\s*nowrap/s,
   );
   assert.match(
     globalStyles,

@@ -48,7 +48,8 @@ export function getCourseCatalog(locale: Locale) {
   const courseModules = locale === "zh" ? courseModulesZh : courseModulesEn;
   const stages = locale === "zh" ? stagesZh : stagesEn;
   const recommendedCourseModules = courseModules.filter(
-    (courseModule) => !courseModule.optionalReview,
+    (courseModule) =>
+      !courseModule.optionalReview && !courseModule.prerequisite,
   );
   const courseStats = {
     stations: courseModules.length,
@@ -57,8 +58,11 @@ export function getCourseCatalog(locale: Locale) {
       0,
     ),
     mainlineStations: recommendedCourseModules.length,
+    prerequisiteStations: courseModules.filter(
+      (courseModule) => courseModule.prerequisite,
+    ).length,
     optionalReviewStations:
-      courseModules.length - recommendedCourseModules.length,
+      courseModules.filter((courseModule) => courseModule.optionalReview).length,
   };
 
   return { courseModules, stages, recommendedCourseModules, courseStats };

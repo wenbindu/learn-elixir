@@ -22,27 +22,27 @@ type BasicLessonPageProps = {
 
 const pageCopy = {
   zh: {
-    sidebarLabel: (language: string) => language + " 基础目录",
+    sidebarLabel: (language: string) => language + " 语言路线目录",
     pathSummary: (count: number, shell: string) =>
       count + " 课 · 从 " + shell + " 开始",
     mobileContents: (title: string, number: string) =>
       title + " · 第 " + number + " 课（展开目录）",
     home: "首页",
     lessonNumber: (number: string) => "第 " + number + " 课",
-    goal: "这一课只做一件事",
-    plainKicker: "先听明白",
-    plainTitle: "它到底是什么",
-    conceptMany: "先分成六类",
-    conceptFew: "先认三个词",
-    conceptTitle: "够用就好",
-    symbolsKicker: "符号拆解",
-    symbolsTitle: "一段一段读",
-    exampleKicker: "先猜，再运行",
-    outputTitle: "运行后对照",
-    stepsKicker: "按行读",
-    stepsTitle: "不要一口吞下整段",
-    practiceKicker: "轮到你改一处",
-    practiceTitle: "先别看答案",
+    goal: "今天先做什么",
+    exampleKicker: "01 · 先看完整例子",
+    outputTitle: "先对照结果",
+    stepsKicker: "02 · 回头拆代码",
+    stepsTitle: "从第一行往下读",
+    symbolsKicker: "03 · 认清新符号",
+    symbolsTitle: "符号不是暗号",
+    conceptMany: "04 · 代码里的概念",
+    conceptFew: "04 · 代码里的概念",
+    conceptTitle: "把名字和意思对上",
+    plainKicker: "05 · 再说清楚",
+    plainTitle: "这些写法为什么有用",
+    practiceKicker: "06 · 自己改一次",
+    practiceTitle: "合上答案，动手",
     starterLabel: "练习起点",
     expectedLabel: "目标结果：",
     hintSummary: "卡住了，再看提示",
@@ -54,34 +54,34 @@ const pageCopy = {
     sources: "这条路线参考",
     completionLabel: "本课结束",
     completionBody: "代码也跑过一次，就把这一课收好。",
-    paginationLabel: "相邻基础课",
+    paginationLabel: "相邻语言课",
     previous: "← 上一课",
     directory: "← 路线目录",
     next: "下一课 →",
     mainline: "进入 BEAM 主线 →",
   },
   en: {
-    sidebarLabel: (language: string) => language + " basics contents",
+    sidebarLabel: (language: string) => language + " language path contents",
     pathSummary: (count: number, shell: string) =>
       count + " lessons · Start in " + shell,
     mobileContents: (title: string, number: string) =>
       title + " · Lesson " + number + " (open contents)",
     home: "Home",
     lessonNumber: (number: string) => "Lesson " + number,
-    goal: "One job for this lesson",
-    plainKicker: "First, make it clear",
-    plainTitle: "What is it?",
-    conceptMany: "Meet six kinds",
-    conceptFew: "Meet three words",
-    conceptTitle: "Learn only what you need",
-    symbolsKicker: "Break down the symbols",
-    symbolsTitle: "Read one piece at a time",
-    exampleKicker: "Guess, then run",
-    outputTitle: "Compare after running",
-    stepsKicker: "Read line by line",
-    stepsTitle: "Take the code one line at a time",
-    practiceKicker: "Now change one thing",
-    practiceTitle: "Do not peek at the answer yet",
+    goal: "What you will make",
+    exampleKicker: "01 · Start with the whole example",
+    outputTitle: "Check the result first",
+    stepsKicker: "02 · Take the code apart",
+    stepsTitle: "Read from the first line down",
+    symbolsKicker: "03 · Meet the new symbols",
+    symbolsTitle: "Symbols are not secret signs",
+    conceptMany: "04 · Ideas inside the code",
+    conceptFew: "04 · Ideas inside the code",
+    conceptTitle: "Match each name to its meaning",
+    plainKicker: "05 · Make the idea clear",
+    plainTitle: "Why these forms are useful",
+    practiceKicker: "06 · Change it yourself",
+    practiceTitle: "Close the answer and try",
     starterLabel: "Practice starting point",
     expectedLabel: "Target result:",
     hintSummary: "Stuck? Read one hint",
@@ -93,11 +93,33 @@ const pageCopy = {
     sources: "Sources for this path",
     completionLabel: "Lesson complete",
     completionBody: "Run the code once, then mark this lesson as done.",
-    paginationLabel: "Nearby beginner lessons",
+    paginationLabel: "Nearby language lessons",
     previous: "← Previous lesson",
     directory: "← Path contents",
     next: "Next lesson →",
     mainline: "Enter the BEAM mainline →",
+  },
+} as const;
+
+const basicStageOrder = [
+  "scratch",
+  "foundation",
+  "intermediate",
+  "project",
+] as const;
+
+const basicStageLabels = {
+  zh: {
+    scratch: "试跑",
+    foundation: "基础",
+    intermediate: "进阶",
+    project: "作品",
+  },
+  en: {
+    scratch: "Scratch",
+    foundation: "Foundation",
+    intermediate: "Intermediate",
+    project: "Project",
   },
 } as const;
 
@@ -163,19 +185,28 @@ export default async function BasicLessonPage({
               <small>{copy.pathSummary(path.lessons.length, path.shell)}</small>
             </div>
             <nav>
-              {path.lessons.map((item) => (
-                <LocalizedLink
-                  href={
-                    "/from-scratch/" + path.id + "/" + item.slug
-                  }
-                  locale={locale}
-                  data-active={item.slug === lesson.slug}
-                  aria-current={item.slug === lesson.slug ? "page" : undefined}
-                  key={item.slug}
-                >
-                  <b>{item.number}</b>
-                  <span>{item.title}</span>
-                </LocalizedLink>
+              {basicStageOrder.map((stage) => (
+                <div className={styles.sidebarStage} key={stage}>
+                  <strong>{basicStageLabels[locale][stage]}</strong>
+                  {path.lessons
+                    .filter((item) => item.stage === stage)
+                    .map((item) => (
+                      <LocalizedLink
+                        href={
+                          "/from-scratch/" + path.id + "/" + item.slug
+                        }
+                        locale={locale}
+                        data-active={item.slug === lesson.slug}
+                        aria-current={
+                          item.slug === lesson.slug ? "page" : undefined
+                        }
+                        key={item.slug}
+                      >
+                        <b>{item.number}</b>
+                        <span>{item.title}</span>
+                      </LocalizedLink>
+                    ))}
+                </div>
               ))}
             </nav>
           </aside>
@@ -233,7 +264,9 @@ export default async function BasicLessonPage({
             >
               <div className={styles.lessonHeaderTop}>
                 <span>
-                  {path.language.toUpperCase()} · LESSON {lesson.number}
+                  {path.language.toUpperCase()} ·{" "}
+                  {basicStageLabels[locale][lesson.stage].toUpperCase()} · LESSON{" "}
+                  {lesson.number}
                 </span>
                 <small>{lesson.duration}</small>
               </div>
@@ -241,21 +274,74 @@ export default async function BasicLessonPage({
               <p>{lesson.summary}</p>
             </header>
 
-            <aside className={styles.goalCard}>
-              <strong>{copy.goal}</strong>
+            <aside
+              className={styles.goalCard}
+              data-learning-step="task"
+              aria-labelledby="lesson-task-title"
+            >
+              <strong id="lesson-task-title">{copy.goal}</strong>
               <p>
                 <InlineCodeText text={lesson.goal} />
               </p>
             </aside>
 
+            <section
+              className={styles.lessonSection}
+              data-learning-step="code"
+              aria-labelledby="lesson-code-title"
+            >
+              <div className="section-kicker">{copy.exampleKicker}</div>
+              <h2 id="lesson-code-title">{lesson.example.label}</h2>
+              <p className={styles.exampleIntro}>
+                <InlineCodeText text={lesson.example.caption} />
+              </p>
+              <CopyBlock
+                code={lesson.example.code}
+                language={path.id}
+                label={path.language}
+                locale={locale}
+              />
+              <div className={styles.outputPanel}>
+                <strong>{copy.outputTitle}</strong>
+                <ul>
+                  {lesson.example.output.map((item) => (
+                    <li key={item}>
+                      <InlineCodeText text={item} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </section>
+
+            <section
+              className={styles.lessonSection}
+              data-learning-step="syntax"
+              aria-labelledby="lesson-syntax-title"
+            >
+              <div className="section-kicker">{copy.stepsKicker}</div>
+              <h2 id="lesson-syntax-title">{copy.stepsTitle}</h2>
+              <ol className={styles.stepsList}>
+                {lesson.steps.map((step) => (
+                  <li key={step}>
+                    <span>
+                      <InlineCodeText text={step} />
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+
             <section className={styles.lessonSection}>
-              <div className="section-kicker">{copy.plainKicker}</div>
-              <h2>{copy.plainTitle}</h2>
-              <div className={styles.plainCopy}>
-                {lesson.plain.map((paragraph) => (
-                  <p key={paragraph}>
-                    <InlineCodeText text={paragraph} />
-                  </p>
+              <div className="section-kicker">{copy.symbolsKicker}</div>
+              <h2>{copy.symbolsTitle}</h2>
+              <div className={styles.symbolList}>
+                {lesson.symbols.map((symbol) => (
+                  <div className={styles.symbolRow} key={symbol.token}>
+                    <code>{symbol.token}</code>
+                    <p>
+                      <InlineCodeText text={symbol.reading} />
+                    </p>
+                  </div>
                 ))}
               </div>
             </section>
@@ -288,61 +374,24 @@ export default async function BasicLessonPage({
             </section>
 
             <section className={styles.lessonSection}>
-              <div className="section-kicker">{copy.symbolsKicker}</div>
-              <h2>{copy.symbolsTitle}</h2>
-              <div className={styles.symbolList}>
-                {lesson.symbols.map((symbol) => (
-                  <div className={styles.symbolRow} key={symbol.token}>
-                    <code>{symbol.token}</code>
-                    <p>
-                      <InlineCodeText text={symbol.reading} />
-                    </p>
-                  </div>
+              <div className="section-kicker">{copy.plainKicker}</div>
+              <h2>{copy.plainTitle}</h2>
+              <div className={styles.plainCopy}>
+                {lesson.plain.map((paragraph) => (
+                  <p key={paragraph}>
+                    <InlineCodeText text={paragraph} />
+                  </p>
                 ))}
               </div>
             </section>
 
-            <section className={styles.lessonSection}>
-              <div className="section-kicker">{copy.exampleKicker}</div>
-              <h2>{lesson.example.label}</h2>
-              <p className={styles.exampleIntro}>
-                <InlineCodeText text={lesson.example.caption} />
-              </p>
-              <CopyBlock
-                code={lesson.example.code}
-                language={path.id}
-                label={path.language}
-                locale={locale}
-              />
-              <div className={styles.outputPanel}>
-                <strong>{copy.outputTitle}</strong>
-                <ul>
-                  {lesson.example.output.map((item) => (
-                    <li key={item}>
-                      <InlineCodeText text={item} />
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </section>
-
-            <section className={styles.lessonSection}>
-              <div className="section-kicker">{copy.stepsKicker}</div>
-              <h2>{copy.stepsTitle}</h2>
-              <ol className={styles.stepsList}>
-                {lesson.steps.map((step) => (
-                  <li key={step}>
-                    <span>
-                      <InlineCodeText text={step} />
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            </section>
-
-            <section className={styles.practiceSection}>
+            <section
+              className={styles.practiceSection}
+              data-learning-step="practice"
+              aria-labelledby="lesson-practice-title"
+            >
               <div className="section-kicker">{copy.practiceKicker}</div>
-              <h2>{copy.practiceTitle}</h2>
+              <h2 id="lesson-practice-title">{copy.practiceTitle}</h2>
               <p className={styles.practiceTask}>
                 <InlineCodeText text={lesson.practice.task} />
               </p>
@@ -394,7 +443,9 @@ export default async function BasicLessonPage({
                 {lesson.takeaways.map((takeaway, index) => (
                   <li key={takeaway}>
                     <span>{index + 1}</span>
-                    <InlineCodeText text={takeaway} />
+                    <p className={styles.takeawayCopy}>
+                      <InlineCodeText text={takeaway} />
+                    </p>
                   </li>
                 ))}
               </ol>

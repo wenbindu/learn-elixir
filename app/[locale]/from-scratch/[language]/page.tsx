@@ -22,11 +22,41 @@ const pageCopy = {
     checkShell: (shell: string) => "先确认能打开 " + shell,
     shellIntro: "在终端输入命令。看到交互提示符就够了。暂时不用建项目。",
     installAction: "还没安装？看安装步骤",
-    roadmapKicker: "九步路线",
-    roadmapTitle: "一课只解决一个问题",
-    roadmapBeforeShell:
-      "按顺序学。遇到陌生符号，不要猜着跳过。先看“符号拆解”，再把示例复制到",
-    lessonAction: "开始这一课",
+    roadmapKicker: "四段路",
+    roadmapTitle: "从第一次运行，走到完整作品",
+    roadmapBody: (shell: string) =>
+      "每课仍然先看要做什么，再把完整例子复制到 " +
+      shell +
+      "。Scratch 负责敢运行，Foundation 负责独立写模块，Intermediate 处理真实输入，Project 把它们合成一个作品。",
+    lessonAction: "先跑例子",
+    beamBridgeKicker: "FOUNDATION 完成后",
+    beamBridgeTitle: "现在已经够用，可以进入 BEAM",
+    beamBridgeBody:
+      "接下来有两种走法：继续学文件、测试和项目工具，或先去解决消息、超时和进程故障。两条路以后还能接上。",
+    beamBridgeAction: "进入 BEAM 前置检查",
+    stageLessons: (count: number) => count + " 节短课",
+    stages: {
+      scratch: {
+        label: "SCRATCH · 试跑",
+        title: "先让代码跑起来",
+        description: "看懂输入和结果。完成一段 5–15 行的小任务。",
+      },
+      foundation: {
+        label: "FOUNDATION · 基础",
+        title: "自己写一个模块",
+        description: "补齐集合、函数、控制流、模块和基础测试。",
+      },
+      intermediate: {
+        label: "INTERMEDIATE · 进阶",
+        title: "接住真实输入",
+        description: "处理文件、错误边界、类型约定和项目工具。",
+      },
+      project: {
+        label: "PROJECT · 作品",
+        title: "把知识合成一个作品",
+        description: "从需求、测试走到可运行、可打包的小程序。",
+      },
+    },
     afterPath: "学完以后",
     sourcesKicker: "课程依据",
     sourcesTitle: "不懂时去看原文",
@@ -41,11 +71,42 @@ const pageCopy = {
     shellIntro:
       "Enter the command in your terminal. Seeing the interactive prompt is enough. You do not need to create a project yet.",
     installAction: "Not installed yet? Follow the installation steps",
-    roadmapKicker: "Nine small steps",
-    roadmapTitle: "One lesson, one question",
-    roadmapBeforeShell:
-      "Study in order. When a symbol is new, do not guess and skip it. Read “Break down the symbols” first, then copy the example into",
-    lessonAction: "Start this lesson",
+    roadmapKicker: "Four stages",
+    roadmapTitle: "From the first run to a finished project",
+    roadmapBody: (shell: string) =>
+      "Each lesson still begins with a concrete task and a complete example in " +
+      shell +
+      ". Scratch builds confidence, Foundation builds independent modules, Intermediate handles real input, and Project combines the pieces.",
+    lessonAction: "Run the example",
+    beamBridgeKicker: "AFTER FOUNDATION",
+    beamBridgeTitle: "You now know enough to enter the BEAM path",
+    beamBridgeBody:
+      "Continue with files, tests, and project tools, or switch now to messages, timeouts, and process failures. You can return to either path later.",
+    beamBridgeAction: "Open the BEAM setup check",
+    stageLessons: (count: number) =>
+      count + (count === 1 ? " short lesson" : " short lessons"),
+    stages: {
+      scratch: {
+        label: "SCRATCH · FIRST RUNS",
+        title: "Get the code running",
+        description: "Read inputs and results. Finish one 5–15 line task.",
+      },
+      foundation: {
+        label: "FOUNDATION",
+        title: "Write a module on your own",
+        description: "Build fluency with collections, functions, control flow, modules, and basic tests.",
+      },
+      intermediate: {
+        label: "INTERMEDIATE",
+        title: "Handle real input",
+        description: "Work with files, error boundaries, type contracts, and project tools.",
+      },
+      project: {
+        label: "PROJECT",
+        title: "Combine the pieces into a project",
+        description: "Move from a small requirement and tests to a runnable, packaged program.",
+      },
+    },
     afterPath: "After this path",
     sourcesKicker: "Course sources",
     sourcesTitle: "Read the original when you need more",
@@ -53,6 +114,8 @@ const pageCopy = {
       "This path follows beginner courses. Check the official documentation for exact syntax details.",
   },
 } as const;
+
+const stageOrder = ["scratch", "foundation", "intermediate", "project"] as const;
 
 export const dynamicParams = false;
 
@@ -114,7 +177,7 @@ export default async function BasicPathPage({
             </div>
             <div className={styles.trackHeroLead}>
               <div>
-                <div className="section-kicker">{path.language} · BEGINNER</div>
+                <div className="section-kicker">{path.language} · LANGUAGE PATH</div>
                 <h1>{path.title}</h1>
                 <p>{path.description}</p>
               </div>
@@ -161,37 +224,69 @@ export default async function BasicPathPage({
                 <div className="section-kicker">{copy.roadmapKicker}</div>
                 <h2>{copy.roadmapTitle}</h2>
               </div>
-              <p>
-                {copy.roadmapBeforeShell} {path.shell}.
-              </p>
+              <p>{copy.roadmapBody(path.shell)}</p>
             </div>
 
-            <div className={styles.lessonRoadmap}>
-              {path.lessons.map((lesson) => (
-                <LocalizedLink
-                  className={styles.lessonCard}
-                  href={
-                    "/from-scratch/" + path.id + "/" + lesson.slug
-                  }
-                  locale={locale}
-                  key={lesson.slug}
-                >
-                  <div className={styles.lessonCardTop}>
-                    <span>LESSON {lesson.number}</span>
-                    <span>{lesson.duration}</span>
-                  </div>
-                  <h3>{lesson.title}</h3>
-                  <p>{lesson.summary}</p>
-                  <div className={styles.lessonCardFooter}>
-                    <span>{copy.lessonAction} →</span>
-                    <BasicLessonStatus
-                      language={path.id}
-                      slug={lesson.slug}
-                      locale={locale}
-                    />
-                  </div>
-                </LocalizedLink>
-              ))}
+            <div className={styles.stageRoadmap}>
+              {stageOrder.map((stage, stageIndex) => {
+                const lessons = path.lessons.filter(
+                  (lesson) => lesson.stage === stage,
+                );
+                const stageCopy = copy.stages[stage];
+
+                return (
+                  <section className={styles.stageGroup} key={stage}>
+                    <header className={styles.stageHeader}>
+                      <span>{String(stageIndex + 1).padStart(2, "0")}</span>
+                      <div>
+                        <small>{stageCopy.label}</small>
+                        <h3>{stageCopy.title}</h3>
+                        <p>{stageCopy.description}</p>
+                      </div>
+                      <strong>{copy.stageLessons(lessons.length)}</strong>
+                    </header>
+                    <div className={styles.lessonRoadmap}>
+                      {lessons.map((lesson) => (
+                        <LocalizedLink
+                          className={styles.lessonCard}
+                          href={
+                            "/from-scratch/" + path.id + "/" + lesson.slug
+                          }
+                          locale={locale}
+                          key={lesson.slug}
+                        >
+                          <div className={styles.lessonCardTop}>
+                            <span>LESSON {lesson.number}</span>
+                            <span>{lesson.duration}</span>
+                          </div>
+                          <h3>{lesson.title}</h3>
+                          <p>{lesson.summary}</p>
+                          <div className={styles.lessonCardFooter}>
+                            <span>{copy.lessonAction} →</span>
+                            <BasicLessonStatus
+                              language={path.id}
+                              slug={lesson.slug}
+                              locale={locale}
+                            />
+                          </div>
+                        </LocalizedLink>
+                      ))}
+                    </div>
+                    {stage === "foundation" ? (
+                      <aside className={styles.beamBridge}>
+                        <div>
+                          <small>{copy.beamBridgeKicker}</small>
+                          <h3>{copy.beamBridgeTitle}</h3>
+                          <p>{copy.beamBridgeBody}</p>
+                        </div>
+                        <LocalizedLink href="/learn/start-line" locale={locale}>
+                          {copy.beamBridgeAction} →
+                        </LocalizedLink>
+                      </aside>
+                    ) : null}
+                  </section>
+                );
+              })}
             </div>
 
             <div className={styles.trackFooterGrid}>

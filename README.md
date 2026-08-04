@@ -1,18 +1,18 @@
 # BEAM Path
 
-一个中英双语的 Erlang + Elixir 学习站。Elixir、Erlang 各有一条独立的零基础语法路线，
-学完任意一条，再汇入 BEAM / OTP 主线。每章包含简短讲解、可运行代码和小练习。
+一个中英双语的 Erlang + Elixir 学习站。Elixir、Erlang 各有一条 31 课语言路线，
+完成 Foundation 后即可汇入问题驱动的 BEAM / OTP 主线。每章包含具体任务、可运行代码和小练习。
 
 ## 已包含
 
-- 2 条 From Scratch 路线、18 节单语基础课，从类型、集合和模式匹配讲到函数、模块与项目
-- 11 站 BEAM 主线、2 站可选语言复习，共 49 个检查点；覆盖安装、并发、OTP、监督树、容量、分布式与互操作
+- 2 条 From Scratch 路线、62 节单语短课；每条分为 Scratch 9、Foundation 8、Intermediate 8、Project 6
+- 2 站前置、9 站 BEAM 主线、2 站可选语言复习，共 49 个检查点；每站从故障、架构问题或项目约束引入
 - macOS、Linux、Windows 三套安装准备，说明 Erlang/OTP、Elixir 的顺序以及 Mix 随 Elixir 提供
-- 首页按 From Scratch、进阶、高级分层，并保留可搜索、可筛选的 BEAM 课程地图
+- 首页明确区分语言路线、BEAM 问题主线与综合项目，并保留可搜索、可筛选的课程地图
 - 右上角用紧凑开关切换浅色与深色主题，并在本机保存选择
 - 中文、英文使用明确的 `/zh`、`/en` URL 前缀；语言切换会保留当前页面、查询参数和锚点
 - 专门拆解 `String.trim/1`、`string:trim/1`、arity、`&1`、capture 与管道，不把缩写当作前置知识
-- Elixir / Erlang 双栏代码，以及可复制到 IEx / erl 的章节实验
+- BEAM 代码可在 Elixir / Erlang 之间切换；共享协议和互操作课程另有对照模式
 - 独立的 Elixir 在线 Playground，内置管道、模式匹配与进程消息练习
 - 可搜索的 Elixir + Erlang 关键字字典，区分严格保留字、特殊形式、宏与声明
 - 独立的关联资源目录，资源从一份易维护的 Markdown 配置自动生成
@@ -198,8 +198,8 @@ npm test
 npm run lint
 ```
 
-测试会验证中英文首页与深链接、18 节 From Scratch 课程、三平台安装准备、独立资源目录、
-关键字完整清单、11 站主线与 2 站可选复习、语言跳转、metadata 与品牌图标资产。
+测试会验证中英文首页与深链接、62 节语言课程、四阶段目录、三平台安装准备、独立资源目录、
+关键字完整清单、2 站前置 / 9 站主线 / 2 站复习、代码切换、metadata 与品牌图标资产。
 
 ## 主要目录
 
@@ -214,8 +214,8 @@ app/
     resources/page.tsx     Markdown 驱动的关联资源目录
     page.tsx               本地化首页
   i18n/                    语言、英文课程数据与 metadata 工具
-  basic-path-data.ts       Elixir / Erlang 共 18 节基础课数据
-  course-data.ts           11 站主线、2 站可选复习与三平台安装数据
+  basic-path-data.ts       Elixir / Erlang 共 62 节四阶段语言课数据
+  course-data.ts           2 站前置、9 站主线、2 站复习与三平台安装数据
   resource-data.ts         资源配置解析与构建时校验
   manifest.ts              中性英文默认 PWA manifest
   sitemap.ts               中英文 URL 与 hreflang 对照
