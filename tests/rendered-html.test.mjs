@@ -591,6 +591,31 @@ test("renders all 62 language lessons with the example-first template", async ()
   assert.equal(badLesson.status, 404);
 });
 
+test("keeps the active From Scratch lesson visible in the desktop sidebar", async () => {
+  const response = await render(
+    "/zh/from-scratch/elixir/behaviours-and-callbacks",
+  );
+  assert.equal(response.status, 200);
+  const html = await response.text();
+
+  assert.match(
+    html,
+    /<nav[^>]*data-auto-scroll-active="behaviours-and-callbacks"/,
+  );
+  assert.match(
+    html,
+    /<a[^>]*aria-current="page"[^>]*href="\/zh\/from-scratch\/elixir\/behaviours-and-callbacks"/,
+  );
+
+  const source = await readFile(
+    new URL("../app/components/AutoScrollLessonNav.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /nav\.scrollTop/);
+  assert.match(source, /nav\.scrollHeight - nav\.clientHeight/);
+  assert.doesNotMatch(source, /scrollIntoView/);
+});
+
 test("keeps Elixir lesson two readable as six distinct value groups", async () => {
   const response = await render("/zh/from-scratch/elixir/values-and-types");
   assert.equal(response.status, 200);

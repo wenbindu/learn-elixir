@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { AutoScrollLessonNav } from "../../../../components/AutoScrollLessonNav";
 import { BasicProgressButton } from "../../../../components/BasicProgress";
 import { CopyBlock } from "../../../../components/CopyBlock";
 import { InlineCodeText } from "../../../../components/InlineCodeText";
@@ -184,7 +185,7 @@ export default async function BasicLessonPage({
               <strong>{path.shortTitle}</strong>
               <small>{copy.pathSummary(path.lessons.length, path.shell)}</small>
             </div>
-            <nav>
+            <AutoScrollLessonNav activeLesson={lesson.slug}>
               {basicStageOrder.map((stage) => (
                 <div className={styles.sidebarStage} key={stage}>
                   <strong>{basicStageLabels[locale][stage]}</strong>
@@ -208,7 +209,7 @@ export default async function BasicLessonPage({
                     ))}
                 </div>
               ))}
-            </nav>
+            </AutoScrollLessonNav>
           </aside>
 
           <article className={styles.lessonArticle}>
