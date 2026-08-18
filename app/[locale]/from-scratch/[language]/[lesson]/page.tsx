@@ -4,6 +4,10 @@ import { AutoScrollLessonNav } from "../../../../components/AutoScrollLessonNav"
 import { BasicProgressButton } from "../../../../components/BasicProgress";
 import { CopyBlock } from "../../../../components/CopyBlock";
 import { InlineCodeText } from "../../../../components/InlineCodeText";
+import {
+  BeforeRunCard,
+  DesignComparisonPanel,
+} from "../../../../components/LearningGuidancePanel";
 import { LocalizedLink } from "../../../../components/LocalizedLink";
 import { SiteFooter } from "../../../../components/SiteFooter";
 import { SiteHeader } from "../../../../components/SiteHeader";
@@ -14,6 +18,7 @@ import {
   getBasicPaths,
 } from "../../../../i18n/catalog";
 import { isLocale, locales } from "../../../../i18n/locales";
+import { getBasicLessonGuidance } from "../../../../i18n/learning-guidance";
 import { localeAlternates } from "../../../../i18n/metadata";
 import styles from "../../../../from-scratch/from-scratch.module.css";
 
@@ -30,6 +35,11 @@ const pageCopy = {
       title + " · 第 " + number + " 课（展开目录）",
     home: "首页",
     lessonNumber: (number: string) => "第 " + number + " 课",
+    continuityLabel: "课程衔接",
+    previousStep: "刚走过",
+    currentStep: "这一课",
+    nextStep: "接下来",
+    startingPoint: "从这里起步",
     goal: "今天先做什么",
     exampleKicker: "01 · 先看完整例子",
     outputTitle: "先对照结果",
@@ -69,6 +79,11 @@ const pageCopy = {
       title + " · Lesson " + number + " (open contents)",
     home: "Home",
     lessonNumber: (number: string) => "Lesson " + number,
+    continuityLabel: "Lesson continuity",
+    previousStep: "Just behind you",
+    currentStep: "This lesson",
+    nextStep: "Up next",
+    startingPoint: "Start here",
     goal: "What you will make",
     exampleKicker: "01 · Start with the whole example",
     outputTitle: "Check the result first",
@@ -170,6 +185,7 @@ export default async function BasicLessonPage({
 
   const copy = pageCopy[locale];
   const { previous, next } = getAdjacentBasicLessons(path, lesson.slug);
+  const guidance = getBasicLessonGuidance(locale, path.id, lesson);
 
   return (
     <>
@@ -275,6 +291,50 @@ export default async function BasicLessonPage({
               <p>{lesson.summary}</p>
             </header>
 
+            <nav
+              className={styles.lessonContinuity}
+              aria-label={copy.continuityLabel}
+            >
+              <div>
+                <span>{copy.previousStep}</span>
+                {previous ? (
+                  <LocalizedLink
+                    href={
+                      "/from-scratch/" + path.id + "/" + previous.slug
+                    }
+                    locale={locale}
+                  >
+                    <strong>{previous.title}</strong>
+                    <small>{previous.summary}</small>
+                  </LocalizedLink>
+                ) : (
+                  <p>{copy.startingPoint}</p>
+                )}
+              </div>
+              <div aria-current="step">
+                <span>{copy.currentStep}</span>
+                <strong>{lesson.title}</strong>
+                <small>{lesson.summary}</small>
+              </div>
+              <div>
+                <span>{copy.nextStep}</span>
+                {next ? (
+                  <LocalizedLink
+                    href={"/from-scratch/" + path.id + "/" + next.slug}
+                    locale={locale}
+                  >
+                    <strong>{next.title}</strong>
+                    <small>{next.summary}</small>
+                  </LocalizedLink>
+                ) : (
+                  <LocalizedLink href={path.bridge.href} locale={locale}>
+                    <strong>{path.bridge.title}</strong>
+                    <small>{path.bridge.description}</small>
+                  </LocalizedLink>
+                )}
+              </div>
+            </nav>
+
             <aside
               className={styles.goalCard}
               data-learning-step="task"
@@ -296,6 +356,7 @@ export default async function BasicLessonPage({
               <p className={styles.exampleIntro}>
                 <InlineCodeText text={lesson.example.caption} />
               </p>
+              <BeforeRunCard guidance={guidance} locale={locale} />
               <CopyBlock
                 code={lesson.example.code}
                 language={path.id}
@@ -385,6 +446,8 @@ export default async function BasicLessonPage({
                 ))}
               </div>
             </section>
+
+            <DesignComparisonPanel guidance={guidance} locale={locale} />
 
             <section
               className={styles.practiceSection}

@@ -6,7 +6,7 @@
 ## 已包含
 
 - 2 条 From Scratch 路线、62 节单语短课；每条分为 Scratch 9、Foundation 8、Intermediate 8、Project 6
-- 2 站前置、9 站 BEAM 主线、2 站可选语言复习，共 49 个检查点；每站从故障、架构问题或项目约束引入
+- 2 站前置、7 站 BEAM 核心、2 站可选语言复习、2 站双语扩展，共 49 个检查点；每站从故障、架构问题或项目约束引入
 - macOS、Linux、Windows 三套安装准备，说明 Erlang/OTP、Elixir 的顺序以及 Mix 随 Elixir 提供
 - 首页明确区分语言路线、BEAM 问题主线与综合项目，并保留可搜索、可筛选的课程地图
 - 右上角用紧凑开关切换浅色与深色主题，并在本机保存选择
@@ -16,6 +16,7 @@
 - 独立的 Elixir 在线 Playground，内置管道、模式匹配与进程消息练习
 - 可搜索的 Elixir + Erlang 关键字字典，区分严格保留字、特殊形式、宏与声明
 - 独立的关联资源目录，资源从一份易维护的 Markdown 配置自动生成
+- 首页 Case Chat 入口：沿真实语音会话项目继续学习 Mix、OTP、WebSocket 与进程边界
 - 13 个故事桥，用历史、文学和生活场景引出抽象概念，并说明比喻边界
 - 统一的字号层级，以及 Vercel Analytics 与 Speed Insights
 - 故障实验、结论边界、小测、分级提示和完成自查
@@ -117,6 +118,34 @@ Vercel 生产构建仍使用 Next.js 默认构建流程。
 分类顺序就是页面顺序。构建会检查 URL、重复链接、空描述和未知元数据，并报告行号。
 保存后刷新本地页面即可查看。提交到 GitHub 后，Vercel 会在下次部署时读取新配置。
 
+## 同步 Case Chat 案例
+
+首页的 **Case Chat** 不是本机目录链接。部署时，Vercel 会直接发布
+[`public/case-chat/`](public/case-chat/) 中的静态页面，因此线上地址稳定为
+`/case-chat/index.html`。案例目前只有中文，英文首页会明确标出这一点。
+
+案例源文件默认位于相邻项目：
+
+```text
+../dsh-ws/voice_chat_tutorial
+```
+
+源教程更新后，先在源目录按它自己的说明重新生成页面，再回到本项目同步三份运行时文件：
+
+```bash
+./scripts/sync-case-chat.sh
+```
+
+如果源目录在别处，可以临时指定：
+
+```bash
+CASE_CHAT_SOURCE=/absolute/path/to/voice_chat_tutorial \
+  ./scripts/sync-case-chat.sh
+```
+
+同步脚本只复制 `index.html`、`styles.css` 与 `engine.js`。提交这三份文件后，GitHub 与
+Vercel 部署都不依赖开发者电脑上的绝对路径。
+
 ## 部署到 Vercel
 
 项目已经适配为 Vercel 原生 Next.js，无需 `vercel.json` 或自定义构建输出。
@@ -199,7 +228,8 @@ npm run lint
 ```
 
 测试会验证中英文首页与深链接、62 节语言课程、四阶段目录、三平台安装准备、独立资源目录、
-关键字完整清单、2 站前置 / 9 站主线 / 2 站复习、代码切换、metadata 与品牌图标资产。
+关键字完整清单、2 站前置 / 7 站核心 / 2 站复习 / 2 站双语扩展、代码切换、metadata、
+品牌图标与 Case Chat 静态资产。
 
 ## 主要目录
 
@@ -215,7 +245,7 @@ app/
     page.tsx               本地化首页
   i18n/                    语言、英文课程数据与 metadata 工具
   basic-path-data.ts       Elixir / Erlang 共 62 节四阶段语言课数据
-  course-data.ts           2 站前置、9 站主线、2 站复习与三平台安装数据
+  course-data.ts           2 站前置、7 站核心、2 站复习、2 站双语扩展与安装数据
   resource-data.ts         资源配置解析与构建时校验
   manifest.ts              中性英文默认 PWA manifest
   sitemap.ts               中英文 URL 与 hreflang 对照
@@ -227,15 +257,18 @@ content/
 public/
   brand-icon.png           原始品牌图标
   favicon.ico              Chrome favicon
+  case-chat/               可随 Vercel 发布的真实语音服务案例
 config/
   local.env                本地监听地址与端口
 scripts/
   start-local.sh           本地开发启动脚本
+  sync-case-chat.sh        从相邻教程同步 Case Chat 静态页面
 proxy.ts                   根路径语言识别与重定向
 tests/
   rendered-html.test.mjs   SSR 与需求回归测试
 docs/
   content-style-guide.md   面向中小学生的文案与故事桥准则
+  curriculum-roadmap.md    课程断层、目标路径和分阶段补课计划
 ```
 
 ## 关于浏览器实验

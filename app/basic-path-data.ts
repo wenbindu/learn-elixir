@@ -421,6 +421,7 @@ raised =
       "Elixir 的 `=` 不只是“赋值”。它会检查左右两边能不能按同一种形状对上。",
       "左边像一张空表格。右边的数据填进去。位置、标签或 key 对不上时，匹配就失败。",
       "这种写法常用来拆数据。你只写想取出的部分，剩下的可以交给下划线 `_`。",
+      "模式里的普通名字会接住新值。如果要拿一个已经绑定的名字来核对，就在前面写 pin 符号 `^`。`^expected_tag` 的意思是“这里必须等于旧的 `expected_tag`”。",
     ],
     concepts: [
       {
@@ -435,16 +436,24 @@ raised =
         term: "匹配失败",
         explanation: "左右形状或固定值对不上时，Elixir 会给出 `MatchError`。",
       },
+      {
+        term: "pin 运算符",
+        explanation: "`^name` 在模式中使用名字原来绑定的值，不让这个位置接住一个新值。",
+      },
     ],
     symbols: [
       { token: "=", reading: "匹配左右两边。左边的新名字会绑定到对应值。" },
       { token: "_", reading: "这个位置的值不需要保存。" },
       { token: "[head | tail]", reading: "把非空 list 拆成第一个元素和剩余元素。" },
+      { token: "^name", reading: "用 `name` 已有的值核对这个位置。读作 pin name。" },
     ],
     example: {
       label: "从三种集合里拆值",
-      code: `# 固定标签必须对上，下划线忽略第三个值
-{:ok, score, _} = {:ok, 92, :midterm}
+      code: `# 先把预期标签记下来
+expected_tag = :ok
+
+# ^ 使用 expected_tag 的旧值核对标签；下划线忽略第三个值
+{^expected_tag, score, _} = {:ok, 92, :midterm}
 
 # 拆出 list 的第一个元素和其余部分
 [first | rest] = ["桃", "李", "杏"]
@@ -457,21 +466,27 @@ raised =
       output: ["`score` 得到 `92`。", "`first` 得到 `\"桃\"`，`rest` 得到 `[\"李\", \"杏\"]`。", "`name` 得到 `\"阿青\"`。"],
     },
     steps: [
-      "`{:ok, score, _}` 要求右边是三个元素的 tuple，而且第一个必须是 `:ok`；第三个值被忽略。",
+      "`^expected_tag` 不会重新绑定名字。它要求 tuple 第一个值等于已有的 `:ok`；第三个值被 `_` 忽略。",
       "`[first | rest]` 只能匹配非空 list。竖线把第一个值与剩余 list 分开。",
       "map 模式可以只匹配需要的 key；右边多出的 `age` 不妨碍匹配。",
     ],
     practice: {
-      task: "从 `{:weather, \"西安\", 28}` 中拆出城市和温度。",
-      starter: `# 保留标签，给后两个位置起名字
-{____, ____, ____} = {:weather, "西安", 28}
+      task: "先绑定预期标签，再从 `{:weather, \"西安\", 28}` 中核对标签并拆出城市和温度。",
+      starter: `# 这次只接受 weather 消息
+expected_tag = :weather
+
+# 用 pin 核对已有标签，给后两个位置起名字
+{^____, ____, ____} = {:weather, "西安", 28}
 
 # 返回城市和温度
 {city, temperature}`,
       expected: "得到 `{\"西安\", 28}`。",
-      hint: "第一个位置写固定 atom `:weather`，后两个位置写 `city` 和 `temperature`。",
-      answer: `# :weather 必须匹配，两个名字接住数据
-{:weather, city, temperature} = {:weather, "西安", 28}
+      hint: "第一个位置写 `^expected_tag`，后两个位置写 `city` 和 `temperature`。",
+      answer: `# 先保存要核对的标签
+expected_tag = :weather
+
+# ^expected_tag 必须匹配，两个新名字接住数据
+{^expected_tag, city, temperature} = {:weather, "西安", 28}
 
 # 查看拆出的值
 {city, temperature}`,
@@ -483,7 +498,7 @@ raised =
     takeaways: [
       "`=` 会检查形状，不只是把值放进名字。",
       "固定值负责核对，新名字负责接住数据。",
-      "不需要的值可以用 `_` 忽略。",
+      "`^name` 用旧值核对；不需要的值可以用 `_` 忽略。",
     ],
   },
   {
@@ -4949,11 +4964,11 @@ export const basicPaths: BasicPath[] = [
     ],
     lessons: elixirLessons,
     bridge: {
-      title: "下一步：让作品面对并发与故障",
+      title: "下一步：先看懂 BEAM 进程",
       description:
-        "你已经写过模块、文件处理、测试和命令行作品。接着去起跑线做一次分层诊断，再沿 BEAM 主线处理消息、容量与恢复。",
-      href: "/learn/start-line",
-      label: "走上 BEAM 起跑线",
+        "你已经写过模块、文件处理、测试和命令行作品。不必再回起跑线，直接看普通函数何时该变成有状态、会收消息的进程。",
+      href: "/learn/beam-mental-model",
+      label: "进入进程与信箱",
     },
     references: [
       {
@@ -4987,11 +5002,11 @@ export const basicPaths: BasicPath[] = [
     ],
     lessons: erlangLessons,
     bridge: {
-      title: "下一步：让作品面对并发与故障",
+      title: "下一步：先看懂 BEAM 进程",
       description:
-        "你已经写过模块、文件处理、测试和命令行作品。接着去起跑线做一次分层诊断，再沿 BEAM 主线处理消息、OTP 与监督树。",
-      href: "/learn/start-line",
-      label: "走上 BEAM 起跑线",
+        "你已经写过模块、文件处理、测试和命令行作品。不必再回起跑线，直接看普通函数何时该变成有状态、会收消息的进程。",
+      href: "/learn/beam-mental-model",
+      label: "进入进程与信箱",
     },
     references: [
       {

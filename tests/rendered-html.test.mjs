@@ -87,12 +87,12 @@ const lessonSlugs = [
   "beam-mental-model",
   "elixir-foundations",
   "erlang-foundations",
-  "shared-semantics",
   "processes-and-mailboxes",
   "otp-behaviours",
   "supervision-trees",
   "state-and-backpressure",
   "distributed-operations",
+  "shared-semantics",
   "interoperability",
   "reliable-scheduler",
 ];
@@ -235,6 +235,26 @@ test("serves explicit locale URLs without redirecting", async () => {
   }
 });
 
+test("serves the bundled Case Chat study without a local filesystem link", async () => {
+  const page = await render("/case-chat/index.html");
+  assert.equal(page.status, 200);
+  assert.equal(page.headers.get("location"), null);
+  const html = await page.text();
+  assert.match(html, /<html[^>]*lang="zh-CN"/i);
+  assert.match(html, /拆解 voice_chat/);
+  assert.match(html, /href="styles\.css"/);
+  assert.match(html, /src="engine\.js"/);
+  assert.doesNotMatch(html, /file:\/\/|\/Users\/deandu/);
+
+  for (const pathname of [
+    "/case-chat/styles.css",
+    "/case-chat/engine.js",
+  ]) {
+    const asset = await render(pathname);
+    assert.equal(asset.status, 200, pathname);
+  }
+});
+
 test("server-renders the complete Chinese tutorial homepage", async () => {
   const response = await render("/zh");
   assert.equal(response.status, 200);
@@ -248,8 +268,8 @@ test("server-renders the complete Chinese tutorial homepage", async () => {
   assert.match(html, /Elixir/);
   assert.match(html, /2<\/strong><span>条从零路线/);
   assert.match(html, /62<\/strong><span>节语言短课/);
-  assert.match(html, /9<\/strong><span>站 BEAM 主线/);
-  assert.match(html, /2<\/strong><span>站可选复习/);
+  assert.match(html, /7<\/strong><span>站 BEAM 核心/);
+  assert.match(html, /2(?:<!-- -->)? \/ (?:<!-- -->)?2<\/strong><span>复习 \/ 双语扩展/);
   assert.match(html, /FROM SCRATCH/);
   assert.match(html, /LANGUAGE PATH/);
   assert.match(html, /BEAM PATH/);
@@ -275,7 +295,7 @@ test("server-renders the complete Chinese tutorial homepage", async () => {
     "给并发设上限",
     "BEAM 节点失联",
     "双语搭档",
-    "可靠任务小队",
+    "可靠任务调度器",
   ]) {
     assert.match(html, new RegExp(`>${title}<`));
   }
@@ -287,8 +307,11 @@ test("server-renders the complete Chinese tutorial homepage", async () => {
   assert.match(html, /href="\/zh\/from-scratch\/erlang"/);
   assert.match(html, /href="\/zh\/learn\/start-line"/);
   assert.match(html, /href="\/zh\/learn\/shared-semantics"/);
+  assert.match(html, /Case Chat：拆一个语音服务/);
+  assert.match(html, /href="\/case-chat\/index\.html"/);
   assert.match(html, /写法不同，骨架相通/);
   assert.match(html, /class="optional-review-badge">可选复习/);
+  assert.match(html, /class="optional-extension-badge">双语扩展/);
   assert.match(html, /class="prerequisite-badge">前置准备/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
   assert.doesNotMatch(html, /Your site is taking shape|Starter Project/i);
@@ -308,6 +331,9 @@ test("server-renders the English homepage and keeps internal navigation in Engli
   assert.match(html, /href="\/en\/from-scratch\/erlang"/);
   assert.match(html, /href="\/en\/learn\/start-line"/);
   assert.match(html, /href="\/en\/resources"/);
+  assert.match(html, /Case Chat: trace a voice service/);
+  assert.match(html, /Chinese case study/);
+  assert.match(html, /href="\/case-chat\/index\.html"/);
   assert.doesNotMatch(
     html,
     /href="\/(?:from-scratch|learn|resources|keywords|playground)(?:\/|"|#)/,
@@ -334,7 +360,7 @@ test("renders representative English learning and reference pages", async () => 
         /acceptance matrix/,
         /Remember these three lines/,
       ],
-      href: /href="\/en\/learn\/start-line"/,
+      href: /href="\/en\/learn\/beam-mental-model"/,
     },
     {
       pathname: "/en/learn/processes-and-mailboxes",
@@ -526,13 +552,16 @@ test("renders two independent From Scratch path overviews", async () => {
     const html = await response.text();
 
     assert.match(html, /从第一次运行，走到完整作品/);
+    assert.match(html, /每一段都给下一段铺路/);
+    assert.match(html, /值与形状/);
+    assert.match(html, /交给 BEAM/);
     assert.match(html, /SCRATCH · 试跑/);
     assert.match(html, /FOUNDATION · 基础/);
     assert.match(html, /INTERMEDIATE · 进阶/);
     assert.match(html, /PROJECT · 作品/);
     assert.match(html, /现在已经够用，可以进入 BEAM/);
     assert.match(html, /还没安装？看安装步骤/);
-    assert.match(html, /走上 BEAM 起跑线/);
+    assert.match(html, /进入进程与信箱/);
     assert.match(html, /课程依据/);
     for (const slug of slugs) {
       assert.match(
@@ -551,6 +580,10 @@ test("renders all 62 language lessons with the example-first template", async ()
       const html = await response.text();
 
       assert.match(html, /今天先做什么/, `${language}/${slug}`);
+      assert.match(html, /课程衔接/, `${language}/${slug}`);
+      assert.match(html, /别急着按回车/, `${language}/${slug}`);
+      assert.match(html, /先猜/, `${language}/${slug}`);
+      assert.match(html, /最后只改一处/, `${language}/${slug}`);
       assert.match(html, /01 · 先看完整例子/, `${language}/${slug}`);
       assert.match(html, /02 · 回头拆代码/, `${language}/${slug}`);
       assert.match(html, /03 · 认清新符号/, `${language}/${slug}`);
@@ -673,6 +706,14 @@ test("introduces beginner syntax through complete runnable examples", async () =
   assert.match(elixirFunctions, /try\/rescue/);
   assert.match(elixirFunctions, /ArgumentError/);
   assert.match(elixirFunctions, /\{:ok, 42\}/);
+
+  const elixirMatching = await (
+    await render("/zh/from-scratch/elixir/pattern-matching")
+  ).text();
+  assert.match(elixirMatching, /pin 运算符/);
+  assert.match(elixirMatching, /\^expected_tag/);
+  assert.match(elixirMatching, /为什么不把.*只当作赋值/s);
+  assert.match(elixirMatching, /从 Java、Python、JavaScript 看过来/);
 
   const elixirCapture = await (
     await render("/zh/from-scratch/elixir/capture-enum-pipe")
@@ -826,9 +867,14 @@ test("renders a shareable lesson route with the full teaching template", async (
   assert.match(html, /记住三句话/);
   assert.match(html, /本站结束/);
   assert.match(html, /标记完成/);
+  assert.match(html, /别急着按回车/);
+  assert.match(html, /为什么这样写/);
+  assert.match(html, /从 Java、Python、JavaScript 看过来/);
+  assert.match(html, /request reference 配对回复/);
+  assert.match(html, /monitor reference 报告退出/);
   assert.ok(html.indexOf("标记完成") > html.indexOf("去看原版资料"));
-  assert.match(html, /发出请求前，先生成本次调用专用的 reference/);
-  assert.match(html, /只接收带有同一 reference 的回复/);
+  assert.match(html, /发出请求前，分别准备“观察进程”和“配对回复”的 reference/);
+  assert.match(html, /正常回复要匹配 request reference/);
   assert.match(html, /href="\/zh\/learn\/otp-behaviours"/);
   assert.ok(html.indexOf("QUESTION · 本站只追这一问") < html.indexOf("为什么学这一站"));
   assert.ok(html.indexOf("这里用了哪些设计模式") < html.indexOf("借一个故事"));
@@ -886,8 +932,9 @@ test("gives every lesson a story bridge with an explicit analogy boundary", asyn
     "古代驿站",
     "唐诗",
     "古文句读",
-    "唐代驿路",
-    "三国演义",
+    "快递服务台",
+    "学校社团活动",
+    "食堂取餐窗口",
     "都江堰",
     "长城烽火台",
     "文言与白话",
@@ -918,27 +965,37 @@ test("start line introduces Mix as a project build tool", async () => {
   );
 });
 
-test("recommended BEAM navigation skips optional language reviews", async () => {
+test("keeps the core BEAM route continuous and branches optional lessons", async () => {
   const cases = [
     {
       slug: "beam-mental-model",
       previous: "start-line",
-      next: "shared-semantics",
+      next: "processes-and-mailboxes",
     },
     {
       slug: "elixir-foundations",
       previous: "beam-mental-model",
-      next: "shared-semantics",
+      next: "processes-and-mailboxes",
     },
     {
       slug: "erlang-foundations",
       previous: "beam-mental-model",
-      next: "shared-semantics",
+      next: "processes-and-mailboxes",
+    },
+    {
+      slug: "distributed-operations",
+      previous: "state-and-backpressure",
+      next: "reliable-scheduler",
     },
     {
       slug: "shared-semantics",
-      previous: "beam-mental-model",
-      next: "processes-and-mailboxes",
+      previous: "distributed-operations",
+      next: "interoperability",
+    },
+    {
+      slug: "interoperability",
+      previous: "shared-semantics",
+      next: "reliable-scheduler",
     },
   ];
 
@@ -968,6 +1025,19 @@ test("recommended BEAM navigation skips optional language reviews", async () => 
   ).text();
   assert.match(optionalReview, /可选复习/);
   assert.match(optionalReview, /href="\/zh#beam-roadmap"/);
+
+  const capstone = await (
+    await render("/zh/learn/reliable-scheduler")
+  ).text();
+  const capstonePagination = capstone.match(
+    /<nav class="lesson-pagination"[\s\S]*?<\/nav>/,
+  )?.[0];
+  assert.ok(capstonePagination, "reliable scheduler pagination");
+  assert.match(
+    capstonePagination,
+    /href="\/zh\/learn\/distributed-operations"/,
+  );
+  assert.match(capstonePagination, /href="\/case-chat\/index\.html"/);
 });
 
 test("puts a three-platform installation guide before the start line", async () => {
@@ -979,8 +1049,9 @@ test("puts a three-platform installation guide before the start line", async () 
   assert.match(html, /Mix 已包含在 Elixir 里/);
   assert.match(html, /只走你电脑这一条路/);
   assert.match(html, /2(?:<!-- -->)? 站前置/);
-  assert.match(html, /9(?:<!-- -->)? 站主线/);
+  assert.match(html, /7(?:<!-- -->)? 站核心/);
   assert.match(html, /2(?:<!-- -->)? 站复习/);
+  assert.match(html, /2(?:<!-- -->)? 站扩展/);
   assert.match(html, />macOS</);
   assert.match(html, />Linux</);
   assert.match(html, />Windows</);
@@ -1201,6 +1272,10 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
     "../public/favicon.ico",
     "../public/favicon-32x32.png",
     "../public/og.png",
+    "../public/case-chat/index.html",
+    "../public/case-chat/styles.css",
+    "../public/case-chat/engine.js",
+    "../scripts/sync-case-chat.sh",
   ]) {
     await access(new URL(path, import.meta.url));
   }
@@ -1325,10 +1400,15 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
   assert.match(courseData, /stations:\s*courseModules\.length/);
   assert.equal((courseData.match(/prerequisite:\s*true/g) ?? []).length, 2);
   assert.equal((courseData.match(/optionalReview:\s*true/g) ?? []).length, 2);
+  assert.equal((courseData.match(/optionalExtension:\s*true/g) ?? []).length, 2);
   assert.match(courseData, /mainlineStations:\s*recommendedCourseModules\.length/);
   assert.match(
     courseData,
-    /!courseModule\.optionalReview && !courseModule\.prerequisite/,
+    /recommendedCourseOrder = \[[\s\S]*"beam-mental-model",[\s\S]*"processes-and-mailboxes",[\s\S]*"distributed-operations",[\s\S]*"reliable-scheduler"/,
+  );
+  assert.match(
+    courseData,
+    /bilingualExtensionOrder = \[[\s\S]*"shared-semantics",[\s\S]*"interoperability"/,
   );
   assert.equal((courseData.match(/\n    question:\n/g) ?? []).length, 13);
   assert.equal((courseData.match(/\n    incident:\s*\{/g) ?? []).length, 13);

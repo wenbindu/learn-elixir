@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CodeLanguageSwitcher } from "../../../components/CodeLanguageSwitcher";
 import { CopyBlock } from "../../../components/CopyBlock";
 import { InlineCodeText } from "../../../components/InlineCodeText";
+import {
+  BeforeRunCard,
+  DesignComparisonPanel,
+} from "../../../components/LearningGuidancePanel";
 import { LocalizedLink } from "../../../components/LocalizedLink";
 import { ProgressButton } from "../../../components/ProgressButton";
 import { QuizCard } from "../../../components/QuizCard";
@@ -14,18 +19,30 @@ import {
   getCourseModule,
 } from "../../../i18n/catalog";
 import { isLocale, locales, type Locale } from "../../../i18n/locales";
+import { getCourseLearningGuidance } from "../../../i18n/learning-guidance";
 import { localeAlternates } from "../../../i18n/metadata";
 
 const lessonPageCopy = {
   zh: {
     courseDirectory: "课程目录",
     mapTitle: "BEAM 探险地图",
-    sidebarStats: (prerequisite: number, mainline: number, optional: number) =>
-      `${prerequisite} 站前置 · ${mainline} 站主线 · ${optional} 站复习`,
+    sidebarStats: (
+      prerequisite: number,
+      mainline: number,
+      optional: number,
+      extension: number,
+    ) =>
+      `${prerequisite} 站前置 · ${mainline} 站核心 · ${optional} 站复习 · ${extension} 站扩展`,
     prerequisite: "前置准备",
     optionalReview: "可选复习",
+    optionalExtension: "双语扩展",
     sidebarNote: "进度只在这台设备。换设备前，去首页保存。",
     station: (number: string) => `第 ${number} 站`,
+    continuityLabel: "BEAM 主线衔接",
+    previousStep: "上一件事",
+    currentStep: "现在解决",
+    nextStepLabel: "下一件事",
+    startingPoint: "先把工具装好，再选一门语言动手。",
     expandMap: "展开探险地图",
     home: "首页",
     mainline: "BEAM 主线",
@@ -82,18 +99,29 @@ const lessonPageCopy = {
     nextStep: "下一步 →",
     chooseBasics: "选择一条从零路线",
     next: "下一站 →",
-    allComplete: "全部通关 →",
-    backToMap: "回到探险地图",
+    allComplete: "去读真实案例 →",
+    backToMap: "Case Chat · 语音服务",
   },
   en: {
     courseDirectory: "Course directory",
     mapTitle: "BEAM Adventure Map",
-    sidebarStats: (prerequisite: number, mainline: number, optional: number) =>
-      `${prerequisite} setup · ${mainline} mainline · ${optional} reviews`,
+    sidebarStats: (
+      prerequisite: number,
+      mainline: number,
+      optional: number,
+      extension: number,
+    ) =>
+      `${prerequisite} setup · ${mainline} core · ${optional} reviews · ${extension} extensions`,
     prerequisite: "Setup",
     optionalReview: "Optional review",
+    optionalExtension: "Bilingual extension",
     sidebarNote: "Progress stays on this device. Save it from the home page before switching devices.",
     station: (number: string) => `Station ${number}`,
+    continuityLabel: "BEAM mainline continuity",
+    previousStep: "Previous problem",
+    currentStep: "Problem in hand",
+    nextStepLabel: "Next problem",
+    startingPoint: "Set up the tools, then begin with one language.",
     expandMap: "Open the adventure map",
     home: "Home",
     mainline: "BEAM mainline",
@@ -150,8 +178,8 @@ const lessonPageCopy = {
     nextStep: "Next step →",
     chooseBasics: "Choose a From Scratch path",
     next: "Next station →",
-    allComplete: "All stations complete →",
-    backToMap: "Return to the adventure map",
+    allComplete: "Read a real case study →",
+    backToMap: "Case Chat · voice service (Chinese)",
   },
 } as const satisfies Record<Locale, object>;
 
@@ -199,6 +227,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
     courseModule.slug,
   );
   const copy = lessonPageCopy[locale];
+  const guidance = getCourseLearningGuidance(locale, courseModule);
 
   return (
     <>
@@ -214,6 +243,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
                   courseStats.prerequisiteStations,
                   courseStats.mainlineStations,
                   courseStats.optionalReviewStations,
+                  courseStats.optionalExtensionStations,
                 )}
               </small>
             </div>
@@ -243,6 +273,9 @@ export default async function LessonPage({ params }: LessonPageProps) {
                           {item.optionalReview
                             ? `${copy.optionalReview} · `
                             : ""}
+                          {item.optionalExtension
+                            ? `${copy.optionalExtension} · `
+                            : ""}
                           {item.duration}
                         </small>
                       </LocalizedLink>
@@ -265,6 +298,9 @@ export default async function LessonPage({ params }: LessonPageProps) {
                   {courseModule.optionalReview
                     ? ` · ${copy.optionalReview}`
                     : ""}
+                  {courseModule.optionalExtension
+                    ? ` · ${copy.optionalExtension}`
+                    : ""}
                   {courseModule.prerequisite
                     ? ` · ${copy.prerequisite}`
                     : ""}
@@ -284,6 +320,11 @@ export default async function LessonPage({ params }: LessonPageProps) {
                     {item.optionalReview ? (
                       <small className="lesson-nav-optional">
                         {copy.optionalReview}
+                      </small>
+                    ) : null}
+                    {item.optionalExtension ? (
+                      <small className="lesson-nav-optional">
+                        {copy.optionalExtension}
                       </small>
                     ) : null}
                     {item.prerequisite ? (
@@ -335,6 +376,9 @@ export default async function LessonPage({ params }: LessonPageProps) {
                   {courseModule.optionalReview ? (
                     <span>{copy.optionalReview}</span>
                   ) : null}
+                  {courseModule.optionalExtension ? (
+                    <span>{copy.optionalExtension}</span>
+                  ) : null}
                   {courseModule.prerequisite ? (
                     <span>{copy.prerequisite}</span>
                   ) : null}
@@ -356,6 +400,47 @@ export default async function LessonPage({ params }: LessonPageProps) {
                 </div>
               </div>
             </header>
+
+            {courseModule.slug !== "install-toolchain" ? (
+              <nav
+                className="lesson-route-context"
+                aria-label={copy.continuityLabel}
+              >
+                <div>
+                  <span>{copy.previousStep}</span>
+                  {previous ? (
+                    <LocalizedLink
+                      href={`/learn/${previous.slug}`}
+                      locale={locale}
+                    >
+                      <strong>{previous.title}</strong>
+                      <small>{previous.summary}</small>
+                    </LocalizedLink>
+                  ) : (
+                    <p>{copy.startingPoint}</p>
+                  )}
+                </div>
+                <div aria-current="step">
+                  <span>{copy.currentStep}</span>
+                  <strong>{courseModule.title}</strong>
+                  <small>{courseModule.summary}</small>
+                </div>
+                <div>
+                  <span>{copy.nextStepLabel}</span>
+                  {next ? (
+                    <LocalizedLink href={`/learn/${next.slug}`} locale={locale}>
+                      <strong>{next.title}</strong>
+                      <small>{next.summary}</small>
+                    </LocalizedLink>
+                  ) : (
+                    <Link href="/case-chat/index.html" prefetch={false}>
+                      <strong>{copy.backToMap}</strong>
+                      <small>{copy.allComplete}</small>
+                    </Link>
+                  )}
+                </div>
+              </nav>
+            ) : null}
 
             <section className="lesson-problem" aria-labelledby="lesson-question">
               <div className="lesson-problem-question">
@@ -512,6 +597,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
                 </p>
               </div>
               <div className="lesson-code-switcher">
+                <BeforeRunCard guidance={guidance} locale={locale} />
                 <CodeLanguageSwitcher
                   elixirCode={courseModule.elixirCode}
                   erlangCode={courseModule.erlangCode}
@@ -523,6 +609,8 @@ export default async function LessonPage({ params }: LessonPageProps) {
                 />
               </div>
             </section>
+
+            <DesignComparisonPanel guidance={guidance} locale={locale} />
 
             <section className="lesson-block experiment-block">
               <div className="experiment-heading">
@@ -791,10 +879,10 @@ export default async function LessonPage({ params }: LessonPageProps) {
                   </strong>
                 </LocalizedLink>
               ) : (
-                <LocalizedLink href="/#beam-roadmap" locale={locale}>
+                <Link href="/case-chat/index.html" prefetch={false}>
                   <span>{copy.allComplete}</span>
                   <strong>{copy.backToMap}</strong>
-                </LocalizedLink>
+                </Link>
               )}
             </nav>
           </article>

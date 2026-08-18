@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CourseMap } from "../components/CourseMap";
 import { LocalizedLink } from "../components/LocalizedLink";
@@ -28,16 +29,16 @@ const homeCopy = {
     erlangRouteNote: (count: number) => `${count} 节 · 四阶段 · 从 term 到作品`,
     knowsSyntax: "已懂基础语法",
     beamRoute: "进入 BEAM 主线",
-    beamRouteNote: "进程 · 消息 · OTP · 监督树",
+    beamRouteNote: "7 站核心 · 双语另作扩展",
     pathMetric: "条从零路线",
     lessonMetric: "节语言短课",
-    mainlineMetric: "站 BEAM 主线",
-    reviewMetric: "站可选复习",
+    mainlineMetric: "站 BEAM 核心",
+    reviewMetric: "复习 / 双语扩展",
     runtimeLabel: "BEAM 进程与监督关系示意图",
-    tiersKicker: "三条清楚的路",
-    tiersTitle: "先写好语言，再处理系统故障",
+    tiersKicker: "四步，前后接上",
+    tiersTitle: "先写好语言，再读真实系统",
     tiersLead:
-      "语言线负责代码、测试和项目工具。BEAM 主线负责并发、失败与恢复。最后把它们装进一个可靠任务系统。",
+      "语言线负责代码、测试和项目工具。BEAM 主线负责并发、失败与恢复。做完综合练习，再去 Case Chat 看这些选择怎样落进一个语音服务。",
     scratchTitle: "选一门语言，走到作品",
     availableNow: "现在就能学",
     scratchDescription:
@@ -57,6 +58,11 @@ const homeCopy = {
     supervision: "监督树 →",
     nodes: "节点失联 →",
     capstoneLink: "综合练习 →",
+    caseStudyTitle: "Case Chat：拆一个语音服务",
+    caseStudyBadge: "中文案例",
+    caseStudyDescription:
+      "沿着一次语音会话读完整项目。先看全貌，再逐章追 mix、监督树、WebSocket、录音进程和浏览器代码。重点不在抄写，而在看每个选择解决了什么问题。",
+    caseStudyLink: "打开 Case Chat →",
     quickKicker: "常用入口",
     quickTitle: "常用资料，随时可查",
     openResources: "打开学习工具箱",
@@ -120,8 +126,8 @@ const homeCopy = {
     concepts: ["数据 term", "小进程 process", "收信箱 mailbox", "调度器 scheduler"],
     roadmapKicker: "问题课 · BEAM 主线",
     roadmapTitle: "从一个具体故障，走到可靠系统",
-    roadmapLead: (main: number, review: number) =>
-      `主线有 ${main} 站，另有 ${review} 站语言跳级复习。每站只追一个工程问题，再用实验、模式和双语代码回答。若基础语法还陌生，先完成任意一门语言的 Foundation。`,
+    roadmapLead: (main: number, review: number, extension: number) =>
+      `核心有 ${main} 站，另有 ${review} 站语言跳级复习和 ${extension} 站双语扩展。先用熟悉的语言走完进程、OTP、容量与综合项目；需要互操作时，再补共享 term 与 adapter。`,
     labKicker: "试 3 分钟",
     labTitle: "发消息，等回信",
     labLead:
@@ -133,13 +139,19 @@ const homeCopy = {
     ],
     learnMailbox: "学习进程与 mailbox",
     openPlayground: "去 Playground 写代码",
-    capstoneEyebrow: "第 12 站 · 综合练习",
+    capstoneEyebrow: "第 08 站 · 综合练习",
     capstoneTitle: "做一个任务调度器",
     capstoneLead:
-      "它像驿站总管。Elixir 收下任务，Erlang 的 gen_server 排队并安排 worker。即使回复迟到、worker 退出或节点断开，系统也要给出清楚结果。",
-    capstoneTags: ["有界队列", "监督树", "重试 / 幂等", "双语测试", "Release"],
+      "先用 Elixir 或 Erlang 任一门做出核心版：队列有上限，失败有去向，重试有次数。学过互操作以后，再把另一门语言接进来。",
+    capstoneTags: ["有界队列", "监督树", "重试 / 幂等", "双语扩展（选做）", "Release"],
     capstoneButton: "查看任务要求",
     capstoneDiagram: "可靠任务调度器结构示意",
+    capstoneApiLabel: "接口层",
+    capstoneApiRole: "校验 · 归一化 · 回复",
+    capstoneCoreLabel: "调度核心",
+    capstoneCoreRole: "排队 · 分发 · 重试",
+    capstoneSupervisorLabel: "监督者",
+    capstoneSupervisorRole: "退出 → 记录 → 恢复",
     resourcesKicker: "学习工具箱",
     resourcesTitle: "遇到问题，去查资料",
     resourcesLead:
@@ -162,16 +174,16 @@ const homeCopy = {
       `${count} lessons · four stages · terms to project`,
     knowsSyntax: "I know the basics",
     beamRoute: "Enter the BEAM path",
-    beamRouteNote: "Processes · messages · OTP · supervisors",
+    beamRouteNote: "7 core stations · bilingual work is an extension",
     pathMetric: "beginner paths",
     lessonMetric: "language lessons",
-    mainlineMetric: "BEAM stations",
-    reviewMetric: "optional reviews",
+    mainlineMetric: "BEAM core stations",
+    reviewMetric: "reviews / bilingual extensions",
     runtimeLabel: "Diagram of BEAM processes and supervision",
-    tiersKicker: "Three clear paths",
-    tiersTitle: "Learn the language. Then handle system failure.",
+    tiersKicker: "Four connected steps",
+    tiersTitle: "Learn the language. Then read a real system.",
     tiersLead:
-      "The language paths teach code, tests, and project tools. The BEAM path teaches concurrency, failure, and recovery. The capstone brings them together.",
+      "The language paths teach code, tests, and project tools. The BEAM path deals with concurrency, failure, and recovery. After the capstone, Case Chat shows those choices inside a working voice service.",
     scratchTitle: "Take one language all the way to a project",
     availableNow: "Ready now",
     scratchDescription:
@@ -191,6 +203,11 @@ const homeCopy = {
     supervision: "Supervision trees →",
     nodes: "When nodes disappear →",
     capstoneLink: "Capstone →",
+    caseStudyTitle: "Case Chat: trace a voice service",
+    caseStudyBadge: "Chinese case study",
+    caseStudyDescription:
+      "Follow one voice session through a real project, then read Mix, supervision, WebSockets, recorder processes, and browser code in context. The case study is currently written in Chinese.",
+    caseStudyLink: "Open Case Chat →",
     quickKicker: "Quick links",
     quickTitle: "Useful references, close at hand",
     openResources: "Open the learning toolbox",
@@ -254,8 +271,8 @@ const homeCopy = {
     concepts: ["data terms", "small processes", "mailboxes", "schedulers"],
     roadmapKicker: "Problem-driven · BEAM mainline",
     roadmapTitle: "From one concrete failure to a reliable system",
-    roadmapLead: (main: number, review: number) =>
-      `The mainline has ${main} stations and ${review} language bridge reviews. Each station follows one engineering question, then answers it with an experiment, patterns, and switchable code. Finish Foundation in either language first if the syntax is still unfamiliar.`,
+    roadmapLead: (main: number, review: number, extension: number) =>
+      `The core has ${main} stations, plus ${review} placement reviews and ${extension} bilingual extensions. Finish processes, OTP, capacity, and the capstone in your familiar language. Add shared terms and adapters when you need interoperability.`,
     labKicker: "Try it for 3 minutes",
     labTitle: "Send a message. Wait for a reply.",
     labLead:
@@ -267,13 +284,19 @@ const homeCopy = {
     ],
     learnMailbox: "Learn processes and mailboxes",
     openPlayground: "Write code in the Playground",
-    capstoneEyebrow: "Station 12 · Capstone",
+    capstoneEyebrow: "Station 08 · Capstone",
     capstoneTitle: "Build a task scheduler",
     capstoneLead:
-      "Think of it as a small station master. Elixir accepts jobs. An Erlang gen_server queues them and assigns workers. Late replies, stopped workers, and lost nodes still need clear outcomes.",
-    capstoneTags: ["Bounded queue", "Supervision tree", "Retry / idempotency", "Cross-language tests", "Release"],
+      "Build the core in either Elixir or Erlang: bound the queue, name each failure outcome, and cap retries. Add the other language only after the interoperability lessons.",
+    capstoneTags: ["Bounded queue", "Supervision tree", "Retry / idempotency", "Optional bilingual extension", "Release"],
     capstoneButton: "See the requirements",
     capstoneDiagram: "Reliable task scheduler structure",
+    capstoneApiLabel: "APPLICATION API",
+    capstoneApiRole: "validate · normalize · reply",
+    capstoneCoreLabel: "SCHEDULER CORE",
+    capstoneCoreRole: "queue · dispatch · retry",
+    capstoneSupervisorLabel: "SUPERVISOR",
+    capstoneSupervisorRole: "exit → observe → recover",
     resourcesKicker: "Learning toolbox",
     resourcesTitle: "When you are stuck, look it up",
     resourcesLead:
@@ -365,7 +388,7 @@ export default async function Home({ params }: HomeProps) {
                 <div><strong>{basicPathStats.paths}</strong><span>{copy.pathMetric}</span></div>
                 <div><strong>{basicPathStats.lessons}</strong><span>{copy.lessonMetric}</span></div>
                 <div><strong>{courseStats.mainlineStations}</strong><span>{copy.mainlineMetric}</span></div>
-                <div><strong>{courseStats.optionalReviewStations}</strong><span>{copy.reviewMetric}</span></div>
+                <div><strong>{courseStats.optionalReviewStations} / {courseStats.optionalExtensionStations}</strong><span>{copy.reviewMetric}</span></div>
               </div>
             </div>
 
@@ -429,6 +452,15 @@ export default async function Home({ params }: HomeProps) {
                   <LocalizedLink locale={locale} href="/learn/supervision-trees">{copy.supervision}</LocalizedLink>
                   <LocalizedLink locale={locale} href="/learn/distributed-operations">{copy.nodes}</LocalizedLink>
                   <LocalizedLink locale={locale} href="/learn/reliable-scheduler">{copy.capstoneLink}</LocalizedLink>
+                </div>
+              </article>
+              <article className="learning-tier learning-tier--case">
+                <div className="learning-tier-head"><span>04</span><div><small>CASE STUDY</small><h3>{copy.caseStudyTitle}</h3></div><b>{copy.caseStudyBadge}</b></div>
+                <p>{copy.caseStudyDescription}</p>
+                <div className="learning-tier-links">
+                  <Link href="/case-chat/index.html" prefetch={false}>
+                    {copy.caseStudyLink}
+                  </Link>
                 </div>
               </article>
             </div>
@@ -495,7 +527,7 @@ export default async function Home({ params }: HomeProps) {
           <div className="section-shell">
             <div className="section-heading section-heading--split">
               <div><span className="section-kicker">{copy.roadmapKicker}</span><h2>{copy.roadmapTitle}</h2></div>
-              <p>{copy.roadmapLead(courseStats.mainlineStations, courseStats.optionalReviewStations)}</p>
+              <p>{copy.roadmapLead(courseStats.mainlineStations, courseStats.optionalReviewStations, courseStats.optionalExtensionStations)}</p>
             </div>
             <CourseMap locale={locale} modules={courseModules} stages={stages} />
           </div>
@@ -525,10 +557,10 @@ export default async function Home({ params }: HomeProps) {
               <LocalizedLink locale={locale} className="button button--dark" href="/learn/reliable-scheduler">{copy.capstoneButton}<span aria-hidden="true">→</span></LocalizedLink>
             </div>
             <div className="capstone-diagram" aria-label={copy.capstoneDiagram}>
-              <div className="diagram-level diagram-level--api"><span>ELIXIR API</span><strong>validate · normalize · respond</strong></div><i />
-              <div className="diagram-level diagram-level--core"><span>ERLANG CORE</span><strong>queue · dispatch · retry</strong></div><i />
+              <div className="diagram-level diagram-level--api"><span>{copy.capstoneApiLabel}</span><strong>{copy.capstoneApiRole}</strong></div><i />
+              <div className="diagram-level diagram-level--core"><span>{copy.capstoneCoreLabel}</span><strong>{copy.capstoneCoreRole}</strong></div><i />
               <div className="diagram-workers"><div>worker 01</div><div>worker 02</div><div>worker 03</div></div>
-              <div className="diagram-supervisor"><span>SUPERVISOR</span><b>crash → observe → restart</b></div>
+              <div className="diagram-supervisor"><span>{copy.capstoneSupervisorLabel}</span><b>{copy.capstoneSupervisorRole}</b></div>
             </div>
           </div>
         </section>

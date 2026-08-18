@@ -1,0 +1,2599 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="拆解 voice_chat：一个 Elixir 语音会话服务。11 章、逐行代码讲解，讲清 mix / OTP / Plug / WebSock / 进程模型。">
+<title>拆解 voice_chat · 一个 Elixir 语音会话服务的 11 章逐行讲解</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f5fa9'/%3E%3Ctext x='32' y='44' font-size='30' font-family='sans-serif' font-weight='700' fill='%23fff' text-anchor='middle'%3E%E7%A5%9E%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="scrollbar"></div>
+
+<aside id="sidebar">
+  <div class="brand">
+    <button id="menu-close" class="iconbtn" type="button" aria-label="关闭目录">✕</button>
+    <h1>拆解 <span class="dot">voice_chat</span></h1>
+    <p>一个 Elixir 语音会话服务 · 11 章逐行源码讲解<br>配套 mix 工程：<code>voice_chat/</code></p>
+  </div>
+  <div class="searchbox">
+    <input id="q" type="search" placeholder="搜索概念 / 章节…" autocomplete="off">
+    <div id="toc-hint"></div>
+  </div>
+  <nav id="toc"></nav>
+</aside>
+
+<div id="stage">
+  <header id="topbar">
+    <button id="menu-btn" class="iconbtn" type="button" aria-controls="sidebar" aria-expanded="false" aria-label="打开目录">☰</button>
+    <span class="crumb" id="crumb"></span>
+    <span class="spacer"></span>
+    <button id="theme-btn" class="iconbtn">🌙 深色</button>
+  </header>
+
+  <main id="content">
+<section class="chapter" id="ch0" data-key="ch0" data-title="全景：一次语音会话的完整旅程">
+  <div class="chapter-head"><span class="ch-n">第 0 章</span><h2>全景：一次语音会话的完整旅程</h2></div>
+
+  <div class="chapter-lead reveal">
+    <p class="lead-title">先看全貌，再看代码。</p>
+    <p>voice_chat 很小——后端 9 个项目模块、前端 3 个页面文件和 1 个音频资源——但它把 Elixir 里最重要的几件事串了起来：<b>进程、消息传递、OTP 监督树、Plug 管线、WebSocket 协议</b>。本章用一张会动的图，带你走一遍「你对着麦克风说话」到「服务端落盘 + 约每 3 秒推送一次提示文本与音频」的全程。</p>
+  </div>
+
+    <figure class="figwrap reveal">
+    <svg viewBox="0 0 980 440" role="img" aria-label="一次语音会话的完整旅程示意">
+      <defs>
+        <marker id="ah-ac" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/></marker>
+        <marker id="ah-ok" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--ok)"/></marker>
+        <marker id="ah-mu" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--muted)"/></marker>
+        <marker id="ah-a2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent2)"/></marker>
+      </defs>
+
+      <!-- 服务器边界 -->
+      <rect x="250" y="14" width="716" height="390" rx="14" fill="none" stroke="var(--line2)" stroke-dasharray="6 5"/>
+      <text x="256" y="12" font-size="12" fill="var(--muted)">Bandit 服务器 · BEAM 运行时（Elixir 一侧）</text>
+
+      <!-- 浏览器：麦克风 -->
+      <rect x="14" y="30" width="180" height="100" rx="12" fill="var(--accent-soft)" stroke="var(--accent)"/>
+      <text x="104" y="62" font-size="14" fill="var(--accent)" text-anchor="middle" font-weight="700">浏览器 · 麦克风</text>
+      <text x="104" y="84" font-size="11.5" fill="var(--muted)" text-anchor="middle">getUserMedia 采集</text>
+      <text x="104" y="102" font-size="11.5" fill="var(--muted)" text-anchor="middle">PCM16 / Opus 分块</text>
+      <text x="104" y="120" font-size="11" fill="var(--muted)" text-anchor="middle">（第 9 章）</text>
+
+      <!-- WSHandler 会话进程 -->
+      <rect x="390" y="30" width="190" height="100" rx="12" fill="var(--panel)" stroke="var(--accent)"/>
+      <text x="485" y="58" font-size="13.5" fill="var(--fg)" text-anchor="middle" font-weight="700">WSHandler 会话进程</text>
+      <text x="485" y="78" font-size="11" fill="var(--muted)" text-anchor="middle">init / handle_in / handle_info</text>
+      <text x="485" y="94" font-size="11" fill="var(--muted)" text-anchor="middle">每个连接一个（第 5 章）</text>
+      <text x="485" y="112" font-size="10.5" fill="var(--muted)" text-anchor="middle">运行在 Bandit 为连接开的进程里</text>
+
+      <!-- Recorder 进程 -->
+      <rect x="680" y="30" width="170" height="70" rx="12" fill="var(--ok-soft)" stroke="var(--ok)"/>
+      <text x="765" y="56" font-size="13" fill="var(--ok)" text-anchor="middle" font-weight="700">Recorder 进程</text>
+      <text x="765" y="76" font-size="11" fill="var(--muted)" text-anchor="middle">收 chunk → 写入文件（第 6 章）</text>
+
+      <!-- Prompter 进程 -->
+      <rect x="680" y="200" width="170" height="70" rx="12" fill="var(--accent2-soft)" stroke="var(--accent2)"/>
+      <text x="765" y="226" font-size="13" fill="var(--accent2)" text-anchor="middle" font-weight="700">Prompter 进程</text>
+      <text x="765" y="246" font-size="11" fill="var(--muted)" text-anchor="middle">每 3 秒推一次提示音（第 7 章）</text>
+
+      <!-- 录音文件 -->
+      <rect x="880" y="252" width="86" height="80" rx="12" fill="var(--panel2)" stroke="var(--line)"/>
+      <text x="923" y="282" font-size="12.5" fill="var(--fg)" text-anchor="middle" font-weight="700">录音文件</text>
+      <text x="923" y="302" font-size="10.5" fill="var(--muted)" text-anchor="middle">priv/recordings</text>
+      <text x="923" y="318" font-size="9.5" fill="var(--muted)" text-anchor="middle">WAV · WebM · Ogg</text>
+
+      <!-- 浏览器：消息日志 + 喇叭（服务器边界之外） -->
+      <rect x="14" y="300" width="180" height="80" rx="12" fill="var(--purple-soft)" stroke="var(--purple)"/>
+      <text x="104" y="328" font-size="13" fill="var(--purple)" text-anchor="middle" font-weight="700">浏览器 · 日志 / 喇叭</text>
+      <text x="104" y="349" font-size="11" fill="var(--muted)" text-anchor="middle">handleText + decodeAudioData</text>
+      <text x="104" y="367" font-size="11" fill="var(--muted)" text-anchor="middle">显示提示并播放音频（第 9 章）</text>
+
+      <!-- ① 连接 + config（文本帧） -->
+      <path d="M194 60 H386" stroke="var(--accent)" stroke-width="1.8" fill="none" marker-end="url(#ah-ac)"/>
+      <text x="256" y="46" font-size="11" fill="var(--accent)">① 连接 + config</text>
+
+      <!-- ② 音频块（二进制帧） -->
+      <path d="M194 100 H386" stroke="var(--accent)" stroke-width="1.8" fill="none" marker-end="url(#ah-ac)"/>
+      <text x="256" y="118" font-size="11" fill="var(--accent)">② 音频块（二进制帧）</text>
+      <path d="M580 80 H676" stroke="var(--accent)" stroke-width="1.8" fill="none" marker-end="url(#ah-ac)"/>
+
+      <!-- ③ 持续写入 -->
+      <path d="M854 65 V292 H872" stroke="var(--ok)" stroke-width="1.8" fill="none" marker-end="url(#ah-ok)"/>
+      <text x="690" y="172" font-size="11" fill="var(--ok)">③ 持续写入文件</text>
+
+      <!-- ④ 每 3 秒：Prompter 先发给 ws，ws 再推到浏览器 -->
+      <path d="M676 235 H620 V112 H584" stroke="var(--accent2)" stroke-width="1.8" fill="none" marker-end="url(#ah-a2)"/>
+      <text x="670" y="257" font-size="11" fill="var(--accent2)" text-anchor="end">④a 文本 + 音频消息</text>
+      <path d="M390 108 H320 V340 H198" stroke="var(--accent2)" stroke-width="1.8" fill="none" marker-end="url(#ah-a2)"/>
+      <text x="306" y="322" font-size="11" fill="var(--accent2)" text-anchor="end">④b WebSocket 下行</text>
+
+      <!-- spawn_link -->
+      <path d="M580 55 H676" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="4 3" fill="none" marker-end="url(#ah-mu)"/>
+      <path d="M585 130 V220 H676" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="4 3" fill="none" marker-end="url(#ah-mu)"/>
+      <text x="575" y="190" font-size="10.5" fill="var(--muted)" text-anchor="end">spawn_link ×2</text>
+
+      <!-- 运动小点 -->
+      <circle r="4.5" fill="var(--accent)"><animateMotion dur="2.5s" repeatCount="indefinite" path="M194 60 L386 60"/></circle>
+      <circle r="4.5" fill="var(--accent)"><animateMotion dur="2s" repeatCount="indefinite" path="M194 100 L386 100"/></circle>
+      <circle r="4.5" fill="var(--accent)"><animateMotion dur="1.6s" begin="1s" repeatCount="indefinite" path="M580 80 L676 80"/></circle>
+      <circle r="4.5" fill="var(--ok)"><animateMotion dur="3s" repeatCount="indefinite" path="M854 65 L854 292 L872 292"/></circle>
+      <circle r="4.5" fill="var(--accent2)"><animateMotion dur="3s" repeatCount="indefinite" path="M676 235 L620 235 L620 112 L584 112"/></circle>
+      <circle r="4.5" fill="var(--accent2)"><animateMotion dur="3s" begin=".35s" repeatCount="indefinite" path="M390 108 L320 108 L320 340 L198 340"/></circle>
+    </svg>
+    <figcaption>图 0-1 · 一次语音会话的旅程：① 浏览器连接并发送 config；② 音频块不断上行；③ Recorder 持续落盘；④ Prompter 约每 3 秒把文本与音频消息发给 ws 进程，再由该连接推到服务器边界外的浏览器显示、播放。</figcaption>
+  </figure>
+<h3 class="reveal">一张表记住「需求 → 代码 → 章节」</h3>
+  <table class="reveal">
+    <tr><th>你的需求</th><th>落在哪</th><th>对应章节</th></tr>
+    <tr><td>启动 WebSocket 接口</td><td><code>endpoint.ex</code> 的 <code>/ws</code> 路由 + <code>ws_handler.ex</code></td><td>第 4、5 章</td></tr>
+    <tr><td>连接 = 新建一个 session</td><td>每个连接一个 WSHandler 进程，注册进 Registry</td><td>第 5 章</td></tr>
+    <tr><td>持续接收麦克风音频（PCM16 / Opus 容器分块）</td><td>二进制帧 → <code>handle_in</code> → Recorder 进程</td><td>第 5、6 章</td></tr>
+    <tr><td>轻量进程把音频流保存为文件</td><td><code>recorder.ex</code>（spawn_link + receive 循环）</td><td>第 6 章</td></tr>
+    <tr><td>另一个轻量进程约每 3 秒推送提示</td><td><code>prompter.ex</code> + 现有 <code>haode.wav</code>（缺失时由 <code>wav.ex</code> 合成双音）</td><td>第 7、8 章</td></tr>
+    <tr><td>前端调试页（消息日志 + 麦克风采集/回放）</td><td><code>priv/static/index.html / app.js / app.css</code></td><td>第 9 章</td></tr>
+  </table>
+
+  <div class="callout why reveal">
+    <h5>为什么“每连接两个进程”会是这个项目的灵魂</h5>
+    <p>Bandit 在 BEAM 进程中管理连接，本项目再为每个 WebSocket 会话显式 spawn 两个帮手进程，用消息把连接处理、落盘和定时提示分开。各会话进程的堆和业务状态不直接共享；Registry 则封装了共享查找状态。业务代码也没有自行管理线程池；真正的 socket、调度与协议细节由 Bandit、Thousand Island 和 BEAM 运行时承担。<b>进程和消息是 Elixir 的核心并发原语</b>，voice_chat 把它们放进了一个直观的小场景。</p>
+  </div>
+
+  <div class="objectives reveal">
+    <h4>学完这一章你应该能做到</h4>
+    <ul>
+      <li>在 30 秒内说出「你说话 → 落盘 → 收到提示音」经过哪几个进程、什么顺序</li>
+      <li>看着任意一行后端代码，说出它<b>运行在哪个进程里</b></li>
+      <li>解释为什么「每 3 秒发一次」不需要引入任何定时器库</li>
+      <li>指出 4 个 OTP 概念在这个项目里的具体化身：Application / Supervisor / 进程 / 消息</li>
+      <li>说清 Plug 管线和 WebSocket 升级在 <code>/ws</code> 这条路上各做了什么</li>
+    </ul>
+  </div>
+
+  <details class="checkpoint reveal">
+    <summary>自测：给这段旅程排个序</summary>
+    <div class="cp-body">
+      <p>把下面 6 步按真实发生顺序排列：<br>
+      a) Prompter 进程向 ws 进程发 <code>{:send_binary, 音频}</code>　b) 浏览器 <code>getUserMedia</code> 拿到麦克风　
+      c) Bandit 为连接开进程并调用 <code>WSHandler.init/1</code>　d) Recorder 进程把 chunk 追加进文件　
+      e) 浏览器 <code>decodeAudioData</code> 播放“好的”　f) <code>terminate</code> 停掉两个子进程</p>
+      <div class="ans"><b>答案：</b>HTTP Upgrade 成功后，服务端会切换协议并执行 c，浏览器的 <code>open</code> 回调则开始 b；这两边属于并发的握手后工作，不能要求 c 一定先完成。服务端在处理后续帧前会先完成 <code>init</code>。随后音频块上行并触发 d；Prompter 从 init 创建后约 3 秒执行 a，浏览器收到音频后执行 e。断开时进入 f。麦克风授权、持续落盘和周期提示会交错进行，因此不存在把 a、d 排成唯一全局顺序的答案。</div>
+    </div>
+  </details>
+</section>
+
+<section class="chapter" id="ch1" data-key="ch1" data-title="mix new：一个 Elixir 项目从哪来">
+  <div class="chapter-head"><span class="ch-n">第 1 章</span><h2>mix new：一个 Elixir 项目从哪来</h2></div>
+
+  <div class="chapter-lead reveal">
+    <p class="lead-title">先认识你脚下的脚手架，再看每一块地砖。</p>
+    <p>整个项目从 <code>mix new voice_chat --sup</code> 提供的基础骨架长出来。本章先区分哪些文件由命令生成、哪些是项目后续加入，再搞清楚 <code>lib/</code>、<code>priv/</code>、<code>config/</code>、<code>test/</code>、<code>mix.exs</code>、<code>mix.lock</code> 各由谁在什么时候使用。</p>
+  </div>
+
+  <h3 class="reveal">基础骨架 vs 后续新增</h3>
+  <div class="bs-code reveal"><span class="cmt"># 当前项目的教学摘录（省略 README、scripts、部分测试与构建产物）</span>
+voice_chat/
+├── mix.exs              <span class="cmt"># mix new 生成，后续补入依赖和应用配置</span>
+├── mix.lock             <span class="cmt"># 首次解析依赖后生成，不是 mix new 的初始文件</span>
+├── .formatter.exs       <span class="cmt"># mix format 的规则</span>
+├── .gitignore           <span class="cmt"># 忽略 _build/ deps/ 等</span>
+├── config/              <span class="cmt"># 本项目后续加入</span>
+│   ├── config.exs       <span class="cmt"># 共享配置入口</span>
+│   └── {dev,prod,test}.exs <span class="cmt"># 分环境配置</span>
+├── lib/
+│   ├── voice_chat.ex    <span class="cmt"># 顶层模块（我们把它改成文档 + 两个辅助函数）</span>
+│   └── voice_chat/      <span class="cmt"># Application + 7 个业务模块</span>
+├── priv/static/         <span class="cmt"># 本项目后续加入：页面、脚本、样式、提示音</span>
+├── priv/recordings/     <span class="cmt"># 运行时创建的录音输出目录</span>
+└── test/
+    ├── test_helper.exs
+    └── *_test.exs       <span class="cmt"># ExUnit 单元/生命周期测试</span></div>
+  <p class="reveal"><code>mix new --sup</code> 提供 <code>mix.exs</code>、顶层模块、Application 骨架和测试等基础文件；本项目随后新增了 <code>config/</code>、<code>priv/</code> 以及七个业务模块，并改写了 Application、顶层模块和测试。<code>mix.lock</code> 则在依赖被解析后生成。</p>
+
+  <h3 class="reveal">六类文件，各用一句人话说明</h3>
+  <table class="reveal">
+    <tr><th>目录 / 文件</th><th>一句话</th><th>谁在消费它</th></tr>
+    <tr><td><code>mix.exs</code></td><td>项目的「出生证明」：名字、版本、依赖、应用入口</td><td>mix 本身（deps.get / compile / run / test…）</td></tr>
+    <tr><td><code>lib/</code></td><td>按惯例放应用的 Elixir 源码</td><td>编译器 → <code>_build/</code> 里的 <code>.beam</code> 字节码</td></tr>
+    <tr><td><code>priv/</code></td><td>随应用打包、运行期按路径读取的资源（前端页、音频）</td><td><code>Application.app_dir/2</code>、<code>Plug.Static</code></td></tr>
+    <tr><td><code>config/</code></td><td>编译或启动应用前加载的配置（端口、录音目录）</td><td>Mix 配置系统 → <code>Application.get_env/3</code></td></tr>
+    <tr><td><code>test/</code></td><td>ExUnit 测试</td><td><code>mix test</code></td></tr>
+    <tr><td><code>mix.lock</code></td><td>记录已解析依赖的精确版本与校验信息</td><td><code>mix deps.get</code>（让团队/CI 复用同一解析结果）</td></tr>
+  </table>
+
+  <div class="callout analogy reveal">
+    <h5>类比：mix 之于 Elixir，约等于 cargo / npm / rebar3</h5>
+    <p>mix 身兼三职：<b>项目脚手架</b>（new）、<b>构建工具</b>（compile / test / run）、<b>包管理器入口</b>（deps.get 去 Hex 拉依赖，deps 锁进 mix.lock）。它采用强约定：默认会从 <code>lib/</code> 编译源码、从 <code>test/</code> 找测试；这些路径可配置，但多数项目沿用默认布局。</p>
+  </div>
+
+  <h3 class="reveal">一个关键区分：Mix 项目 ≠ OTP 应用</h3>
+  <p class="reveal">这两个词经常被混用，但拆开讲更清楚：</p>
+  <ul class="reveal">
+    <li><b>Mix 项目（project）</b>：构建工具看到的工程，由 <code>mix.exs</code> 描述——怎么编译、测试、解析依赖和打包。</li>
+    <li><b>OTP 应用（application）</b>：<code>mix.exs</code> 里 <code>app: :voice_chat</code> 声明的那个东西，服务于<b>运行期</b>——一组模块 + 一个可选的启动入口（<code>mod:</code>），由 BEAM 的应用控制器负责启动/停止。</li>
+  </ul>
+  <p class="reveal">你写 <code>mix run --no-halt</code> 时，mix 先编译项目，再让应用控制器把 <code>:voice_chat</code> 应用连同它的依赖（logger、bandit…）一起启动——启动时调用 <code>mod:</code> 指向的 <code>VoiceChat.Application.start/2</code>。这条链到第 3 章会完整展开。</p>
+
+  <details class="checkpoint reveal">
+    <summary>自测：lib/ 和 priv/ 有什么区别</summary>
+    <div class="cp-body">
+      <p>为什么本项目把前端页面放在 <code>priv/static/</code>，而不是 <code>lib/</code>？</p>
+      <div class="ans"><b>答案：</b><code>lib/</code> 默认用于会编译成 BEAM 字节码的 Elixir 源码；<code>priv/</code> 用于随应用打包、运行期按路径读取的资源。前端页面要原样交给浏览器，所以放进惯用的 <code>priv/static/</code>，再由 <code>Plug.Static</code> 或 <code>Application.app_dir/2</code> 定位。</div>
+    </div>
+  </details>
+</section>
+
+<section class="chapter" id="ch2" data-key="ch2" data-title="mix.exs 逐行：项目的出生证明">
+  <div class="chapter-head"><span class="ch-n">第 2 章</span><h2>mix.exs 逐行：项目的出生证明</h2></div>
+
+  <div class="chapter-lead reveal">
+    <p class="lead-title">全文只有 29 行，但每一行都决定了后面所有章节的写法。</p>
+    <p>这是本书第一个<b>代码走读</b>。走读组件左侧是带行号的源码，右侧是讲解卡片；<b>点代码里的任意一行</b>，或点卡片标题，或按 ▶ 逐步播放，讲解会跟着行号走。代码块可用 <code>python3 gen.py --check</code> 对照 <code>voice_chat/</code> 源码校验。</p>
+  </div>
+
+  <div class="wt reveal" data-file="mix.exs">
+    <div class="wt-head">
+      <span class="wt-path">mix.exs<span class="wt-size">· 29 行 · 整个项目的元信息</span></span>
+      <span class="wt-ctl">
+        <button class="wt-step" data-dir="-1">◀</button>
+        <span class="wt-pos">0/0</span>
+        <button class="wt-step" data-dir="1">▶</button>
+        <button class="wt-play primary">▶ 自动播放</button>
+        <button class="wt-reset">重置</button>
+      </span>
+    </div>
+    <div class="wt-body">
+      <pre class="wt-code">defmodule VoiceChat.MixProject do
+  use Mix.Project
+
+  def project do
+    [
+      app: :voice_chat,
+      version: &quot;0.1.0&quot;,
+      elixir: &quot;~&gt; 1.15&quot;,
+      start_permanent: Mix.env() == :prod,
+      deps: deps()
+    ]
+  end
+
+  def application do
+    [
+      extra_applications: [:logger],
+      mod: {VoiceChat.Application, []}
+    ]
+  end
+
+  defp deps do
+    [
+      {:bandit, &quot;~&gt; 1.6&quot;},
+      {:websock_adapter, &quot;~&gt; 0.5&quot;},
+      {:plug, &quot;~&gt; 1.16&quot;},
+      {:jason, &quot;~&gt; 1.4&quot;}
+    ]
+  end
+end</pre>
+      <div class="wt-panel">
+        <div class="wt-card" data-lines="1-3">
+          <div class="wt-hd"><span class="wt-ln">L1–3</span> 模块声明 + <code>use Mix.Project</code></div>
+          <div class="wt-bd">
+            <p><code>VoiceChat.MixProject</code> 是生成器采用的命名约定；真正把模块声明为 Mix 项目的是 <code>use Mix.Project</code>。它设置项目行为和编译钩子，项目再实现 <code>project/0</code>，并可选实现 <code>application/0</code>。</p>
+            <p class="why">Mix 在求值 <code>mix.exs</code> 时装载这个模块并读取返回的配置；关键不是模块名被“搜索到”，而是 <code>use Mix.Project</code> 完成注册和约定接线。</p>
+            <p class="rel">关联：第 1 章「Mix 项目」、第 3 章「OTP 应用」——这一行同时定义了两者。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="4-5">
+          <div class="wt-hd"><span class="wt-ln">L4–5</span> <code>project/0</code>：一段关键字列表</div>
+          <div class="wt-bd">
+            <p><code>project/0</code> 返回一个关键字列表（keyword list），是 mix 读取项目信息的主入口。第 5 行的 <code>[</code> 开始这个列表。</p>
+            <p class="why">这里体现「配置就是数据」：本项目的函数只返回关键字列表。Elixir 函数本身并不会被语言强制为纯函数，因此“无副作用”是这段实现的选择，不是 Mix 的硬保证。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="6">
+          <div class="wt-hd"><span class="wt-ln">L6</span> <code>app: :voice_chat</code> —— OTP 应用名</div>
+          <div class="wt-bd">
+            <p>声明这个项目的 <b>OTP 应用名</b>（一个 atom）。它出现在三处：编译产物 <code>voice_chat.app</code>、<code>Application.get_env(:voice_chat, …)</code>、以及 <code>Application.app_dir(:voice_chat, …)</code>。</p>
+            <p class="why">atom 是 Erlang VM 里的符号常量，适合应用名这类有限、可信的标识；atom 表不会回收，所以不能把任意用户输入转成新 atom。</p>
+            <p class="rel">关联：第 3 章 <code>Application.get_env</code>，以及第 4、8 章的 <code>Application.app_dir</code>——同一枚应用 atom 贯穿配置与资源定位。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="7">
+          <div class="wt-hd"><span class="wt-ln">L7</span> <code>version: "0.1.0"</code></div>
+          <div class="wt-bd">
+            <p>当前项目自身的版本号，会进入应用元数据并用于发布/打包；发布到 Hex 时通常遵循语义化版本。它不决定依赖锁定，<code>mix.lock</code> 记录的是依赖解析结果。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="8">
+          <div class="wt-hd"><span class="wt-ln">L8</span> <code>elixir: "~> 1.15"</code> —— 版本约束</div>
+          <div class="wt-bd">
+            <p>要求 Elixir 版本。重点是 <code>~></code> 的语义：<code>~> 1.15</code> 允许 <code>1.15.x</code> 及以上、但不到 <code>2.0</code> 的版本（即允许 <code>1.19</code>，不允许 <code>2.0</code>）。</p>
+            <p class="why">用宽松下限 + 语义化版本，既不锁死环境，又不放进来不兼容的大版本——这是 Hex 生态的惯例。</p>
+            <p class="rel">关联：第 1 章 <code>mix.lock</code>（依赖的版本锁得比这严格得多）。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="9">
+          <div class="wt-hd"><span class="wt-ln">L9</span> <code>start_permanent: Mix.env() == :prod</code></div>
+          <div class="wt-bd">
+            <p>当 Mix 启动应用且 <code>MIX_ENV=prod</code> 时，把该应用标为 <code>:permanent</code>；如果整个 OTP 应用最终停止，BEAM 节点会退出。子进程的普通崩溃仍先按 Supervisor 策略重启，并不是任意异常都立即关 VM。</p>
+            <p class="why">它让“应用已无法维持监督树”成为节点级失败信号，便于外部服务管理器重启实例；开发环境不启用这个永久启动标记。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="10-13">
+          <div class="wt-hd"><span class="wt-ln">L10–13</span> <code>deps: deps()</code> —— 依赖</div>
+          <div class="wt-bd">
+            <p>把私有函数 <code>deps/0</code> 返回的依赖列表挂到 project 上。<code>deps/0</code> 定义在第 21 行。</p>
+            <p class="why">拆成私有函数是惯例：project 保持可读，依赖单独成块方便增删。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="14-16">
+          <div class="wt-hd"><span class="wt-ln">L14–16</span> <code>application/0</code>：运行期怎么启动</div>
+          <div class="wt-bd">
+            <p><code>extra_applications: [:logger]</code> 声明「我的应用启动前，请先把 <code>:logger</code> 应用启动好」——因为代码里要 <code>Logger.info</code>。</p>
+            <p class="why">BEAM 的应用有依赖顺序：<code>Logger</code> 是 Elixir 自带的库应用，也要显式声明才保证可用。这也是为什么依赖图是「应用」，不只是「包」。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="17-20">
+          <div class="wt-hd"><span class="wt-ln">L17–20</span> <code>mod: {VoiceChat.Application, []}</code> —— 应用入口</div>
+          <div class="wt-bd">
+            <p>告诉应用控制器：启动本应用时调用 <code>VoiceChat.Application.start/2</code>，参数为 <code>[]</code>。若回调模块实现可选的 <code>stop/1</code>，应用停止时才会调用；本项目没有实现它。</p>
+            <p class="why">没有 <code>mod:</code> 的应用不会启动自己的 Application 回调（仍可打包模块、配置和依赖）；有 <code>mod:</code> 时应用控制器会调用入口，通常由它拉起进程树。voice_chat 属于后一种。</p>
+            <p class="rel">关联：第 3 章整章——<code>start/2</code> 里就是监督树。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="21-22">
+          <div class="wt-hd"><span class="wt-ln">L21–22</span> <code>deps/0</code>：声明式依赖</div>
+          <div class="wt-bd">
+            <p>返回依赖元组列表。每个元组 <code>{名字, 版本约束}</code> 只是<b>声明</b>——真正下载、编译发生在 <code>mix deps.get</code> / <code>mix compile</code> 时。</p>
+            <p class="why">声明式的好处是机器可读、可锁定（mix.lock）并容易在团队和 CI 中复现；Mix/Hex 负责常规依赖获取与校验。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="23-28">
+          <div class="wt-hd"><span class="wt-ln">L23–28</span> 四个依赖，各司其职</div>
+          <div class="wt-bd">
+            <p><code>bandit</code>：HTTP/1、HTTP/2 与 WebSocket 服务器；<code>websock_adapter</code>：把 Plug 连接升级接到 WebSock 回调；<code>plug</code>：请求管线/路由抽象；<code>jason</code>：JSON 编解码。</p>
+            <p class="why">Bandit 提供底层 socket 与协议，WebSock 定义「回调契约」，Plug 定义「请求管线」——三者互相独立、靠 adapter 拼起来，这正是 BEAM 生态「小库组合」的风格。</p>
+            <p class="rel">关联：第 4 章 Plug 管线、第 5 章 WebSock/Jason 入站处理、第 7 章提示 JSON 编码。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="29">
+          <div class="wt-hd"><span class="wt-ln">L29</span> <code>end</code></div>
+          <div class="wt-bd">
+            <p>模块结束。这里没有服务运行期的请求处理逻辑；这些函数会在构建/启动准备阶段被 Mix 调用，返回项目与应用元数据。</p>
+            <p class="why">这提醒我们一个事实：Elixir 的「代码即数据」让项目配置本身也是一段可以被任何工具读取的 Elixir 表达式。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout note reveal">
+    <h5>什么时候会动这个文件</h5>
+    <p>加依赖（往 <code>deps/0</code> 加一行）、改应用入口（<code>mod:</code>）、加编译期依赖或 escript 配置。其他时候基本不动——就像出生证明，偶尔才拿出来改。</p>
+  </div>
+</section>
+
+<section class="chapter" id="ch3" data-key="ch3" data-title="监督树：进程从哪来，谁负责谁">
+  <div class="chapter-head"><span class="ch-n">第 3 章</span><h2>监督树：进程从哪来，谁负责谁</h2></div>
+
+  <div class="chapter-lead reveal">
+    <p class="lead-title">应用自己的顶层 Supervisor 只有两个直接 child spec，但每个组件内部还会管理更多进程。</p>
+    <p>依赖应用启动后，应用控制器按第 2 章的 <code>mod:</code> 调用 <code>VoiceChat.Application.start/2</code>。它准备资源、声明 Registry 与 Bandit 两个直接孩子，再启动顶层 Supervisor；Bandit/Thousand Island 继续管理监听器与连接生命周期。</p>
+  </div>
+
+  <div class="wt reveal" data-file="lib/voice_chat/application.ex">
+    <div class="wt-head">
+      <span class="wt-path">lib/voice_chat/application.ex<span class="wt-size">· 23 行 · 应用入口 + 监督树</span></span>
+      <span class="wt-ctl">
+        <button class="wt-step" data-dir="-1">◀</button>
+        <span class="wt-pos">0/0</span>
+        <button class="wt-step" data-dir="1">▶</button>
+        <button class="wt-play primary">▶ 自动播放</button>
+        <button class="wt-reset">重置</button>
+      </span>
+    </div>
+    <div class="wt-body">
+      <pre class="wt-code">defmodule VoiceChat.Application do
+  @moduledoc false
+  use Application
+
+  @impl true
+  def start(_type, _args) do
+    # 确保录音目录存在
+    VoiceChat.recordings_dir() |&gt; File.mkdir_p!()
+
+    # 确保提示音（“好的”）存在，不存在则生成
+    VoiceChat.PromptAudio.ensure!()
+
+    children = [
+      # 会话注册表：session_id -&gt; ws 进程，进程退出自动清理
+      {Registry, keys: :unique, name: VoiceChat.SessionRegistry},
+      # HTTP + WebSocket 服务器
+      {Bandit, plug: VoiceChat.Endpoint, port: VoiceChat.port()}
+    ]
+
+    opts = [strategy: :one_for_one, name: VoiceChat.Supervisor]
+    Supervisor.start_link(children, opts)
+  end
+end</pre>
+      <div class="wt-panel">
+        <div class="wt-card" data-lines="1-4">
+          <div class="wt-hd"><span class="wt-ln">L1–4</span> 模块声明 + <code>use Application</code></div>
+          <div class="wt-bd">
+            <p><code>use Application</code> 要求实现 <code>start/2</code>（和可选的 <code>stop/1</code>、<code>prep_stop/1</code>）。<code>@moduledoc false</code> 表示这个模块是内部实现细节，不生成文档。</p>
+            <p class="why">OTP 应用的启动/停止是「框架回调」：VM 的应用控制器在正确时机调用 <code>start/2</code>，你只负责返回 <code>{:ok, pid}</code> 或 <code>{:ok, pid, state}</code>。</p>
+            <p class="rel">关联：第 2 章 L17 <code>mod: {VoiceChat.Application, []}</code>——这行就是接线。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="5-6">
+          <div class="wt-hd"><span class="wt-ln">L5–6</span> <code>@impl true</code> + <code>start/2</code></div>
+          <div class="wt-bd">
+            <p><code>@impl true</code> 声明「下面是行为回调的实现」，编译器会校验签名是否匹配。<code>_type</code> 是启动类型（常见为 <code>:normal</code>，也可能是 takeover/failover 元组），<code>_args</code> 是 <code>mod:</code> 里传的参数 <code>[]</code>，这里都用不上。</p>
+            <p class="why">下划线前缀的变量名是「我故意不用你」的约定，避免未使用变量的编译警告。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="7-9">
+          <div class="wt-hd"><span class="wt-ln">L7–9</span> 确保录音目录存在</div>
+          <div class="wt-bd">
+            <p><code>VoiceChat.recordings_dir()</code> 从配置读目录（<code>priv/recordings</code>），<code>File.mkdir_p!/1</code> 递归建目录。<code>|></code> 是管道：左边结果作为右边函数第一个参数。</p>
+            <p class="why">结尾 <code>!</code> 是 Elixir 约定：失败直接抛异常（而非返回 <code>{:error, …}</code>）。这一步发生在顶层 Supervisor 启动之前，因此失败会让 Application 的启动回调失败，错误会在启动期暴露。</p>
+            <p class="rel">关联：第 6 章 Recorder 的 <code>build_path</code> 写文件时假设这个目录已存在。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="10-12">
+          <div class="wt-hd"><span class="wt-ln">L10–12</span> 启动期准备提示音</div>
+          <div class="wt-bd">
+            <p><code>VoiceChat.PromptAudio.ensure!()</code> 检查 <code>priv/static/audio/haode.wav</code> 是否存在，不存在就现场合成一段（第 8 章）。</p>
+            <p class="why">启动期能尽早发现“文件缺失且兜底无法写入”这类错误；但 <code>ensure!</code> 对已存在文件只检查存在性，不验证可读性或 WAV 内容，损坏素材仍可能到 Prompter 读取或浏览器解码时才暴露。</p>
+            <p class="rel">关联：第 7 章 Prompter 启动时 <code>PromptAudio.bytes()</code> 直接读文件。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="13-15">
+          <div class="wt-hd"><span class="wt-ln">L13–15</span> <code>children</code>：被监督的孩子</div>
+          <div class="wt-bd">
+            <p>声明两个直接 child spec：<code>Registry</code>（唯一键会话注册表，条目属于注册它的连接进程，进程退出时自动清理）和 <code>Bandit</code>（HTTP/WS 服务器组件）。它们本身都可能在内部启动多个进程。</p>
+            <p class="why">放进监督树后，顶层组件异常退出会按策略重启；若超过重启强度，Supervisor 自身仍会终止，因此监督提供的是明确的恢复策略，不是“永不失败”。</p>
+            <p class="rel">关联：第 5 章 <code>Registry.register</code>；第 4 章 <code>Bandit, plug: Endpoint</code> 的 plug 选项。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="16-19">
+          <div class="wt-hd"><span class="wt-ln">L16–19</span> Bandit 子进程规格</div>
+          <div class="wt-bd">
+            <p><code>{Bandit, plug: VoiceChat.Endpoint, port: VoiceChat.port()}</code> 是「子进程规格」简写：模块 + 启动参数。Supervisor 会用 <code>Bandit.child_spec/1</code> 把它展开成完整的启动指令。</p>
+            <p class="why"><code>plug:</code> 告诉 Bandit「HTTP 请求交给这个模块处理」，<code>port:</code> 从配置读端口（默认 4000；本项目的 <code>config.exs</code> 在被求值时读取 <code>PORT</code>）。若打 release 后仍要在每次启动时读取环境变量，通常应把这类逻辑放进 <code>runtime.exs</code>。</p>
+            <p class="rel">关联：第 4 章 Endpoint 整章；第 1 章 config/ 目录。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="20-23">
+          <div class="wt-hd"><span class="wt-ln">L20–23</span> 把孩子们交给 Supervisor</div>
+          <div class="wt-bd">
+            <p><code>Supervisor.start_link(children, opts)</code> 启动监督者并 <code>link</code> 到调用进程。<code>strategy: :one_for_one</code> 表示「一个孩子挂了只重启那一个」；<code>name:</code> 把监督者注册为 <code>VoiceChat.Supervisor</code>。</p>
+            <p class="why">link 把 Application 启动进程与顶层 Supervisor 的生命周期接起来。<code>one_for_one</code> 表示某个直接孩子退出时只重启该 child spec；但 Registry 重启会丢失旧注册信息，已有连接与调试视图仍可能需要额外恢复设计。</p>
+            <p class="rel">关联：第 5 章每个连接的 <code>spawn_link</code> 是同一机制的最简形态；第 6 章 <code>trap_exit</code> 处理的就是 link 产生的信号。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <figure class="figwrap reveal">
+    <svg viewBox="0 0 700 320" role="img" aria-label="监督树结构示意">
+      <defs>
+        <marker id="ah3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--muted)"/></marker>
+      </defs>
+      <rect x="250" y="12" width="200" height="52" rx="10" fill="var(--ok-soft)" stroke="var(--ok)"/>
+      <text x="350" y="36" font-size="13.5" fill="var(--ok)" text-anchor="middle" font-weight="700">VoiceChat.Supervisor</text>
+      <text x="350" y="54" font-size="10.5" fill="var(--muted)" text-anchor="middle">one_for_one</text>
+
+      <path d="M320 64 V80 H180 V92" stroke="var(--muted)" stroke-width="1.6" fill="none" marker-end="url(#ah3)"/>
+      <path d="M380 64 V80 H520 V92" stroke="var(--muted)" stroke-width="1.6" fill="none" marker-end="url(#ah3)"/>
+
+      <rect x="90" y="96" width="180" height="66" rx="10" fill="var(--panel)" stroke="var(--accent)"/>
+      <text x="180" y="122" font-size="13" fill="var(--accent)" text-anchor="middle" font-weight="700">Registry</text>
+      <text x="180" y="142" font-size="11" fill="var(--muted)" text-anchor="middle">keys: :unique</text>
+      <text x="180" y="156" font-size="11" fill="var(--muted)" text-anchor="middle">session_id → ws 进程</text>
+
+      <rect x="430" y="96" width="180" height="66" rx="10" fill="var(--panel)" stroke="var(--accent)"/>
+      <text x="520" y="122" font-size="13" fill="var(--accent)" text-anchor="middle" font-weight="700">Bandit</text>
+      <text x="520" y="142" font-size="11" fill="var(--muted)" text-anchor="middle">HTTP + WebSocket</text>
+      <text x="520" y="156" font-size="11" fill="var(--muted)" text-anchor="middle">port 4000</text>
+
+      <path d="M520 162 V194 H428 V242" stroke="var(--muted)" stroke-width="1.6" fill="none" marker-end="url(#ah3)"/>
+      <text x="474" y="189" font-size="10" fill="var(--muted)" text-anchor="middle">管理连接生命周期</text>
+
+      <rect x="360" y="214" width="300" height="92" rx="12" fill="none" stroke="var(--line2)" stroke-dasharray="6 4"/>
+      <text x="380" y="234" font-size="11.5" fill="var(--muted)">动态区域：连接进程由 Bandit / Thousand Island 管理</text>
+
+      <rect x="380" y="246" width="96" height="44" rx="8" fill="var(--panel2)" stroke="var(--line)"/>
+      <text x="428" y="264" font-size="11" fill="var(--fg)" text-anchor="middle">ws 进程</text>
+      <text x="428" y="280" font-size="10" fill="var(--muted)" text-anchor="middle">WSHandler</text>
+
+      <rect x="500" y="246" width="84" height="44" rx="8" fill="var(--ok-soft)" stroke="var(--ok)"/>
+      <text x="542" y="264" font-size="10.5" fill="var(--ok)" text-anchor="middle">Recorder</text>
+      <text x="542" y="280" font-size="10" fill="var(--muted)" text-anchor="middle">spawn_link</text>
+
+      <rect x="592" y="246" width="52" height="44" rx="8" fill="var(--accent2-soft)" stroke="var(--accent2)"/>
+      <text x="618" y="266" font-size="10.5" fill="var(--accent2)" text-anchor="middle">Prompter</text>
+
+      <path d="M476 260 H496" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="3 3" fill="none" marker-end="url(#ah3)"/>
+      <path d="M476 276 C510 304 566 304 588 276" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="3 3" fill="none" marker-end="url(#ah3)"/>
+
+      <circle r="4" fill="var(--ok)"><animateMotion dur="2s" repeatCount="indefinite" path="M320 64 L320 80 L180 80 L180 92"/></circle>
+      <circle r="4" fill="var(--ok)"><animateMotion dur="2s" begin="1s" repeatCount="indefinite" path="M380 64 L380 80 L520 80 L520 92"/></circle>
+    </svg>
+    <figcaption>图 3-1 · 简化后的生命周期关系：应用顶层 Supervisor 直接管理 Registry 与 Bandit；Bandit/Thousand Island 动态管理连接进程，连接进程再分别 link Recorder 与 Prompter。Registry、Bandit/Thousand Island 自己的内部进程树没有展开。</figcaption>
+  </figure>
+
+  <div class="callout why reveal">
+    <h5>为什么应用代码不把每条连接列成顶层 child spec</h5>
+    <p>WebSocket 连接短命且动态，断开后也不应按固定 child spec 重启。它们的生命周期由 Bandit/Thousand Island 的服务器层管理；本应用只把长期的服务器组件 Bandit 放进自己的顶层监督树。WSHandler 初始化后，再分别 link Recorder 与 Prompter 这两个会话辅助进程。</p>
+  </div>
+
+  <div class="callout analogy reveal">
+    <h5>类比：监督树 = 值班经理</h5>
+    <p>Supervisor 像值班经理：直接孩子（Registry、Bandit）退出时按策略处理。连接则像由 Bandit 业务线内部调度的短期任务——仍有明确的生命周期管理，只是不逐条出现在本应用的顶层 children 列表里。</p>
+  </div>
+</section>
+
+<section class="chapter" id="ch4" data-key="ch4" data-title="Endpoint：Plug 管线和 101 升级">
+  <div class="chapter-head"><span class="ch-n">第 4 章</span><h2>Endpoint：Plug 管线和 101 升级</h2></div>
+
+  <div class="chapter-lead reveal">
+    <p class="lead-title">从 HTTP 请求切换到 WebSocket 帧协议，入口是一轮成功的 101 Upgrade 握手。</p>
+    <p><code>endpoint.ex</code> 是流量的第一站：静态页面、健康检查、会话列表和 WebSocket 升级都在这个模块里。理解它需要两个核心概念：<b>Plug 管线</b>（请求穿过一串 conn 变换）和 <b>WebSocket 升级</b>（从 HTTP 握手切换到帧协议）。</p>
+  </div>
+
+  <div class="wt reveal" data-file="lib/voice_chat/endpoint.ex">
+    <div class="wt-head">
+      <span class="wt-path">lib/voice_chat/endpoint.ex<span class="wt-size">· 源码全文 · 流量第一站</span></span>
+      <span class="wt-ctl">
+        <button class="wt-step" data-dir="-1">◀</button>
+        <span class="wt-pos">0/0</span>
+        <button class="wt-step" data-dir="1">▶</button>
+        <button class="wt-play primary">▶ 自动播放</button>
+        <button class="wt-reset">重置</button>
+      </span>
+    </div>
+    <div class="wt-body">
+      <pre class="wt-code">defmodule VoiceChat.Endpoint do
+  @moduledoc &quot;&quot;&quot;
+  HTTP 路由：静态调试页面 + WebSocket 升级接口 + 调试辅助接口。
+  &quot;&quot;&quot;
+
+  use Plug.Router
+
+  plug(Plug.Logger)
+
+  plug(Plug.Static,
+    at: &quot;/&quot;,
+    from: :voice_chat,
+    only: ~w(index.html app.js app.css)
+  )
+
+  plug(:match)
+  plug(:dispatch)
+
+  get &quot;/&quot; do
+    send_file(conn, 200, Application.app_dir(:voice_chat, &quot;priv/static/index.html&quot;))
+  end
+
+  get &quot;/health&quot; do
+    send_resp(conn, 200, &quot;ok&quot;)
+  end
+
+  get &quot;/sessions&quot; do
+    sessions =
+      VoiceChat.SessionRegistry
+      |&gt; Registry.select([{{:&quot;$1&quot;, :&quot;$2&quot;, :&quot;$3&quot;}, [], [{{:&quot;$1&quot;, :&quot;$2&quot;, :&quot;$3&quot;}}]}])
+      |&gt; Enum.map(fn {id, pid, meta} -&gt;
+        %{
+          &quot;session&quot; =&gt; id,
+          &quot;ws_pid&quot; =&gt; inspect(pid),
+          # PID 不是 JSON 类型，编码前统一转成字符串，否则会话进行中该接口会 500
+          &quot;meta&quot; =&gt;
+            Map.new(meta, fn
+              {k, v} when is_pid(v) -&gt; {k, inspect(v)}
+              {k, v} -&gt; {k, v}
+            end)
+        }
+      end)
+
+    conn
+    |&gt; put_resp_content_type(&quot;application/json&quot;)
+    |&gt; send_resp(200, Jason.encode!(sessions))
+  end
+
+  get &quot;/ws&quot; do
+    conn = Plug.Conn.fetch_query_params(conn)
+
+    try do
+      conn
+      |&gt; WebSockAdapter.upgrade(
+        VoiceChat.WSHandler,
+        %{query_params: conn.query_params},
+        timeout: 60_000,
+        max_frame_size: 10_000_000
+      )
+      |&gt; halt()
+    rescue
+      e in WebSockAdapter.UpgradeError -&gt;
+        send_resp(conn, 400, &quot;websocket upgrade failed: #{Exception.message(e)}&quot;)
+    end
+  end
+
+  match _ do
+    send_resp(conn, 404, &quot;not found&quot;)
+  end
+end</pre>
+      <div class="wt-panel">
+        <div class="wt-card" data-lines="1-7">
+          <div class="wt-hd"><span class="wt-ln">L1–7</span> <code>use Plug.Router</code>：路由即模块</div>
+          <div class="wt-bd">
+            <p><code>use Plug.Router</code> 生成路由所需代码，并让模块实现 Plug 约定的 <code>init/1</code>、<code>call/2</code>：请求以 <code>%Plug.Conn{}</code> 进入，也以更新后的 conn 返回。</p>
+            <p class="why">任何实现 <code>init/1</code> + <code>call/2</code> 的模块都可以作为 plug，既能单独调用，也能串进管线；Plug.Router 再在这个基础上提供匹配与分派宏。</p>
+            <p class="rel">关联：第 3 章 Bandit 的 <code>plug: VoiceChat.Endpoint</code> 选项——服务器把请求交给这个模块。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="8-9">
+          <div class="wt-hd"><span class="wt-ln">L8–9</span> <code>plug(Plug.Logger)</code></div>
+          <div class="wt-bd">
+            <p>把日志中间件挂进管线，记录请求方法/路径以及响应状态与耗时。</p>
+            <p class="why">这是本管线的第一个「关卡」：请求先经过它，再到路由。中间件可以更新 conn；需要提前结束后续管线时，还要发送响应并 <code>halt</code>。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="10-15">
+          <div class="wt-hd"><span class="wt-ln">L10–15</span> <code>Plug.Static</code>：静态文件服务</div>
+          <div class="wt-bd">
+            <p>把 <code>priv/static/</code> 挂到根路径：<code>at: "/"</code>（URL 前缀）、<code>from: :voice_chat</code>（<code>:voice_chat</code> 是 <code>priv/static</code> 的简写）、<code>only: ~w(index.html app.js app.css)</code>（只放行这三个文件）。</p>
+            <p class="why"><code>only</code> 是白名单：调试页面的静态资源就三个，白名单既快又安全（<code>audio/haode.wav</code> 故意不放行——它只走 WebSocket 推给客户端，不需要被 HTTP 直接下载）。<code>~w(...)</code> 是字符串列表字面量。</p>
+            <p class="rel">关联：第 9 章前端页面；第 8 章提示音文件在 <code>priv/static/audio/</code> 但不走 HTTP。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="16-18">
+          <div class="wt-hd"><span class="wt-ln">L16–18</span> <code>:match</code> 与 <code>:dispatch</code></div>
+          <div class="wt-bd">
+            <p>Plug.Router 的两段式：<code>:match</code> 找到匹配的路由，<code>:dispatch</code> 执行它。本模块把 Logger、Static 排在两者之前，所以请求会先按声明顺序经过它们。</p>
+            <p class="why">显式顺序让日志覆盖本模块收到的请求，也让 Static 有机会在路由匹配前直接服务白名单资源。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="19-22">
+          <div class="wt-hd"><span class="wt-ln">L19–22</span> <code>get "/"</code>：首页</div>
+          <div class="wt-bd">
+            <p>根路径显式用 <code>send_file</code> 返回 <code>index.html</code>；<code>Plug.Static</code> 负责的是按 URL 文件名请求的 <code>/app.js</code>、<code>/app.css</code> 等资源，并不会自动把 <code>/</code> 当作目录首页。</p>
+            <p class="why">把首页路由和静态资源白名单分开后，根路径行为清楚，也不依赖目录索引约定。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="23-26">
+          <div class="wt-hd"><span class="wt-ln">L23–26</span> <code>/health</code></div>
+          <div class="wt-bd">
+            <p>健康检查：<code>send_resp(conn, 200, "ok")</code>。部署时负载均衡/探针打这个接口确认服务活着。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="27-43">
+          <div class="wt-hd"><span class="wt-ln">L27–43</span> <code>/sessions</code>：读取并序列化注册项</div>
+          <div class="wt-bd">
+            <p><code>Registry.select/2</code> 的第一个参数是 Registry 名，第二个才是 match spec（ETS 匹配规格）。<code>{{:"$1", :"$2", :"$3"}, [], [...]}</code> 把条目投影成键、注册进程 pid 和元数据；随后把 pid 转成字符串，避免 Jason 直接编码 pid 失败。</p>
+            <p class="why">match spec 是 Registry/ETS 的查询语言。这里没有筛选条件，只是一次取出调试接口需要的三个字段；元数据里的 recorder pid 也在 <code>Map.new</code> 中转成可编码字符串。</p>
+            <p class="rel">关联：第 5 章 <code>Registry.register</code>（写入）——这里是同一张表的读取。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="44-48">
+          <div class="wt-hd"><span class="wt-ln">L44–48</span> 把列表变成 JSON</div>
+          <div class="wt-bd">
+            <p><code>put_resp_content_type("application/json")</code> 设置 Content-Type，<code>Jason.encode!</code> 把 Elixir 数据结构编码成 JSON 字符串返回。</p>
+            <p class="why"><code>Jason.encode!</code> 的 <code>!</code> 表示编码失败会抛异常；前一段显式字符串化已知 pid，正是为了让当前元数据结构可编码。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="49-51">
+          <div class="wt-hd"><span class="wt-ln">L49–51</span> <code>/ws</code>：先取查询参数</div>
+          <div class="wt-bd">
+            <p><code>fetch_query_params(conn)</code> 解析 URL 里的查询串（<code>?session=xxx</code>）放进 <code>conn.query_params</code>。注意这里手动取——因为 <code>WebSockAdapter.upgrade</code> 之后 conn 就不再是普通 HTTP 请求了，参数得在升级前拿到。</p>
+            <p class="rel">关联：第 5 章 init/1 收到的 <code>%{query_params: …}</code> 就是从这里传进去的。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="52-60">
+          <div class="wt-hd"><span class="wt-ln">L52–60</span> WebSocket 升级：一次 101 握手</div>
+          <div class="wt-bd">
+            <p><code>WebSockAdapter.upgrade</code> 校验升级请求，在 conn 上登记 WebSock 回调模块和初始参数；Bandit 随后发送 101 并让同一个 HTTP/1 连接进程切换到 WebSocket handler。第三个参数会传给 <code>WSHandler.init/1</code>，<code>halt(conn)</code> 则停止后续 Plug 管线。</p>
+            <p class="why">WebSocket 有独立的帧协议，但通常先通过 HTTP/1 Upgrade 建立：请求带升级头，服务器回 101，之后同一 TCP 连接切换为 WebSocket 帧。<code>timeout</code> 控制空闲断开，<code>max_frame_size</code> 限制单帧大小。</p>
+            <p class="rel">关联：第 5 章整章——升级完成后，本项目实现的 WebSock 业务回调进入 WSHandler；连接协议和控制帧细节仍由 Bandit/WebSockAdapter 承接。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="61-66">
+          <div class="wt-hd"><span class="wt-ln">L61–66</span> <code>rescue</code>：升级失败要友好</div>
+          <div class="wt-bd">
+            <p>升级请求不合法（缺 <code>Sec-WebSocket-Key</code> 等）时 <code>upgrade</code> 会抛 <code>WebSockAdapter.UpgradeError</code>，这里捕获并回 400。</p>
+            <p class="why">「让用户看到 400 而不是 500」：协议错误是客户端的问题，不该算服务器内部错误。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="67-70">
+          <div class="wt-hd"><span class="wt-ln">L67–70</span> <code>match _</code>：兜底 404</div>
+          <div class="wt-bd">
+            <p>任何没被上面路由接住、也没被 Static 接住的请求，返回 404。</p>
+            <p class="why">显式兜底把未匹配路径稳定地变成 404；若没有匹配子句，生成的路由匹配函数会因找不到可用子句而失败，而不是自动替本模块构造这条响应。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <figure class="figwrap reveal">
+    <svg viewBox="0 0 880 170" role="img" aria-label="Plug 管线示意">
+      <defs>
+        <marker id="ah4-ac" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/></marker>
+        <marker id="ah4-line" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--line)"/></marker>
+        <marker id="ah4-a2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent2)"/></marker>
+        <marker id="ah4-ok" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--ok)"/></marker>
+        <marker id="ah4-danger" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--danger)"/></marker>
+      </defs>
+      <text x="10" y="40" font-size="12" fill="var(--muted)">HTTP 请求</text>
+      <path d="M74 34 H96" stroke="var(--accent)" stroke-width="1.8" fill="none" marker-end="url(#ah4-ac)"/>
+
+      <rect x="100" y="18" width="110" height="36" rx="8" fill="var(--panel)" stroke="var(--line)"/>
+      <text x="155" y="41" font-size="11.5" fill="var(--fg)" text-anchor="middle">Plug.Logger</text>
+      <path d="M210 36 H232" stroke="var(--line)" stroke-width="1.6" fill="none" marker-end="url(#ah4-line)"/>
+
+      <rect x="236" y="18" width="120" height="36" rx="8" fill="var(--panel)" stroke="var(--line)"/>
+      <text x="296" y="41" font-size="11.5" fill="var(--fg)" text-anchor="middle">Plug.Static</text>
+      <path d="M356 36 H378" stroke="var(--line)" stroke-width="1.6" fill="none" marker-end="url(#ah4-line)"/>
+
+      <rect x="382" y="18" width="96" height="36" rx="8" fill="var(--panel)" stroke="var(--accent)"/>
+      <text x="430" y="41" font-size="11.5" fill="var(--accent)" text-anchor="middle">:match</text>
+      <path d="M478 36 H500" stroke="var(--line)" stroke-width="1.6" fill="none" marker-end="url(#ah4-line)"/>
+
+      <rect x="504" y="18" width="104" height="36" rx="8" fill="var(--panel)" stroke="var(--accent)"/>
+      <text x="556" y="41" font-size="11.5" fill="var(--accent)" text-anchor="middle">:dispatch</text>
+
+      <path d="M608 36 H660 V110 H696" stroke="var(--accent2)" stroke-width="1.6" fill="none" marker-end="url(#ah4-a2)"/>
+      <text x="630" y="86" font-size="11" fill="var(--accent2)">/ws</text>
+
+      <rect x="700" y="92" width="162" height="44" rx="8" fill="var(--accent2-soft)" stroke="var(--accent2)"/>
+      <text x="779" y="110" font-size="11.5" fill="var(--accent2)" text-anchor="middle" font-weight="700">WebSockAdapter.upgrade</text>
+      <text x="779" y="127" font-size="10.5" fill="var(--muted)" text-anchor="middle">101 → 切换 WSHandler</text>
+
+      <rect x="100" y="100" width="150" height="44" rx="8" fill="var(--ok-soft)" stroke="var(--ok)"/>
+      <text x="175" y="118" font-size="11.5" fill="var(--ok)" text-anchor="middle">静态文件 / 首页</text>
+      <text x="175" y="135" font-size="10.5" fill="var(--muted)" text-anchor="middle">直接返回 200</text>
+      <path d="M296 54 V122 H254" stroke="var(--ok)" stroke-width="1.6" fill="none" marker-end="url(#ah4-ok)"/>
+
+      <rect x="360" y="130" width="150" height="36" rx="8" fill="var(--danger-soft)" stroke="var(--danger)"/>
+      <text x="435" y="153" font-size="11.5" fill="var(--danger)" text-anchor="middle">match _ → 404</text>
+      <path d="M430 54 V126" stroke="var(--danger)" stroke-width="1.6" stroke-dasharray="4 3" fill="none" marker-end="url(#ah4-danger)"/>
+
+      <circle r="4" fill="var(--accent)"><animateMotion dur="3s" repeatCount="indefinite" path="M74 34 L96 34 L210 34 L232 34 L356 34 L378 34 L478 34 L500 34 L608 34 L660 34 L660 110 L700 110"/></circle>
+    </svg>
+    <figcaption>图 4-1 · Plug 管线：请求依次穿过 Logger、Static，再由 match/dispatch 分派。<code>/ws</code> 登记升级后，Bandit 让该连接切换到 WebSocket/WSHandler；未匹配路径进入 404 兜底。</figcaption>
+  </figure>
+
+  <div class="callout pitfall reveal">
+    <h5>最容易踩的坑：升级之后 conn 就「死」了</h5>
+    <p><code>WebSockAdapter.upgrade</code> 返回的 conn 状态是 <code>:upgraded</code>，不能再 <code>send_resp</code>。所以任何「升级前要做的检查」（比如鉴权、取参数）都必须在 <code>upgrade</code> 调用<b>之前</b>完成——这正是我们先把 <code>fetch_query_params</code> 放在前面的原因。</p>
+  </div>
+</section>
+
+<section class="chapter" id="ch5" data-key="ch5" data-title="WSHandler：一个 session 的一生">
+  <div class="chapter-head"><span class="ch-n">第 5 章</span><h2>WSHandler：一个 session 的一生</h2></div>
+
+  <div class="chapter-lead reveal">
+    <p class="lead-title">升级完成之后，这段代码就活在一个属于这个连接的进程里。</p>
+    <p>第 4 章末尾，Bandit 完成 101 握手；在 HTTP/1 路径上，原连接进程切换到 WebSocket handler，并调用 <code>WSHandler.init/1</code>，不是升级后再开一个 ws 进程。本模块实现 <code>init</code>、<code>handle_in</code>、<code>handle_info</code> 三个必需回调，以及可选的 <code>terminate</code>；WebSock 行为另一个可选回调 <code>handle_control/2</code> 未实现。</p>
+  </div>
+
+  <div class="callout note reveal">
+    <h5>先记住一个事实：这段代码跑在谁的进程里</h5>
+    <p>Bandit 的 WebSocket 实现（<code>Bandit.WebSocket.Connection</code>）在连接进程里调用我们的回调。所以 <code>self()</code> 就是「这个连接的进程」；别人 <code>send(ws_pid, msg)</code> 时，<code>handle_info</code> 会被调用——这正是第 7 章 Prompter 推音频给客户端用的通道。</p>
+  </div>
+
+  <div class="wt reveal" data-file="lib/voice_chat/ws_handler.ex">
+    <div class="wt-head">
+      <span class="wt-path">lib/voice_chat/ws_handler.ex<span class="wt-size">· 源码全文 · 会话生命周期</span></span>
+      <span class="wt-ctl">
+        <button class="wt-step" data-dir="-1">◀</button>
+        <span class="wt-pos">0/0</span>
+        <button class="wt-step" data-dir="1">▶</button>
+        <button class="wt-play primary">▶ 自动播放</button>
+        <button class="wt-reset">重置</button>
+      </span>
+    </div>
+    <div class="wt-body">
+      <pre class="wt-code">defmodule VoiceChat.WSHandler do
+  @moduledoc &quot;&quot;&quot;
+  WebSocket 会话处理器（WebSock 回调模块，运行在 Bandit 的 ws 进程中）。
+
+  每个连接即一个新 session：
+  - `init/1` 启动录音进程与提示音进程，并把 session 注册到 Registry；
+  - 二进制帧（麦克风音频块）转发给录音进程落盘；
+  - 文本帧为 JSON 控制消息（config / text 等）；
+  - `handle_info` 响应提示音进程发来的下发请求（文本 + 音频）。
+  &quot;&quot;&quot;
+
+  @behaviour WebSock
+
+  require Logger
+
+  @impl true
+  def init(%{query_params: query_params}) do
+    session_id = VoiceChat.SessionId.sanitize(query_params[&quot;session&quot;])
+    ws_pid = self()
+
+    # 先占用最终 session id，再用它启动录音进程，避免重名连接写入旧 id 的文件。
+    session_id = register_session(session_id, ws_pid)
+    recorder = VoiceChat.Recorder.start(session_id, ws_pid)
+
+    {_, _} =
+      Registry.update_value(
+        VoiceChat.SessionRegistry,
+        session_id,
+        &amp;Map.put(&amp;1, :recorder, recorder)
+      )
+
+    prompter = VoiceChat.Prompter.start(ws_pid)
+
+    Logger.info(&quot;session opened id=#{session_id} ws_pid=#{inspect(ws_pid)}&quot;)
+
+    session_message = Jason.encode!(%{type: &quot;session&quot;, session: session_id})
+    state = %{session_id: session_id, ws_pid: ws_pid, recorder: recorder, prompter: prompter}
+
+    {:push, {:text, session_message}, state}
+  end
+
+  defp register_session(session_id, ws_pid) when is_pid(ws_pid) do
+    meta = %{ws_pid: ws_pid, started_at: DateTime.utc_now() |&gt; DateTime.to_iso8601()}
+    register_session(session_id, meta)
+  end
+
+  defp register_session(session_id, meta) do
+    case Registry.register(VoiceChat.SessionRegistry, session_id, meta) do
+      {:ok, _} -&gt;
+        session_id
+
+      {:error, {:already_registered, _pid}} -&gt;
+        register_session(VoiceChat.SessionId.generate(), meta)
+    end
+  end
+
+  @impl true
+  def handle_in({data, opcode: :binary}, state) do
+    VoiceChat.Recorder.chunk(state.recorder, data)
+    {:ok, state}
+  end
+
+  def handle_in({text, opcode: :text}, state) do
+    case Jason.decode(text) do
+      {:ok, %{&quot;type&quot; =&gt; &quot;config&quot;} = config} -&gt;
+        VoiceChat.Recorder.config(state.recorder, config)
+        {:ok, state}
+
+      {:ok, %{&quot;type&quot; =&gt; &quot;text&quot;, &quot;text&quot; =&gt; t}} when is_binary(t) -&gt;
+        # 模拟聊天：回一句 echo
+        reply = Jason.encode!(%{type: &quot;text&quot;, message: &quot;收到: #{t}&quot;, session: state.session_id})
+        {:push, {:text, reply}, state}
+
+      {:ok, _other} -&gt;
+        {:ok, state}
+
+      {:error, _} -&gt;
+        Logger.warning(&quot;bad json frame session=#{state.session_id}&quot;)
+        {:ok, state}
+    end
+  end
+
+  @impl true
+  def handle_info({:send_binary, data}, state), do: {:push, {:binary, data}, state}
+  def handle_info({:send_text, text}, state), do: {:push, {:text, text}, state}
+  def handle_info(_msg, state), do: {:ok, state}
+
+  @impl true
+  def terminate(_reason, state) do
+    VoiceChat.Prompter.stop(state.prompter)
+
+    if VoiceChat.Recorder.stop(state.recorder) == {:error, :timeout} do
+      Logger.warning(&quot;recorder stop timed out session=#{state.session_id}&quot;)
+    end
+
+    Logger.info(&quot;session closed id=#{state.session_id}&quot;)
+    :ok
+  end
+end</pre>
+      <div class="wt-panel">
+        <div class="wt-card" data-lines="1-11">
+          <div class="wt-hd"><span class="wt-ln">L1–11</span> 模块文档：先写清「谁在什么时候调用我」</div>
+          <div class="wt-bd">
+            <p><code>@moduledoc</code> 不只是注释——<code>mix docs</code> 会生成文档，而更重要的是一开始就想清楚回调的职责边界。</p>
+            <p class="why">WebSock 回调的「触发者」各不相同：init 由连接建立触发、handle_in 由客户端帧触发、handle_info 由别的进程发消息触发、terminate 由连接关闭触发。文档把这些写清楚，后面每行代码都有的放矢。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="12-13">
+          <div class="wt-hd"><span class="wt-ln">L12–13</span> <code>@behaviour WebSock</code></div>
+          <div class="wt-bd">
+            <p>声明「我实现了 WebSock 这个行为」。编译器会按行为定义检查回调并对缺失或不匹配给出警告；本项目实现必需的 <code>init/1</code>、<code>handle_in/2</code>、<code>handle_info/2</code>，以及 <code>terminate/2</code>。</p>
+            <p class="why">行为（behaviour）类似一份回调接口：适配层把协议事件翻译成函数调用，所以本项目业务模块无需自行实现 RFC 6455 的握手与帧解析。</p>
+            <p class="rel">关联：<code>websock</code> 是间接依赖里的行为定义方，<code>websock_adapter</code> 负责把 Plug/Bandit 的升级接进来。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="14-15">
+          <div class="wt-hd"><span class="wt-ln">L14–15</span> <code>require Logger</code></div>
+          <div class="wt-bd">
+            <p>引入 <code>Logger</code> 宏（<code>Logger.info/1</code> 等其实是宏，需要 require）。</p>
+            <p class="why">细节：为什么是 require 不是 import/alias？因为 Logger 的 API 是宏（延迟求值 + 编译期裁剪日志级别），宏必须 require。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="16-17">
+          <div class="wt-hd"><span class="wt-ln">L16–17</span> <code>init/1</code>：session 的出生</div>
+          <div class="wt-bd">
+            <p>连接建立后调用一次。参数是第 4 章 upgrade 时传的 <code>%{query_params: …}</code>，用模式匹配直接解包。<code>@impl true</code> 标记这是行为回调。</p>
+            <p class="why">「每个连接 = 一个新 session」就发生在这里：每连接进程各调一次 init，天然隔离，不需要 session 池、不需要锁。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="18">
+          <div class="wt-hd"><span class="wt-ln">L18</span> session id：来自查询参数或自动生成</div>
+          <div class="wt-bd">
+            <p><code>VoiceChat.SessionId.sanitize(query_params["session"])</code>：缺少或清洗后为空时自动生成；其他输入把非字母数字/下划线/连字符替换为 <code>_</code>，并截到最多 64 个字符。</p>
+            <p class="why">用户输入永远不可信：id 会拼进文件名（第 6 章 <code>build_path</code>），不清洗就可能写出路径穿越。这是安全习惯，不是功能。</p>
+            <p class="rel">关联：<code>lib/voice_chat/session_id.ex</code>；第 6 章文件名拼接。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="19-20">
+          <div class="wt-hd"><span class="wt-ln">L19–20</span> <code>ws_pid = self()</code></div>
+          <div class="wt-bd">
+            <p>记下当前进程 pid——就是「这个连接的进程」。它会被交给 Recorder/Prompter，让它们能发消息回来（走 <code>handle_info</code>）。</p>
+            <p class="why">pid 是定位进程的句柄；<code>send/2</code> 把异步消息放进它的邮箱。它和同步“方法调用”并不等价：没有返回值，也不会替调用方提供背压。</p>
+            <p class="rel">关联：第 6 章 <code>trap_exit</code> 里对比的 <code>from</code> 就是它；第 7 章 <code>Process.alive?(ws_pid)</code>。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="21-24">
+          <div class="wt-hd"><span class="wt-ln">L21–24</span> 先确定最终 id，再启动 Recorder</div>
+          <div class="wt-bd">
+            <p>先用 <code>register_session/2</code> 占用最终 session id，再把这个 id 交给 <code>Recorder.start/2</code>。这样重名连接换到新 id 时，Registry、WebSock state 和录音文件名前缀仍然一致。</p>
+            <p class="why">Recorder 内部用 <code>spawn_link</code>。ws 异常退出时，Recorder 因 <code>trap_exit</code> 收到 EXIT 消息并收尾；反方向若 Recorder 异常退出，link 也会把故障传播给连接进程。</p>
+            <p class="rel">关联：第 6、7 章整章；第 0 章旅程图的 spawn_link 虚线。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="25-33">
+          <div class="wt-hd"><span class="wt-ln">L25–33</span> 补齐 Registry 元数据，再启动 Prompter</div>
+          <div class="wt-bd">
+            <p><code>Registry.update_value/3</code> 把刚得到的 recorder pid 加入元数据；随后 <code>Prompter.start/1</code> 创建另一个 link 到 ws 的辅助进程。</p>
+            <p class="why">Registry 的价值：<code>/sessions</code> 调试接口（第 4 章）能实时列出活跃会话，且进程退出时 Registry 自动清理条目——不需要手动 deregister，少一类「忘记清理」的 bug。</p>
+            <p class="rel">关联：第 3 章 Registry 子进程；第 4 章 <code>Registry.select</code>。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="34-41">
+          <div class="wt-hd"><span class="wt-ln">L34–41</span> 首帧确认实际 session id</div>
+          <div class="wt-bd">
+            <p>日志记录连接后，服务端把最终 session id 编成 <code>{"type":"session",…}</code>，同时构造包含三个 pid 的 state，并从 <code>init/1</code> 返回一次文本 push。WebSock 后续回调都会收到这份 state。</p>
+            <p class="why">客户端请求的 id 可能因冲突被替换，不能继续把本地候选值当真；首帧把 Registry 与文件名实际使用的 id 回告页面，页面再更新显示。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="42-56">
+          <div class="wt-hd"><span class="wt-ln">L42–56</span> 唯一注册：冲突时递归换 id</div>
+          <div class="wt-bd">
+            <p>先注册包含 ws pid 和开始时间的 meta；若唯一键已被占用，就生成新 id 后递归重试。注册项属于当前连接进程，连接退出时 Registry 自动删除。</p>
+            <p class="why">先注册、再启动依赖 id 的 Recorder，避免了“展示 id 已换新、文件仍用旧 id”的分裂状态。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="57-62">
+          <div class="wt-hd"><span class="wt-ln">L57–62</span> <code>handle_in</code>：二进制帧 = 音频块</div>
+          <div class="wt-bd">
+            <p>客户端发来的二进制帧（<code>{data, opcode: :binary}</code>）就是一块音频，直接 <code>VoiceChat.Recorder.chunk(state.recorder, data)</code> 转发给录音进程，然后 <code>{:ok, state}</code> 继续。</p>
+            <p class="why"><code>chunk/2</code> 只是异步 <code>send</code>，所以磁盘写入不在连接进程中执行；代价是当前实现没有背压，Recorder 跟不上时消息会积在邮箱里。</p>
+            <p class="rel">关联：第 6 章 write_chunk；第 9 章前端每次回调读取 4096 个输入采样帧，降采样后发一个二进制块。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="63-68">
+          <div class="wt-hd"><span class="wt-ln">L63–68</span> 文本帧 = JSON 控制消息</div>
+          <div class="wt-bd">
+            <p><code>Jason.decode</code> 解析 JSON，按 <code>type</code> 分派：<code>config</code> 转发给 Recorder（设置格式/采样率）。</p>
+            <p class="why">当前协议约定二进制帧承载音频，文本帧承载 JSON 控制消息；这是清晰的类型分工，但仍需由两端共同维护，并不会由 WebSocket 自动验证内容语义。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="69-73">
+          <div class="wt-hd"><span class="wt-ln">L69–73</span> 文本回显：协议演示</div>
+          <div class="wt-bd">
+            <p>收到 <code>{"type":"text","text":t}</code> 就回一条 <code>{"type":"text","message":"收到: …"}</code>。当前网页没有文本输入框，这条分支是协议/测试脚本可调用的回显示例，页面只会把收到的文本写进消息日志。</p>
+            <p class="why"><code>guard</code>（<code>when is_binary(t)</code>）挡掉缺字段的脏消息；<code>{:push, msg, state}</code> 是 WebSock 的「立即下发」返回。</p>
+            <p class="rel">关联：第 9 章 <code>handleText</code>；<code>scripts/ws_advanced_test.mjs</code> 会实际发送 text 消息。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="74-82">
+          <div class="wt-hd"><span class="wt-ln">L74–82</span> 其他 JSON 与坏消息</div>
+          <div class="wt-bd">
+            <p>未知 type 静默忽略；解析失败的帧打一条 warning。</p>
+            <p class="why">协议要宽容：客户端（尤其浏览器）偶尔发怪帧，别让一个坏帧杀掉整个连接。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="83-87">
+          <div class="wt-hd"><span class="wt-ln">L83–87</span> <code>handle_info</code>：别人给我的消息</div>
+          <div class="wt-bd">
+            <p>Prompter 每轮等待约 3 秒后，依次发送 <code>{:send_text, json}</code> 和 <code>{:send_binary, audio}</code>；这里把它们转换为 WebSock 的 <code>{:push, …}</code> 返回值。</p>
+            <p class="why">持有连接 pid 的进程可以向其邮箱发送约定消息，无需持有底层 socket 句柄；WSHandler 再把这些消息翻译成 WebSock push。当前项目的周期提示走这条路。</p>
+            <p class="rel">关联：第 7 章 Prompter 的 send 调用——两边是配对的。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="88-99">
+          <div class="wt-hd"><span class="wt-ln">L88–99</span> <code>terminate</code>：有界等待录音收尾</div>
+          <div class="wt-bd">
+            <p>先异步停止 Prompter，再调用 <code>Recorder.stop/1</code>；后者请求 finalize 并等待 Recorder 退出，最长 5 秒。超时只记录 warning，随后连接回调返回。</p>
+            <p class="why">常规成功路径因此有时间完成 WAV 回填；不过 stop 只观察 DOWN、没有检查退出 reason，也不是持久化 ACK，不能单凭 <code>:ok</code> 证明写盘成功。<code>terminate/2</code> 本身也并非所有故障下都保证执行。</p>
+            <p class="rel">关联：第 6 章 <code>stop/1</code>、monitor 与 finalize；第 0 章旅程图的断开收尾。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <figure class="figwrap reveal">
+    <svg viewBox="0 0 880 160" role="img" aria-label="session 生命周期四阶段">
+      <defs>
+        <marker id="ah5" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--line)"/></marker>
+      </defs>
+      <rect x="10" y="30" width="190" height="100" rx="12" fill="var(--accent-soft)" stroke="var(--accent)"/>
+      <text x="105" y="58" font-size="13" fill="var(--accent)" text-anchor="middle" font-weight="700">① 出生 · 升级</text>
+      <text x="105" y="80" font-size="11" fill="var(--muted)" text-anchor="middle">/ws → 101</text>
+      <text x="105" y="97" font-size="11" fill="var(--muted)" text-anchor="middle">连接进程切换 handler</text>
+      <text x="105" y="114" font-size="11" fill="var(--muted)" text-anchor="middle">init/1 被调用</text>
+
+      <rect x="230" y="30" width="190" height="100" rx="12" fill="var(--ok-soft)" stroke="var(--ok)"/>
+      <text x="325" y="58" font-size="13" fill="var(--ok)" text-anchor="middle" font-weight="700">② 组建家庭</text>
+      <text x="325" y="80" font-size="11" fill="var(--muted)" text-anchor="middle">先占用 Registry session id</text>
+      <text x="325" y="97" font-size="11" fill="var(--muted)" text-anchor="middle">spawn_link 两个帮手</text>
+      <text x="325" y="114" font-size="11" fill="var(--muted)" text-anchor="middle">首帧回告实际 id</text>
+
+      <rect x="450" y="30" width="190" height="100" rx="12" fill="var(--panel)" stroke="var(--accent2)"/>
+      <text x="545" y="58" font-size="13" fill="var(--accent2)" text-anchor="middle" font-weight="700">③ 过日常</text>
+      <text x="545" y="80" font-size="11" fill="var(--muted)" text-anchor="middle">handle_in：音频块上行</text>
+      <text x="545" y="97" font-size="11" fill="var(--muted)" text-anchor="middle">handle_info：提示音下行</text>
+      <text x="545" y="114" font-size="11" fill="var(--muted)" text-anchor="middle">（可以持续几小时）</text>
+
+      <rect x="670" y="30" width="190" height="100" rx="12" fill="var(--danger-soft)" stroke="var(--danger)"/>
+      <text x="765" y="58" font-size="13" fill="var(--danger)" text-anchor="middle" font-weight="700">④ 常规收尾</text>
+      <text x="765" y="80" font-size="11" fill="var(--muted)" text-anchor="middle">terminate/2 被调用</text>
+      <text x="765" y="97" font-size="11" fill="var(--muted)" text-anchor="middle">先停 Prompter</text>
+      <text x="765" y="114" font-size="11" fill="var(--muted)" text-anchor="middle">等待 Recorder（最多 5s）</text>
+
+      <path d="M200 80 H226" stroke="var(--line)" stroke-width="1.6" fill="none" marker-end="url(#ah5)"/>
+      <path d="M420 80 H446" stroke="var(--line)" stroke-width="1.6" fill="none" marker-end="url(#ah5)"/>
+      <path d="M640 80 H666" stroke="var(--line)" stroke-width="1.6" fill="none" marker-end="url(#ah5)"/>
+      <circle cx="213" cy="80" r="4" fill="var(--accent)" opacity="0">
+        <animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;.12;.16;.24;1" dur="4.8s" repeatCount="indefinite"/>
+        <animate attributeName="r" values="3;3;6;3;3" keyTimes="0;.12;.16;.24;1" dur="4.8s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="433" cy="80" r="4" fill="var(--accent2)" opacity="0">
+        <animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;.42;.46;.54;1" dur="4.8s" repeatCount="indefinite"/>
+        <animate attributeName="r" values="3;3;6;3;3" keyTimes="0;.42;.46;.54;1" dur="4.8s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="653" cy="80" r="4" fill="var(--danger)" opacity="0">
+        <animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;.72;.76;.84;1" dur="4.8s" repeatCount="indefinite"/>
+        <animate attributeName="r" values="3;3;6;3;3" keyTimes="0;.72;.76;.84;1" dur="4.8s" repeatCount="indefinite"/>
+      </circle>
+    </svg>
+    <figcaption>图 5-1 · 一个 session 的常规路径：已有连接进程完成升级并 init → 先占用实际 id、两次 spawn_link 并回告 id → handle_in/handle_info 处理事件 → 常规关闭路径调用可选的 terminate，在 5 秒上限内等待 Recorder 退出并尝试收尾。图中是本模块实现的四类回调，不含另一个可选回调 handle_control。</figcaption>
+  </figure>
+</section>
+
+<section class="chapter" id="ch6" data-key="ch6" data-title="Recorder：把音频流变成文件">
+  <div class="chapter-head"><span class="ch-n">第 6 章</span><h2>Recorder：把音频流变成文件</h2></div>
+
+  <div class="chapter-lead reveal">
+    <p class="lead-title">225 行，用一个 receive 循环把格式选择、文件写入和有界收尾串起来。</p>
+    <p>Recorder 为了教学直接使用 <code>spawn_link + receive</code>，没有套 GenServer。它展示 <b>link / trap_exit</b>、<b>monitor 等待退出</b>、<b>惰性打开</b>、<b>PCM 帧对齐与 WAV 回填</b>；也保留了裸进程方案缺少标准调试、监督与背压的局限。</p>
+  </div>
+
+  <div class="wt reveal" data-file="lib/voice_chat/recorder.ex">
+    <div class="wt-head">
+      <span class="wt-path">lib/voice_chat/recorder.ex<span class="wt-size">· 源码全文 · 音频落盘进程</span></span>
+      <span class="wt-ctl">
+        <button class="wt-step" data-dir="-1">◀</button>
+        <span class="wt-pos">0/0</span>
+        <button class="wt-step" data-dir="1">▶</button>
+        <button class="wt-play primary">▶ 自动播放</button>
+        <button class="wt-reset">重置</button>
+      </span>
+    </div>
+    <div class="wt-body">
+      <pre class="wt-code">defmodule VoiceChat.Recorder do
+  @moduledoc &quot;&quot;&quot;
+  每个 session 的音频落盘进程（轻量进程）。
+
+  接收 `{:chunk, binary}` 持续写入文件；收到 `:stop` 或所属 ws 进程退出时，
+  补齐 WAV 头并关闭文件。PCM16 数据在 finalize 时包装成标准 .wav 文件，
+  Opus 的 WebM / Ogg 容器数据则原样拼接保存。
+  &quot;&quot;&quot;
+
+  require Logger
+
+  @stop_timeout 5_000
+  @wav_header_size 44
+
+  @doc &quot;启动录音进程，与调用进程（ws 进程）link。&quot;
+  def start(session_id, ws_pid) do
+    spawn_link(fn -&gt; init_loop(session_id, ws_pid) end)
+  end
+
+  @doc &quot;设置音频格式 / 采样率等元信息。&quot;
+  def config(pid, config) when is_pid(pid), do: send(pid, {:config, config})
+
+  @doc &quot;写入一块音频数据。&quot;
+  def chunk(pid, data) when is_pid(pid) and is_binary(data), do: send(pid, {:chunk, data})
+
+  @doc &quot;请求停止并等待进程退出；常规 `:stop` 分支先 finalize，超时返回 `{:error, :timeout}`。&quot;
+  def stop(pid) when is_pid(pid) do
+    monitor = Process.monitor(pid)
+    send(pid, :stop)
+
+    receive do
+      {:DOWN, ^monitor, :process, ^pid, _reason} -&gt;
+        :ok
+    after
+      @stop_timeout -&gt;
+        Process.demonitor(monitor, [:flush])
+        {:error, :timeout}
+    end
+  end
+
+  defp init_loop(session_id, ws_pid) do
+    # trap 退出信号：ws 进程异常退出时也能 finalize 文件
+    Process.flag(:trap_exit, true)
+
+    loop(%{
+      session_id: session_id,
+      ws_pid: ws_pid,
+      format: :pcm16,
+      sample_rate: 16_000,
+      channels: 1,
+      io: nil,
+      path: nil,
+      bytes: 0,
+      finalized: false
+    })
+  end
+
+  defp loop(state) do
+    receive do
+      {:config, config} -&gt;
+        loop(apply_config(state, config))
+
+      {:chunk, data} -&gt;
+        loop(write_chunk(state, data))
+
+      :stop -&gt;
+        finalize_and_exit(state)
+
+      {:EXIT, from, _reason} -&gt;
+        if from == state.ws_pid, do: finalize_and_exit(state), else: loop(state)
+    end
+  end
+
+  # --- config ---------------------------------------------------------------
+
+  defp apply_config(state, config) when is_map(config) do
+    format = container_format(config)
+
+    sample_rate = config[&quot;sample_rate&quot;] || state.sample_rate
+    channels = config[&quot;channels&quot;] || state.channels
+
+    {sample_rate, channels} =
+      if valid_wav_params?(sample_rate, channels) do
+        {sample_rate, channels}
+      else
+        Logger.warning(
+          &quot;invalid audio config ignored session=#{state.session_id} &quot; &lt;&gt;
+            &quot;sample_rate=#{inspect(sample_rate)} channels=#{inspect(channels)}&quot;
+        )
+
+        {state.sample_rate, state.channels}
+      end
+
+    if state.io do
+      Logger.warning(
+        &quot;config ignored (file already open) session=#{state.session_id} format=#{inspect(format)}&quot;
+      )
+
+      state
+    else
+      %{state | format: format, sample_rate: sample_rate, channels: channels}
+    end
+  end
+
+  defp valid_wav_params?(sample_rate, channels)
+       when is_integer(sample_rate) and sample_rate &gt; 0 and sample_rate &lt;= 0xFFFF_FFFF and
+              is_integer(channels) and channels &gt; 0 and channels * 2 &lt;= 0xFFFF and
+              sample_rate * channels * 2 &lt;= 0xFFFF_FFFF,
+       do: true
+
+  defp valid_wav_params?(_sample_rate, _channels), do: false
+
+  defp container_format(%{&quot;format&quot; =&gt; &quot;opus&quot;, &quot;container&quot; =&gt; &quot;ogg&quot;}), do: :ogg
+  defp container_format(%{&quot;format&quot; =&gt; format}) when format in [&quot;opus&quot;, &quot;webm&quot;], do: :webm
+  defp container_format(%{&quot;format&quot; =&gt; &quot;ogg&quot;}), do: :ogg
+  defp container_format(_config), do: :pcm16
+
+  # --- writing --------------------------------------------------------------
+
+  defp write_chunk(%{io: nil} = state, data) do
+    case ensure_open(state) do
+      %{io: nil} = unopened -&gt; unopened
+      opened -&gt; write_chunk(opened, data)
+    end
+  end
+
+  defp write_chunk(state, data) do
+    :ok = :file.write(state.io, data)
+    %{state | bytes: state.bytes + byte_size(data)}
+  end
+
+  defp ensure_open(state) do
+    path = build_path(state)
+
+    case :file.open(path, [:write, :binary, :raw]) do
+      {:ok, io} -&gt;
+        case state.format do
+          :pcm16 -&gt;
+            # 先写占位头，finalize 时回填真实大小
+            :ok = :file.write(io, VoiceChat.Wav.header(state.sample_rate, state.channels, 0))
+
+          format when format in [:webm, :ogg] -&gt;
+            :ok
+        end
+
+        %{state | io: io, path: path}
+
+      {:error, reason} -&gt;
+        Logger.error(&quot;cannot open recording file #{path}: #{inspect(reason)}&quot;)
+        state
+    end
+  end
+
+  defp build_path(state) do
+    timestamp = System.system_time(:microsecond)
+    sequence = System.unique_integer([:positive, :monotonic])
+    ext = if state.format == :pcm16, do: &quot;wav&quot;, else: Atom.to_string(state.format)
+    dir = VoiceChat.recordings_dir()
+    Path.join(dir, &quot;#{state.session_id}_#{timestamp}_#{sequence}.#{ext}&quot;)
+  end
+
+  # --- finalize -------------------------------------------------------------
+
+  defp finalize_and_exit(state) do
+    finalize(state)
+    :ok
+  end
+
+  defp finalize(%{finalized: true} = state), do: state
+
+  defp finalize(%{io: nil} = state), do: %{state | finalized: true}
+
+  defp finalize(state) do
+    state =
+      case state.format do
+        :pcm16 -&gt; finalize_pcm(state)
+        format when format in [:webm, :ogg] -&gt; finalize_container(state)
+      end
+
+    %{state | finalized: true, io: nil}
+  end
+
+  defp finalize_pcm(state) do
+    frame_size = state.channels * 2
+    complete_bytes = state.bytes - rem(state.bytes, frame_size)
+    dropped_bytes = state.bytes - complete_bytes
+
+    if dropped_bytes &gt; 0 do
+      end_position = @wav_header_size + complete_bytes
+      {:ok, ^end_position} = :file.position(state.io, end_position)
+
+      :ok = :file.truncate(state.io)
+
+      Logger.warning(
+        &quot;dropped incomplete PCM frame session=#{state.session_id} bytes=#{dropped_bytes}&quot;
+      )
+    end
+
+    {:ok, 0} = :file.position(state.io, 0)
+
+    :ok =
+      :file.write(
+        state.io,
+        VoiceChat.Wav.header(state.sample_rate, state.channels, complete_bytes)
+      )
+
+    :ok = :file.close(state.io)
+
+    Logger.info(
+      &quot;recorded wav session=#{state.session_id} path=#{state.path} audio_bytes=#{complete_bytes}&quot;
+    )
+
+    %{state | bytes: complete_bytes}
+  end
+
+  defp finalize_container(state) do
+    :ok = :file.close(state.io)
+
+    Logger.info(
+      &quot;recorded container session=#{state.session_id} path=#{state.path} bytes=#{state.bytes}&quot;
+    )
+
+    state
+  end
+end</pre>
+      <div class="wt-panel">
+        <div class="wt-card" data-lines="1-19">
+          <div class="wt-hd"><span class="wt-ln">L1–19</span> 模块职责、常量与 <code>start/2</code></div>
+          <div class="wt-bd">
+            <p>模块文档先声明“收 chunk、在停止时收尾”的边界，<code>require Logger</code> 启用后文日志宏；随后定义 5 秒停止上限与 44 字节 WAV 头大小。<code>start/2</code> 用 <code>spawn_link</code> 运行 <code>init_loop</code>；在实际调用路径里，调用者与传入的 <code>ws_pid</code> 都是当前连接进程。</p>
+            <p class="why">link 会双向传播退出信号，但不等同于监督策略：Recorder 异常退出会影响 ws；ws 退出时 Recorder 则通过后面的 <code>trap_exit</code> 把信号转成消息并尝试收尾。</p>
+            <p class="rel">关联：第 5 章 L21–23 的调用方；第 3 章 Supervisor 在 link 之上还增加 child spec 与重启策略。</p>
+          </div>
+        </div>
+
+        <div class="wt-card" data-lines="20-25">
+          <div class="wt-hd"><span class="wt-ln">L20–25</span> config / chunk：异步邮箱 API</div>
+          <div class="wt-bd">
+            <p><code>config/2</code> 与 <code>chunk/2</code> 都把消息放入 Recorder 邮箱并立即返回；它们不等待接收方处理或磁盘写完。</p>
+            <p class="why">连接进程可以继续处理帧，但当前实现没有端到端背压；若写盘落后，chunk 会在 Recorder 邮箱中累积。</p>
+          </div>
+        </div>
+
+        <div class="wt-card" data-lines="26-40">
+          <div class="wt-hd"><span class="wt-ln">L26–40</span> <code>stop/1</code>：monitor + 5 秒有界等待</div>
+          <div class="wt-bd">
+            <p>先 monitor Recorder，再发送 <code>:stop</code>，等待对应 <code>:DOWN</code>；5 秒内未退出则清掉 monitor 并返回 <code>{:error, :timeout}</code>，但不会强杀 Recorder。</p>
+            <p class="why">monitor 先于 stop，避免错过极快退出。来自同一个 ws 进程的 config、chunk、stop 对同一 Recorder 保持发送顺序，因此常规路径会先处理此前入队的音频，再尝试 finalize。DOWN 只证明进程已退出；代码忽略 reason，不能据此断言收尾成功。</p>
+          </div>
+        </div>
+
+        <div class="wt-card" data-lines="41-57">
+          <div class="wt-hd"><span class="wt-ln">L41–57</span> trap_exit 与私有 state</div>
+          <div class="wt-bd">
+            <p>Recorder 启动后立刻启用 <code>trap_exit</code>，再进入带有 session id、ws pid、格式、采样参数、文件句柄、路径、字节数与 finalized 标志的 state map。</p>
+            <p class="why">默认格式是 PCM16 / 16kHz / 单声道，文件保持 <code>nil</code> 以便惰性打开。trap_exit 能处理 linked ws 的可传播退出信号，但无法抵御直接 <code>:kill</code> Recorder、VM/主机掉电或磁盘故障。</p>
+          </div>
+        </div>
+
+        <div class="wt-card" data-lines="58-75">
+          <div class="wt-hd"><span class="wt-ln">L58–75</span> <code>receive</code>：四路状态转移</div>
+          <div class="wt-bd">
+            <p>config 更新 state，chunk 写入后递归，<code>:stop</code> finalize 并退出；<code>{:EXIT, from, …}</code> 只在来自所属 ws pid 时收尾，其他退出消息继续循环。</p>
+            <p class="why">尾递归把新 state 带入下一轮；没有匹配消息时进程阻塞等待，不占用可运行时间片，但仍保留内存与邮箱资源。</p>
+          </div>
+        </div>
+
+        <div class="wt-card" data-lines="76-93">
+          <div class="wt-hd"><span class="wt-ln">L76–93</span> 配置：取值、验证、失败回退</div>
+          <div class="wt-bd">
+            <p>先把外部格式归一化，再从 JSON 取采样率与声道；<code>valid_wav_params?/2</code> 失败时记录 warning，并保留当前采样参数。</p>
+            <p class="why">这些字段最终会进入固定宽度 WAV 头。对正整数、block align 与 byte rate 做边界检查，可避免不可信 config 在位语法构造时溢出或触发异常。</p>
+          </div>
+        </div>
+
+        <div class="wt-card" data-lines="94-104">
+          <div class="wt-hd"><span class="wt-ln">L94–104</span> 文件已打开：拒绝中途换配置</div>
+          <div class="wt-bd">
+            <p>若 <code>state.io</code> 已存在，就警告并保持原 state；尚未打开时才写入归一化后的格式与 WAV 参数。</p>
+            <p class="why">PCM 头语义和容器扩展名在首次打开时已经确定，中途改格式会让同一文件前后矛盾，所以协议要求 config 先于首个音频块。</p>
+          </div>
+        </div>
+
+        <div class="wt-card" data-lines="105-119">
+          <div class="wt-hd"><span class="wt-ln">L105–119</span> 参数 guard 与容器归一化</div>
+          <div class="wt-bd">
+            <p>guard 检查采样率、声道数、block align 和 byte rate 能装入 RIFF/WAV 对应字段；容器函数把 Opus + Ogg 映为 <code>:ogg</code>，其余受支持的 Opus/WebM 映为 <code>:webm</code>，未知配置回到 PCM16。</p>
+            <p class="why">Opus 是编码，WebM/Ogg 是容器；分开记录后，后缀才能对应浏览器实际选择的 MIME 容器。</p>
+          </div>
+        </div>
+
+        <div class="wt-card" data-lines="120-131">
+          <div class="wt-hd"><span class="wt-ln">L120–131</span> 第一块惰性打开，之后持续追加</div>
+          <div class="wt-bd">
+            <p>第一块到来而 <code>io</code> 仍是 nil 时，先 <code>ensure_open</code>；成功才递归写当前块，失败则返回未打开 state。后续块直接 <code>:file.write</code> 并累加字节数。</p>
+            <p class="why">没有音频的连接不会留下空文件。发送方不等待这次写盘，因此邮箱增长仍是需要监控的容量边界。</p>
+          </div>
+        </div>
+
+        <div class="wt-card" data-lines="132-147">
+          <div class="wt-hd"><span class="wt-ln">L132–147</span> 打开文件：PCM 先写占位头</div>
+          <div class="wt-bd">
+            <p>以 raw binary 写模式打开唯一路径；PCM16 先写 data size 为 0 的 44 字节 WAV 头，WebM/Ogg 不加 WAV 头，然后把句柄与路径写回 state。</p>
+            <p class="why">流式 PCM 事先不知道最终长度，所以先占位、结束时回填。容器分块已经由 MediaRecorder 编码，服务端只追加其字节。</p>
+          </div>
+        </div>
+
+        <div class="wt-card" data-lines="148-153">
+          <div class="wt-hd"><span class="wt-ln">L148–153</span> 打开失败：丢当前块，下一块再试</div>
+          <div class="wt-bd">
+            <p>权限、路径或磁盘问题使 open 返回 error 时，只记日志并保留 <code>io: nil</code>；外层因此丢掉当前块，下一块到来才再次尝试。</p>
+            <p class="why">这样不会对同一 chunk 无限递归。策略是“连接继续、录音尽力而为”；生产环境还应配合告警、退避或关闭会话。</p>
+          </div>
+        </div>
+
+        <div class="wt-card" data-lines="154-163">
+          <div class="wt-hd"><span class="wt-ln">L154–163</span> 路径：微秒时间 + VM 内唯一序号</div>
+          <div class="wt-bd">
+            <p>按 <code>:pcm16 / :webm / :ogg</code> 选择后缀，用已清洗 session id、微秒时间戳和单调唯一整数组成文件名，再拼到配置的录音目录。</p>
+            <p class="why">时间戳便于追踪，<code>System.unique_integer</code> 在同一 VM 内消歧；它不是跨节点全局 id。</p>
+          </div>
+        </div>
+
+        <div class="wt-card" data-lines="164-168">
+          <div class="wt-hd"><span class="wt-ln">L164–168</span> finalize 后让进程退出</div>
+          <div class="wt-bd">
+            <p><code>finalize_and_exit/1</code> 调用收尾函数后返回 <code>:ok</code>，顶层匿名函数结束，Recorder 随之退出，monitor 观察到 DOWN。</p>
+            <p class="why">保存结果以日志与文件系统为准；即将关闭的 WebSocket 不是可靠的“录音完成”确认通道。</p>
+          </div>
+        </div>
+
+        <div class="wt-card" data-lines="169-182">
+          <div class="wt-hd"><span class="wt-ln">L169–182</span> 幂等边界与格式分派</div>
+          <div class="wt-bd">
+            <p>已 finalized 或从未打开文件时直接返回；否则按 PCM16 与 WebM/Ogg 分派到各自收尾函数，最后标记 finalized 并清空句柄。</p>
+            <p class="why">当前循环首次收尾后即退出，这些子句仍让 <code>finalize/1</code> 对“已完成/未打开”状态有明确结果。</p>
+          </div>
+        </div>
+
+        <div class="wt-card" data-lines="183-198">
+          <div class="wt-hd"><span class="wt-ln">L183–198</span> PCM 尾部只保留完整采样帧</div>
+          <div class="wt-bd">
+            <p>每帧大小是 <code>channels × 2</code> 字节。若总字节数不能整除帧大小，就把文件定位到最后一个完整帧，截断残余字节并记录 warning。</p>
+            <p class="why">WAV 的 block align 必须与数据对齐；宁可丢掉不足一帧的尾巴，也不能让头部宣称的数据结构与文件实际字节矛盾。</p>
+          </div>
+        </div>
+
+        <div class="wt-card" data-lines="199-215">
+          <div class="wt-hd"><span class="wt-ln">L199–215</span> 回填真实长度、关闭并记录</div>
+          <div class="wt-bd">
+            <p>文件指针回到 0，用完整帧字节数重建 WAV 头，再关闭句柄并记录路径；返回的 state 也改成截断后的真实字节数。</p>
+            <p class="why"><code>:file.position/2</code> 返回 <code>{:ok, position}</code>，代码按这个形状匹配。经典 RIFF 的 32 位长度字段要求单个 PCM data 小于约 4 GiB；<code>Wav.header/3</code> 会拒绝越界，本项目不自动分段，长录音需另做滚动文件或 RF64。</p>
+            <p class="rel">关联：第 8 章 <code>Wav.header/3</code> 的大小 guard。</p>
+          </div>
+        </div>
+
+        <div class="wt-card" data-lines="216-225">
+          <div class="wt-hd"><span class="wt-ln">L216–225</span> WebM / Ogg：不改容器，只关闭</div>
+          <div class="wt-bd">
+            <p>容器模式不写或回填 WAV 头，只关闭句柄并记录累计字节数。</p>
+            <p class="why">服务器不解码 Opus，只保存同一次 MediaRecorder 会话产生的连续容器分块；文件有效性仍取决于浏览器产出的流。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <figure class="figwrap reveal">
+    <svg viewBox="0 0 880 250" role="img" aria-label="ws 进程向 Recorder 发消息、Recorder 落盘示意">
+      <defs>
+        <marker id="ah6-ac" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/></marker>
+        <marker id="ah6-a2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent2)"/></marker>
+        <marker id="ah6-ok" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--ok)"/></marker>
+        <marker id="ah6m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--muted)"/></marker>
+      </defs>
+
+      <rect x="16" y="70" width="170" height="96" rx="12" fill="var(--panel)" stroke="var(--accent)"/>
+      <text x="101" y="100" font-size="13.5" fill="var(--accent)" text-anchor="middle" font-weight="700">ws 进程</text>
+      <text x="101" y="120" font-size="11" fill="var(--muted)" text-anchor="middle">handle_in</text>
+      <text x="101" y="137" font-size="11" fill="var(--muted)" text-anchor="middle">（Bandit 连接进程）</text>
+
+      <rect x="380" y="70" width="190" height="96" rx="12" fill="var(--ok-soft)" stroke="var(--ok)"/>
+      <text x="475" y="100" font-size="13.5" fill="var(--ok)" text-anchor="middle" font-weight="700">Recorder 进程</text>
+      <text x="475" y="120" font-size="11" fill="var(--muted)" text-anchor="middle">receive 循环</text>
+      <text x="475" y="137" font-size="11" fill="var(--muted)" text-anchor="middle">trap_exit: true</text>
+
+      <rect x="700" y="70" width="164" height="96" rx="12" fill="var(--panel2)" stroke="var(--line)"/>
+      <text x="782" y="100" font-size="13.5" fill="var(--fg)" text-anchor="middle" font-weight="700">录音文件</text>
+      <text x="782" y="120" font-size="11" fill="var(--muted)" text-anchor="middle">*.wav / *.webm / *.ogg</text>
+      <text x="782" y="137" font-size="11" fill="var(--muted)" text-anchor="middle">priv/recordings/</text>
+
+      <path d="M186 100 H376" stroke="var(--accent)" stroke-width="1.8" fill="none" marker-end="url(#ah6-ac)"/>
+      <text x="281" y="84" font-size="11" fill="var(--accent)" text-anchor="middle">{:config, …}（一次）</text>
+      <path d="M186 120 H376" stroke="var(--accent)" stroke-width="1.8" fill="none" marker-end="url(#ah6-ac)"/>
+      <text x="281" y="152" font-size="11" fill="var(--accent)" text-anchor="middle">{:chunk, data}（持续到达）</text>
+      <path d="M186 140 H376" stroke="var(--accent2)" stroke-width="1.8" fill="none" marker-end="url(#ah6-a2)"/>
+      <text x="281" y="168" font-size="11" fill="var(--accent2)" text-anchor="middle">:stop；调用方等待 DOWN</text>
+
+      <path d="M570 120 H696" stroke="var(--ok)" stroke-width="1.8" fill="none" marker-end="url(#ah6-ok)"/>
+      <text x="633" y="104" font-size="11" fill="var(--ok)" text-anchor="middle">:file.write（追加）</text>
+
+      <path d="M101 60 V20 H475 V66" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="4 3" fill="none" marker-end="url(#ah6m)"/>
+      <text x="300" y="36" font-size="10.5" fill="var(--muted)" text-anchor="middle">link：ws 进程退出 → Recorder 收到 {:EXIT, …}</text>
+
+      <circle r="4" fill="var(--accent)"><animateMotion dur="1.6s" repeatCount="indefinite" path="M186 100 L376 100"/></circle>
+      <circle r="4" fill="var(--accent)"><animateMotion dur="2.4s" begin=".6s" repeatCount="indefinite" path="M186 120 L376 120"/></circle>
+      <circle r="4" fill="var(--accent2)"><animateMotion dur="2s" begin="1.2s" repeatCount="indefinite" path="M186 140 L376 140"/></circle>
+      <circle r="4" fill="var(--ok)"><animateMotion dur="1.2s" repeatCount="indefinite" path="M570 120 L696 120"/></circle>
+    </svg>
+    <figcaption>图 6-1 · config/chunk 由 ws 异步发送，Recorder 在自己的 receive 循环中写文件；常规关闭发送 :stop 后通过 monitor 等待 Recorder 退出，最长 5 秒。虚线表示 link 提供的异常退出收尾路径，但它不覆盖 Recorder 被直接 kill、VM 掉电或磁盘错误。</figcaption>
+  </figure>
+
+  <div class="callout why reveal">
+    <h5>为什么这里不用 GenServer</h5>
+    <p>这个教学项目用裸进程，是为了把邮箱、模式匹配和 trap_exit 完整展开。GenServer 不负责重启策略（Supervisor 才负责），但它提供标准的 call/cast、系统消息、调试与可观测接口，生产代码通常更易维护；Recorder 若需要查询状态、背压、统一遥测或独立监督，应优先评估 GenServer/动态监督，而不是把“裸进程更轻”当成选型口诀。</p>
+  </div>
+</section>
+
+<section class="chapter" id="ch7" data-key="ch7" data-title="Prompter：每 3 秒的轻量定时器">
+  <div class="chapter-head"><span class="ch-n">第 7 章</span><h2>Prompter：每 3 秒的轻量定时器</h2></div>
+
+  <div class="chapter-lead reveal">
+    <p class="lead-title">Prompter 选择 receive … after，实现“每轮等待 3 秒再推送”。</p>
+    <p>需求是「接收音频的同时，由另一个轻量进程周期性推送提示」。本实现无需额外调度库，但 <code>receive … after</code> 不是唯一写法；本章也会对比 <code>Process.send_after</code>，并说明当前周期会包含每轮发送耗时，因此是约 3 秒而非墙钟级精确定时。</p>
+  </div>
+
+  <div class="wt reveal" data-file="lib/voice_chat/prompter.ex">
+    <div class="wt-head">
+      <span class="wt-path">lib/voice_chat/prompter.ex<span class="wt-size">· 42 行 · 3 秒定时推送</span></span>
+      <span class="wt-ctl">
+        <button class="wt-step" data-dir="-1">◀</button>
+        <span class="wt-pos">0/0</span>
+        <button class="wt-step" data-dir="1">▶</button>
+        <button class="wt-play primary">▶ 自动播放</button>
+        <button class="wt-reset">重置</button>
+      </span>
+    </div>
+    <div class="wt-body">
+      <pre class="wt-code">defmodule VoiceChat.Prompter do
+  @moduledoc &quot;&quot;&quot;
+  每个 session 的提示音定时进程（轻量进程）。
+
+  每隔 3 秒向所属 ws 进程发送一次提示音（“好的”）音频字节，
+  由 ws 进程通过 WebSocket 推送给客户端播放。
+  &quot;&quot;&quot;
+
+  @interval 3_000
+
+  @doc &quot;启动提示音进程，与调用进程（ws 进程）link。&quot;
+  def start(ws_pid) do
+    spawn_link(fn -&gt; loop(ws_pid, VoiceChat.PromptAudio.bytes()) end)
+  end
+
+  @doc &quot;停止提示音进程。&quot;
+  def stop(pid) when is_pid(pid), do: send(pid, :stop)
+
+  defp loop(ws_pid, audio) do
+    receive do
+      :stop -&gt; :ok
+    after
+      @interval -&gt;
+        if Process.alive?(ws_pid) do
+          send(
+            ws_pid,
+            {:send_text,
+             Jason.encode!(%{
+               type: &quot;prompt&quot;,
+               message: &quot;好的&quot;,
+               at: System.system_time(:second)
+             })}
+          )
+
+          send(ws_pid, {:send_binary, audio})
+          loop(ws_pid, audio)
+        else
+          :ok
+        end
+    end
+  end
+end</pre>
+      <div class="wt-panel">
+        <div class="wt-card" data-lines="1-8">
+          <div class="wt-hd"><span class="wt-ln">L1–8</span> 文档：先写清「每 3 秒向 ws 进程发消息」</div>
+          <div class="wt-bd">
+            <p>一句话说清职责：本进程<b>不碰 socket</b>，只负责定时往 ws 进程发两条消息（文本 + 音频），下发由第 5 章的 <code>handle_info</code> 完成。</p>
+            <p class="why">职责分离的边界很干净：Prompter 管「什么时候发」，WSHandler 管「怎么发出去」。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="9-10">
+          <div class="wt-hd"><span class="wt-ln">L9–10</span> <code>@interval 3_000</code>：模块属性即常量</div>
+          <div class="wt-bd">
+            <p>模块属性（<code>@name value</code>）在编译期被替换成字面量。数字下划线（<code>3_000</code>）只是可读性，等于 3000 毫秒。</p>
+            <p class="why">把「魔法数字」提成具名属性：改间隔只改一行。这比在循环里写死 <code>3000</code> 好维护得多。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="11-15">
+          <div class="wt-hd"><span class="wt-ln">L11–15</span> <code>start/1</code>：子进程读一次音频再进循环</div>
+          <div class="wt-bd">
+            <p><code>spawn_link</code> 创建的子进程调用 <code>PromptAudio.bytes()</code> 读一次当前约 13KB 的文件，再让循环复用同一个 binary；大型 binary 通常由 BEAM 以引用计数方式共享底层数据。</p>
+            <p class="why"><code>start/1</code> 返回 pid，并不等待子进程确认读取成功；若 <code>File.read!</code> 失败，linked Prompter 会异常退出并影响 ws。读取只发生在进循环前，不会叠加到每个 3 秒周期。</p>
+            <p class="rel">关联：第 8 章 PromptAudio.bytes；第 3 章 ensure! 的 fail-fast 哲学。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="16-18">
+          <div class="wt-hd"><span class="wt-ln">L16–18</span> <code>stop/1</code></div>
+          <div class="wt-bd">
+            <p>往进程发 <code>:stop</code>——进程收到后从 <code>:stop -> :ok</code> 分支退出。</p>
+            <p class="why">Prompter.stop 是 fire-and-forget；Recorder.stop 也发送 <code>:stop</code>，但额外用 monitor 等待其退出。两者都避免直接强杀，只是确认语义不同。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="19-22">
+          <div class="wt-hd"><span class="wt-ln">L19–22</span> 循环：先收消息，等不到就等 3 秒</div>
+          <div class="wt-bd">
+            <p><code>receive do :stop -> :ok after @interval -> … end</code> 会选择性接收 <code>:stop</code>；若 3000ms 内没有匹配消息，就执行 after 分支。</p>
+            <p class="why">等待期间进程不会占用调度器执行时间，但仍保留堆、邮箱和计时状态。每次发送完成后才重新进入 receive，所以处理耗时会叠加到下一个周期。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="23-24">
+          <div class="wt-hd"><span class="wt-ln">L23–24</span> 每次先确认 ws 进程还活着</div>
+          <div class="wt-bd">
+            <p><code>if Process.alive?(ws_pid)</code>：ws 进程已退出就不发消息、直接 <code>:ok</code> 结束自己。</p>
+            <p class="why"><code>alive?</code> 只是发送前的快照，检查后进程仍可能立刻退出；向已死 pid 发送也不会抛错。真正的生命周期机制是 ws 在 <code>terminate</code> 中发 <code>:stop</code>，以及异常退出沿 link 传播；这里的检查只避免已明确死亡时继续下一轮。</p>
+            <p class="rel">关联：第 5 章 terminate 的 <code>Prompter.stop</code>；第 6 章 trap_exit 是同一问题的另一种解法。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="25-34">
+          <div class="wt-hd"><span class="wt-ln">L25–34</span> 先发一条文本通知</div>
+          <div class="wt-bd">
+            <p><code>send(ws_pid, {:send_text, Jason.encode!(%{type: "prompt", message: "好的", at: …})})</code>——JSON 里带消息类型和时间戳，前端据此在聊天框显示「服务端提示音: 好的」。</p>
+            <p class="why">文本帧让前端有可展示、可统计的提示，随后同一发送者再发真正的音频；二者相对顺序有保证，但 ws 邮箱仍可能穿插其他发送者的消息。</p>
+            <p class="rel">关联：第 5 章 handle_info <code>{:send_text, …}</code>；第 9 章 handleText 的 <code>type: "prompt"</code>。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="35-36">
+          <div class="wt-hd"><span class="wt-ln">L35–36</span> 再发音频，然后进入下一轮</div>
+          <div class="wt-bd">
+            <p><code>send(ws_pid, {:send_binary, audio})</code> 发提示音字节，<code>loop(ws_pid, audio)</code> 尾递归回到 receive——从此刻再等待 3 秒。</p>
+            <p class="why">长生命周期的 receive 循环通常用尾递归表达；尾调用优化会复用调用帧，因此不会因每轮递归而持续增长栈。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="37-42">
+          <div class="wt-hd"><span class="wt-ln">L37–42</span> ws 已死的分支</div>
+          <div class="wt-bd">
+            <p><code>:ok</code> 结束进程——prompter 的生命随连接结束。</p>
+            <p class="why">连接没了提示音就没意义，主动退出比空转强。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <figure class="figwrap reveal">
+    <svg viewBox="0 0 560 170" role="img" aria-label="3 秒定时圆环示意">
+      <defs>
+        <marker id="ah7-muted" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--muted)"/></marker>
+        <marker id="ah7-a2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent2)"/></marker>
+      </defs>
+      <circle cx="80" cy="85" r="46" fill="none" stroke="var(--line)" stroke-width="7"/>
+      <circle cx="80" cy="85" r="46" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="289" transform="rotate(-90 80 85)" class="ring-progress">
+        <animate attributeName="stroke-dashoffset" values="289;0" dur="3s" repeatCount="indefinite"/>
+      </circle>
+      <text x="80" y="92" font-size="17" fill="var(--fg)" text-anchor="middle" font-weight="700">3s</text>
+      <circle cx="80" cy="39" r="4" fill="var(--accent2)" opacity="0">
+        <animate attributeName="opacity" values="0;0;1;0" keyTimes="0;.9;.94;1" dur="3s" repeatCount="indefinite"/>
+        <animate attributeName="r" values="3;3;7;3" keyTimes="0;.9;.94;1" dur="3s" repeatCount="indefinite"/>
+      </circle>
+      <text x="80" y="150" font-size="11" fill="var(--muted)" text-anchor="middle">receive … after 3000</text>
+
+      <path d="M150 78 H200" stroke="var(--muted)" stroke-width="1.4" fill="none" marker-end="url(#ah7-muted)"/>
+      <path d="M150 92 H200" stroke="var(--accent2)" stroke-width="1.4" fill="none" marker-end="url(#ah7-a2)"/>
+      <rect x="204" y="45" width="150" height="80" rx="12" fill="var(--panel2)" stroke="var(--line)"/>
+      <text x="279" y="72" font-size="12.5" fill="var(--fg)" text-anchor="middle" font-weight="700">ws 进程</text>
+      <text x="279" y="92" font-size="10.5" fill="var(--muted)" text-anchor="middle">{:send_text, …}</text>
+      <text x="279" y="108" font-size="10.5" fill="var(--muted)" text-anchor="middle">{:send_binary, 音频}</text>
+
+      <path d="M354 78 H420" stroke="var(--muted)" stroke-width="1.4" fill="none" marker-end="url(#ah7-muted)"/>
+      <path d="M354 92 H420" stroke="var(--accent2)" stroke-width="1.4" fill="none" marker-end="url(#ah7-a2)"/>
+      <rect x="424" y="45" width="120" height="80" rx="12" fill="var(--accent2-soft)" stroke="var(--accent2)"/>
+      <text x="484" y="74" font-size="12.5" fill="var(--accent2)" text-anchor="middle" font-weight="700">浏览器</text>
+      <text x="484" y="94" font-size="10.5" fill="var(--muted)" text-anchor="middle">handleText 显示提示</text>
+      <text x="484" y="110" font-size="10.5" fill="var(--muted)" text-anchor="middle">解码并播放音频</text>
+
+      <circle r="3.5" fill="var(--fg)" opacity="0">
+        <animateMotion dur="3s" repeatCount="indefinite" path="M150 78 H200" keyPoints="0;0;1;1" keyTimes="0;.86;.92;1" calcMode="linear"/>
+        <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;.84;.86;.94;1" dur="3s" repeatCount="indefinite"/>
+      </circle>
+      <circle r="3.5" fill="var(--accent2)" opacity="0">
+        <animateMotion dur="3s" repeatCount="indefinite" path="M150 92 H200" keyPoints="0;0;1;1" keyTimes="0;.89;.95;1" calcMode="linear"/>
+        <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;.87;.89;.97;1" dur="3s" repeatCount="indefinite"/>
+      </circle>
+      <circle r="3.5" fill="var(--fg)" opacity="0">
+        <animateMotion dur="3s" repeatCount="indefinite" path="M354 78 H420" keyPoints="0;0;1;1" keyTimes="0;.9;.96;1" calcMode="linear"/>
+        <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;.88;.9;.98;1" dur="3s" repeatCount="indefinite"/>
+      </circle>
+      <circle r="3.5" fill="var(--accent2)" opacity="0">
+        <animateMotion dur="3s" repeatCount="indefinite" path="M354 92 H420" keyPoints="0;0;1;1" keyTimes="0;.93;.99;1" calcMode="linear"/>
+        <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;.91;.93;.99;1" dur="3s" repeatCount="indefinite"/>
+      </circle>
+    </svg>
+    <figcaption>图 7-1 · 圆环表示约 3 秒的等待；周期末 Prompter 依次发送文本与音频，同一发送者保证二者相对顺序，但其他发送者的消息仍可穿插。发送完成后才开始下一轮，因此实际相邻推送间隔还包含本轮 JSON 编码与发送耗时；提示音字节只在进程启动时读取一次。</figcaption>
+  </figure>
+
+  <div class="callout analogy reveal">
+    <h5>类比：receive/after 就像车站等车</h5>
+    <p>Prompter 像等在站台上的人：<code>receive</code> 等待 <code>:stop</code>，<code>after 3000</code> 表示 3 秒没等到匹配消息就按超时路线出发。等待时不占用 CPU 时间片，但进程本身仍占内存并维护计时状态。</p>
+  </div>
+
+  <div class="callout note reveal">
+    <h5>对比：Process.send_after 的另一种写法</h5>
+    <p><code>Process.send_after(self(), :tick, 3000)</code> 会创建一次性定时信号，主 receive 可同时处理 <code>:tick</code> 与其他消息；需要取消时要保存 timer reference。<code>receive … after</code> 的超时与当前 receive 调用绑定，若循环还处理其他消息，何时重新进入 receive 会影响下一次超时。Prompter 只匹配 <code>:stop</code>，所以当前写法足够直接。</p>
+  </div>
+</section>
+
+<section class="chapter" id="ch8" data-key="ch8" data-title="二进制：WAV 头和提示音是怎么拼出来的">
+  <div class="chapter-head"><span class="ch-n">第 8 章</span><h2>二进制：WAV 头和提示音是怎么拼出来的</h2></div>
+
+  <div class="chapter-lead reveal">
+    <p class="lead-title">Elixir 的 bitstring 语法，让「拼二进制」跟拼字符串一样自然。</p>
+    <p>第 6 章 Recorder 落盘时写了一个 44 字节的 WAV 头——本章把它拆开看：<code>wav.ex</code> 怎么用一行 bitstring 构造出标准 RIFF 头，怎么现场合成一段「双音提示音」；<code>prompt_audio.ex</code> 怎么管理提示音文件。这也是全书第一次正面讲<b>二进制是 Elixir 一等公民</b>这件事。</p>
+  </div>
+
+  <h3 class="reveal">先认识 WAV 的 44 字节头</h3>
+  <div class="figwrap reveal">
+    <svg viewBox="0 0 900 120" role="img" aria-label="WAV 头部字节布局">
+      <g>
+        <g class="march" style="animation-delay:.1s"><rect x="30" y="20" width="56" height="44" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="58" y="48" font-size="10.5" fill="var(--accent)" text-anchor="middle" font-family="var(--mono)">52 49</text><text x="58" y="84" font-size="9.5" fill="var(--muted)" text-anchor="middle">"RI"</text></g>
+        <g class="march" style="animation-delay:.2s"><rect x="92" y="20" width="56" height="44" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="120" y="48" font-size="10.5" fill="var(--accent)" text-anchor="middle" font-family="var(--mono)">46 46</text><text x="120" y="84" font-size="9.5" fill="var(--muted)" text-anchor="middle">"FF"</text></g>
+        <g class="march" style="animation-delay:.3s"><rect x="170" y="20" width="84" height="44" rx="6" fill="var(--accent2-soft)" stroke="var(--accent2)"/><text x="212" y="48" font-size="10.5" fill="var(--accent2)" text-anchor="middle" font-family="var(--mono)">36+n (4B)</text><text x="212" y="84" font-size="9.5" fill="var(--muted)" text-anchor="middle">RIFF 块长（文件−8）</text></g>
+        <g class="march" style="animation-delay:.4s"><rect x="270" y="20" width="56" height="44" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="298" y="48" font-size="10.5" fill="var(--accent)" text-anchor="middle" font-family="var(--mono)">57 41</text><text x="298" y="84" font-size="9.5" fill="var(--muted)" text-anchor="middle">"WA"</text></g>
+        <g class="march" style="animation-delay:.5s"><rect x="332" y="20" width="56" height="44" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="360" y="48" font-size="10.5" fill="var(--accent)" text-anchor="middle" font-family="var(--mono)">56 45</text><text x="360" y="84" font-size="9.5" fill="var(--muted)" text-anchor="middle">"VE"</text></g>
+        <g class="march" style="animation-delay:.6s"><rect x="430" y="20" width="84" height="44" rx="6" fill="var(--ok-soft)" stroke="var(--ok)"/><text x="472" y="48" font-size="10.5" fill="var(--ok)" text-anchor="middle" font-family="var(--mono)">fmt 块</text><text x="472" y="84" font-size="9.5" fill="var(--muted)" text-anchor="middle">PCM=1 声道 采样率</text></g>
+        <g class="march" style="animation-delay:.7s"><rect x="540" y="20" width="56" height="44" rx="6" fill="var(--ok-soft)" stroke="var(--ok)"/><text x="568" y="48" font-size="10.5" fill="var(--ok)" text-anchor="middle" font-family="var(--mono)">字节率</text><text x="568" y="84" font-size="9.5" fill="var(--muted)" text-anchor="middle">sample×ch×2</text></g>
+        <g class="march" style="animation-delay:.8s"><rect x="620" y="20" width="56" height="44" rx="6" fill="var(--ok-soft)" stroke="var(--ok)"/><text x="648" y="48" font-size="10.5" fill="var(--ok)" text-anchor="middle" font-family="var(--mono)">块对齐</text><text x="648" y="84" font-size="9.5" fill="var(--muted)" text-anchor="middle">ch×2</text></g>
+        <g class="march" style="animation-delay:.9s"><rect x="700" y="20" width="56" height="44" rx="6" fill="var(--ok-soft)" stroke="var(--ok)"/><text x="728" y="48" font-size="10.5" fill="var(--ok)" text-anchor="middle" font-family="var(--mono)">16bit</text><text x="728" y="84" font-size="9.5" fill="var(--muted)" text-anchor="middle">位深</text></g>
+        <g class="march" style="animation-delay:1s"><rect x="790" y="20" width="84" height="44" rx="6" fill="var(--purple-soft)" stroke="var(--purple)"/><text x="832" y="48" font-size="10.5" fill="var(--purple)" text-anchor="middle" font-family="var(--mono)">data 块</text><text x="832" y="84" font-size="9.5" fill="var(--muted)" text-anchor="middle">后面全是 PCM</text></g>
+      </g>
+    </svg>
+    <figcaption>图 8-1 · 标准 PCM WAV 的 44 字节头：偏移 4 的字段是 RIFF chunk size（总文件字节数减 8），data size 才是后续 PCM 的字节数。</figcaption>
+  </div>
+
+  <div class="wt reveal" data-file="lib/voice_chat/wav.ex">
+    <div class="wt-head">
+      <span class="wt-path">lib/voice_chat/wav.ex<span class="wt-size">· 源码全文 · WAV 头 + 提示音合成</span></span>
+      <span class="wt-ctl">
+        <button class="wt-step" data-dir="-1">◀</button>
+        <span class="wt-pos">0/0</span>
+        <button class="wt-step" data-dir="1">▶</button>
+        <button class="wt-play primary">▶ 自动播放</button>
+        <button class="wt-reset">重置</button>
+      </span>
+    </div>
+    <div class="wt-body">
+      <pre class="wt-code">defmodule VoiceChat.Wav do
+  @moduledoc &quot;&quot;&quot;
+  16-bit PCM WAV 文件的头部构造与简单的提示音合成工具。
+  &quot;&quot;&quot;
+
+  @max_u32 0xFFFF_FFFF
+  @max_data_size @max_u32 - 36
+
+  @doc &quot;&quot;&quot;
+  生成 44 字节的 WAV(RIFF) 头部，PCM 16-bit 小端。
+
+  - `sample_rate`: 采样率，如 16000
+  - `channels`: 声道数，如 1
+  - `data_size`: PCM 数据字节数
+  &quot;&quot;&quot;
+  @spec header(pos_integer(), pos_integer(), non_neg_integer()) :: binary()
+  def header(sample_rate, channels, data_size)
+      when is_integer(sample_rate) and sample_rate &gt; 0 and sample_rate &lt;= @max_u32 and
+             is_integer(channels) and channels &gt; 0 and channels * 2 &lt;= 0xFFFF and
+             sample_rate * channels * 2 &lt;= @max_u32 and is_integer(data_size) and
+             data_size &gt;= 0 and data_size &lt;= @max_data_size do
+    byte_rate = sample_rate * channels * 2
+    block_align = channels * 2
+
+    &lt;&lt;&quot;RIFF&quot;, 36 + data_size::little-32, &quot;WAVE&quot;, &quot;fmt &quot;, 16::little-32, 1::little-16,
+      channels::little-16, sample_rate::little-32, byte_rate::little-32, block_align::little-16,
+      16::little-16, &quot;data&quot;, data_size::little-32&gt;&gt;
+  end
+
+  @doc &quot;&quot;&quot;
+  合成一段双音提示音（660Hz 短音 + 停顿 + 880Hz 短音），返回完整 WAV 文件字节。
+  在没有真人语音素材时的兜底方案。
+  &quot;&quot;&quot;
+  @spec synthesize_chime(pos_integer()) :: binary()
+  def synthesize_chime(sample_rate \\ 16_000) do
+    tone = fn freq, duration -&gt;
+      n = round(sample_rate * duration)
+
+      for i &lt;- 0..(n - 1) do
+        attack = min(1.0, i / (sample_rate * 0.01))
+        release = min(1.0, (n - i) / (sample_rate * 0.03))
+        :math.sin(2 * :math.pi() * freq * i / sample_rate) * 0.55 * attack * release
+      end
+    end
+
+    samples =
+      tone.(660, 0.12) ++
+        List.duplicate(0.0, round(sample_rate * 0.06)) ++
+        tone.(880, 0.18)
+
+    pcm =
+      samples
+      |&gt; Enum.map(fn s -&gt; round(max(-1.0, min(1.0, s)) * 32_767) end)
+      |&gt; Enum.map(&amp;&lt;&lt;&amp;1::little-signed-16&gt;&gt;)
+      |&gt; IO.iodata_to_binary()
+
+    header(sample_rate, 1, byte_size(pcm)) &lt;&gt; pcm
+  end
+end</pre>
+      <div class="wt-panel">
+        <div class="wt-card" data-lines="1-8">
+          <div class="wt-hd"><span class="wt-ln">L1–8</span> 纯计算模块 + RIFF 上界</div>
+          <div class="wt-bd">
+            <p>模块不启动进程，只把参数转换成二进制。<code>@max_u32</code> 是 32 位无符号上限；data 上限再减 36，确保 RIFF chunk size 的 <code>36 + data_size</code> 仍能装进 32 位字段。</p>
+            <p class="why">把格式计算从 Recorder 的生命周期代码中拆出，既便于单测，也把经典 RIFF 的约束集中在一个地方。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="9-16">
+          <div class="wt-hd"><span class="wt-ln">L9–16</span> 文档与 <code>@spec</code></div>
+          <div class="wt-bd">
+            <p><code>@spec header(pos_integer(), pos_integer(), non_neg_integer()) :: binary()</code> 声明参数/返回类型，配合 dialyzer 做静态分析。</p>
+            <p class="why">Elixir 运行时仍是动态类型；typespec 为文档、编辑器和可选的 Dialyzer 分析提供契约，真正的数值边界还由下面的 guard 执行。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="17-24">
+          <div class="wt-hd"><span class="wt-ln">L17–24</span> guard + 派生字段</div>
+          <div class="wt-bd">
+            <p>guard 要求采样率、声道和 data size 为合法整数，并限制 16/32 位字段不溢出；随后推导 <code>byte_rate = sample_rate × channels × 2</code> 与 <code>block_align = channels × 2</code>。</p>
+            <p class="why">经典 RIFF/WAV 使用 32 位长度，所以单个 PCM data 必须小于约 4 GiB。超界不会静默回绕，而是无法匹配这个函数子句；本项目也不实现自动分段或 RF64。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="25-29">
+          <div class="wt-hd"><span class="wt-ln">L25–29</span> 一段 bitstring 拼出整个头</div>
+          <div class="wt-bd">
+            <p><code>&lt;&lt;"RIFF", 36 + data_size::little-32, "WAVE", "fmt ", 16::little-32, …&gt;&gt;</code>：Elixir 的位语法直接按字段拼二进制。<code>::little-32</code> 表示「4 字节小端无符号整数」，<code>16::little-16</code> 是 2 字节。</p>
+            <p class="why">位语法让代码<b>声明式描述布局</b>，编译器负责构造对应 binary；它提高的是表达和模式匹配能力，并不意味着运行时完全没有分配或复制。</p>
+            <p class="rel">关联：第 6 章占位头/回填头都调这个函数；第 9 章前端 <code>setInt16(…, true)</code> 的小端是同一回事。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="30-45">
+          <div class="wt-hd"><span class="wt-ln">L30–45</span> 合成提示音：匿名函数 + 包络</div>
+          <div class="wt-bd">
+            <p><code>tone = fn freq, duration -> … end</code> 是匿名函数（闭包），内部用列表推导 <code>for i &lt;- 0..(n-1)</code> 生成采样点；<code>attack/release</code> 是包络（淡入淡出），防止「啪」的爆音；<code>:math.sin</code> 生成正弦波。</p>
+            <p class="why">包络是音频常识：直接发 0→1 跳变会听到爆音，包络让音量从 0 渐入渐出。这也解释了为什么「无素材兜底」也要认真写。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="46-50">
+          <div class="wt-hd"><span class="wt-ln">L46–50</span> 三段拼接：音 + 静音 + 音</div>
+          <div class="wt-bd">
+            <p>660Hz、120ms 短音 + 60ms 静音 + 880Hz、180ms 短音。<code>List.duplicate(0.0, n)</code> 生成中间静音段。</p>
+            <p class="why">这是缺少真人“好的”素材时的可辨识兜底音，不把它冒充成语音内容；文本帧仍会标注提示消息为“好的”。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="51-56">
+          <div class="wt-hd"><span class="wt-ln">L51–56</span> 浮点 → 16 位整数</div>
+          <div class="wt-bd">
+            <p><code>Enum.map(fn s -> round(max(-1.0, min(1.0, s)) * 32_767) end)</code> 把 [-1,1] 浮点钳制到 int16 范围，再 <code>Enum.map(&amp;&lt;&lt;&amp;1::little-signed-16&gt;&gt;)</code> 逐点编码成 2 字节小端，最后 <code>IO.iodata_to_binary/1</code> 把列表拍平成一块二进制。</p>
+            <p class="why"><code>IO.iodata_to_binary</code> 是处理「字节列表」的标准出口：它允许嵌套的列表/二进制混合，最后合并成单块——拼接大量小块时性能远好于字符串 <code>&lt;&gt;</code> 循环。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="57-59">
+          <div class="wt-hd"><span class="wt-ln">L57–59</span> 头 <code>&lt;&gt;</code> 数据</div>
+          <div class="wt-bd">
+            <p><code>header(sample_rate, 1, byte_size(pcm)) &lt;&gt; pcm</code>：44 字节头 + PCM 数据 = 完整 WAV 文件。</p>
+            <p class="why">这行展示了「数据长度已知」时的正常路径——与第 6 章 Recorder「长度未知、先占位再回填」正好互补，两种场景都覆盖到了。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wt reveal" data-file="lib/voice_chat/prompt_audio.ex">
+    <div class="wt-head">
+      <span class="wt-path">lib/voice_chat/prompt_audio.ex<span class="wt-size">· 源码全文 · 提示音文件管理</span></span>
+      <span class="wt-ctl">
+        <button class="wt-step" data-dir="-1">◀</button>
+        <span class="wt-pos">0/0</span>
+        <button class="wt-step" data-dir="1">▶</button>
+        <button class="wt-play primary">▶ 自动播放</button>
+        <button class="wt-reset">重置</button>
+      </span>
+    </div>
+    <div class="wt-body">
+      <pre class="wt-code">defmodule VoiceChat.PromptAudio do
+  @moduledoc &quot;&quot;&quot;
+  管理每 3 秒推送给客户端的提示音（“好的”）音频字节。
+
+  优先使用 `priv/static/audio/haode.wav`（可自行替换为自己的录音），
+  不存在时在启动时自动合成一段双音提示音作为兜底。
+  &quot;&quot;&quot;
+
+  @doc &quot;确保提示音文件存在；不存在则生成兜底音频。&quot;
+  def ensure! do
+    path = path()
+    File.mkdir_p!(Path.dirname(path))
+
+    unless File.exists?(path) do
+      File.write!(path, VoiceChat.Wav.synthesize_chime(16_000))
+      require Logger
+      Logger.info(&quot;generated fallback prompt audio at #{path}&quot;)
+    end
+
+    :ok
+  end
+
+  @doc &quot;提示音文件完整字节（每次调用时读取）。&quot;
+  def bytes, do: File.read!(path())
+
+  @doc &quot;提示音文件路径。&quot;
+  def path, do: Application.app_dir(:voice_chat, &quot;priv/static/audio/haode.wav&quot;)
+end</pre>
+      <div class="wt-panel">
+        <div class="wt-card" data-lines="1-13">
+          <div class="wt-hd"><span class="wt-ln">L1–13</span> 模块职责与 <code>ensure!/0</code>：解析路径并建目录</div>
+          <div class="wt-bd">
+            <p>模块文档先声明“现有素材优先、缺失时合成”的职责。<code>ensure!/0</code> 在运行时调用 <code>path/0</code>，再对其父目录执行 <code>File.mkdir_p!</code>；它不依赖当前 shell 的工作目录。</p>
+            <p class="why">路径通过函数在运行时求值，而不是把构建机上的绝对 priv 路径固化进模块属性；这样 release 安装位置变化时仍能解析当前应用目录。</p>
+            <p class="rel">关联：第 1 章 priv/ 目录；第 2 章 app: :voice_chat。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="14-22">
+          <div class="wt-hd"><span class="wt-ln">L14–22</span> 没有素材就现场造一个</div>
+          <div class="wt-bd">
+            <p>若 <code>path</code> 不存在，就用 <code>VoiceChat.Wav.synthesize_chime(16_000)</code> 生成兜底 WAV、写入并记录日志；存在时保留仓库或部署者提供的素材。</p>
+            <p class="why">「现有素材优先、合成兜底」：仓库已带 <code>haode.wav</code>；缺失时在应用启动阶段生成。目录不可写或生成失败会让启动尽早报错，而不是等第一条会话才暴露。</p>
+            <p class="rel">关联：第 3 章 L10–11；第 7 章 start 时 <code>bytes()</code>。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="23-28">
+          <div class="wt-hd"><span class="wt-ln">L23–28</span> <code>bytes/0</code> 与 <code>path/0</code></div>
+          <div class="wt-bd">
+            <p><code>bytes/0</code> 通过动态路径读取完整文件；Prompter 是每个会话启动时调用一次，不是每 3 秒调用。<code>path/0</code> 用 <code>Application.app_dir/2</code> 解析当前应用的 <code>priv/static/audio/haode.wav</code>。</p>
+            <p class="why">把路径解析封装在模块里，调用方只依赖“给我提示音 bytes”这个语义接口。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout why reveal">
+    <h5>为什么 WAV 要「先占位、最后回填」</h5>
+    <p>Recorder 开始流式写入时还不知道最终 PCM 长度，而 WAV 头要求提前写 RIFF/data 大小，所以先写 0、结束时 <code>position(0)</code> 回填。这是一类“头部依赖最终长度”格式的常见策略；经典 RIFF 的 32 位长度也把单个 data 限制在约 4 GiB 以内，长录音应分段或改用 RF64 等格式。</p>
+  </div>
+</section>
+
+<section class="chapter" id="ch9" data-key="ch9" data-title="前端：浏览器里的音频管线">
+  <div class="chapter-head"><span class="ch-n">第 9 章</span><h2>前端：浏览器里的音频管线</h2></div>
+
+  <div class="chapter-lead reveal">
+    <p class="lead-title">麦克风 → PCM16 或 Opus → WebSocket 二进制帧，整条管线都由浏览器原生 API 组成。</p>
+    <p>前端 <code>app.js</code> 使用浏览器原生的 WebSocket、Media Capture、Web Audio 与 MediaRecorder API 完成采集、编码、发送和播放。页面是语音调试台与消息日志，不是带文本输入框的完整聊天产品；本章重点讲清二进制帧如何与后端落盘格式对齐。</p>
+  </div>
+
+  <div class="wt reveal" data-file="priv/static/app.js">
+    <div class="wt-head">
+      <span class="wt-path">priv/static/app.js · L72–138<span class="wt-size">连接、身份防护与断开</span></span>
+      <span class="wt-ctl">
+        <button class="wt-step" data-dir="-1">◀</button>
+        <span class="wt-pos">0/0</span>
+        <button class="wt-step" data-dir="1">▶</button>
+        <button class="wt-play primary">▶ 自动播放</button>
+        <button class="wt-reset">重置</button>
+      </span>
+    </div>
+    <div class="wt-body">
+      <pre class="wt-code" data-base="72" data-end="138">els.connect.onclick = () =&gt; {
+  if (ws &amp;&amp; (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
+
+  bytesUp = 0;
+  bytesDown = 0;
+  frames = 0;
+  sessionStart = 0;
+  sessionId = &quot;sess_&quot; + Date.now() + &quot;_&quot; + Math.floor(Math.random() * 1e6);
+  const proto = location.protocol === &quot;https:&quot; ? &quot;wss&quot; : &quot;ws&quot;;
+  const url = `${proto}://${location.host}/ws?session=${sessionId}`;
+
+  setStatus(&quot;连接中…&quot;, null);
+  els.connect.disabled = true;
+  addMessage(&quot;system&quot;, `正在连接 ${url}`);
+
+  const socket = new WebSocket(url);
+  ws = socket;
+  socket.binaryType = &quot;arraybuffer&quot;;
+
+  socket.onopen = () =&gt; {
+    if (ws !== socket) return;
+    setStatus(&quot;已连接&quot;, true);
+    els.session.textContent = &quot;会话: &quot; + sessionId;
+    els.disconnect.disabled = false;
+    addMessage(&quot;system&quot;, &quot;✅ 已连接，正在打开麦克风…&quot;);
+    void startRecording(socket);
+  };
+
+  socket.onmessage = (ev) =&gt; {
+    if (ws !== socket) return;
+    if (typeof ev.data === &quot;string&quot;) {
+      handleText(ev.data);
+    } else {
+      bytesDown += ev.data.byteLength;
+      playAudio(ev.data);
+    }
+  };
+
+  socket.onclose = () =&gt; {
+    if (ws !== socket) return;
+    ws = null;
+    void stopRecording();
+    setStatus(&quot;已断开&quot;, false);
+    els.session.textContent = &quot;&quot;;
+    els.connect.disabled = false;
+    els.disconnect.disabled = true;
+    addMessage(&quot;system&quot;, &quot;🔌 连接已断开&quot;);
+    addMessage(&quot;system&quot;, &quot;💾 服务端将尝试收尾本次录音；结果与保存路径以服务端日志为准&quot;);
+  };
+
+  socket.onerror = () =&gt; {
+    if (ws === socket) addMessage(&quot;error&quot;, &quot;⚠️ WebSocket 错误&quot;);
+  };
+};
+
+els.disconnect.onclick = async () =&gt; {
+  const socket = ws;
+  if (!socket) return;
+  els.disconnect.disabled = true;
+  await stopRecording();
+  if (ws === socket &amp;&amp; socket.readyState &lt; WebSocket.CLOSING) socket.close();
+};
+
+window.addEventListener(&quot;beforeunload&quot;, () =&gt; {
+  void stopRecording();
+  if (ws) ws.close();
+});</pre>
+      <div class="wt-panel">
+        <div class="wt-card" data-lines="72-90">
+          <div class="wt-hd"><span class="wt-ln">L72–90</span> 每次连接捕获自己的 socket</div>
+          <div class="wt-bd">
+            <p>重置统计、生成候选 session id，再按当前页面协议/主机拼 URL。新建的连接同时保存为局部 <code>socket</code> 与当前全局 <code>ws</code>；<code>binaryType = "arraybuffer"</code> 让下行音频可直接交给后面的解码函数。</p>
+            <p class="why">异步回调闭包捕获具体 socket，后续可用 <code>ws === socket</code> 判断事件是否仍属于当前会话；这比在旧回调里直接读可变的全局 ws 更能抵御重连竞态。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="91-99">
+          <div class="wt-hd"><span class="wt-ln">L91–99</span> onopen：只为当前连接开麦</div>
+          <div class="wt-bd">
+            <p>先用身份 guard 丢弃旧连接的迟到 open 事件，再更新 UI，并把当前 <code>socket</code> 显式传入 <code>startRecording(socket)</code>。</p>
+            <p class="why"><code>getUserMedia</code> 的核心前提是安全上下文和用户授权；它并非普遍要求必须在点击回调的同一调用栈执行。播放侧的 <code>AudioContext.resume()</code> 还会受到各浏览器自动播放/用户激活策略影响。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="100-109">
+          <div class="wt-hd"><span class="wt-ln">L100–109</span> onmessage：先验明会话，再分文本/音频</div>
+          <div class="wt-bd">
+            <p>字符串帧交给 <code>handleText</code>（解析 JSON 并写入消息日志）；二进制帧统计下行字节并交给 <code>playAudio</code>。</p>
+            <p class="why">客户端出站与服务端入站、服务端出站与客户端入站是两份互补契约：这个项目两向都用文本承载 JSON、二进制承载音频，但消息类型并非一一镜像。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="110-126">
+          <div class="wt-hd"><span class="wt-ln">L110–126</span> close / error：旧事件不得改新 UI</div>
+          <div class="wt-bd">
+            <p>只有当前 socket 的 close 才先把 <code>ws</code> 清为 null、启动录音清理并重置 UI；旧 socket 的迟到 close/error 直接忽略。</p>
+            <p class="why">页面里的“服务端将尝试收尾”是操作提示，不是服务端 ACK；录音是否成功仍以服务端日志和文件系统为准。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="127-138">
+          <div class="wt-hd"><span class="wt-ln">L127–138</span> 主动断开可等待，卸载只能尽力而为</div>
+          <div class="wt-bd">
+            <p>点击断开时先快照 socket，<code>await stopRecording()</code>，再仅在它仍是当前且尚未 closing 时关闭；页面卸载则发起清理并立即 close，无法等待异步完成。</p>
+            <p class="why">主动路径给 MediaRecorder 最终 <code>dataavailable</code> 一次在 socket 仍 OPEN 时发送的机会，但 1 秒客户端等待、网络发送队列与缺少服务端 ACK 意味着它仍不是交付保证。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wt reveal" data-file="priv/static/app.js">
+    <div class="wt-head">
+      <span class="wt-path">priv/static/app.js · L142–239<span class="wt-size">socket 绑定的 PCM16 / Opus 采集</span></span>
+      <span class="wt-ctl">
+        <button class="wt-step" data-dir="-1">◀</button>
+        <span class="wt-pos">0/0</span>
+        <button class="wt-step" data-dir="1">▶</button>
+        <button class="wt-play primary">▶ 自动播放</button>
+        <button class="wt-reset">重置</button>
+      </span>
+    </div>
+    <div class="wt-body">
+      <pre class="wt-code" data-base="142" data-end="239">async function startRecording(socket) {
+  const fmt = els.format.value;
+  if (fmt === &quot;opus&quot;) await startMediaRecorder(socket);
+  else await startPcmCapture(socket);
+}
+
+function sendConfig(socket, fmt, container) {
+  if (ws !== socket || socket.readyState !== WebSocket.OPEN) throw new Error(&quot;WebSocket 已关闭&quot;);
+  const config =
+    fmt === &quot;opus&quot;
+      ? { type: &quot;config&quot;, format: &quot;opus&quot;, container }
+      : { type: &quot;config&quot;, format: &quot;pcm16&quot;, sample_rate: 16000, channels: 1, bit_depth: 16 };
+  socket.send(JSON.stringify(config));
+}
+
+async function startPcmCapture(socket) {
+  try {
+    ensureAudioCtx();
+    await audioCtx.resume();
+    if (ws !== socket) return;
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 16000 },
+    });
+    if (ws !== socket || socket.readyState !== WebSocket.OPEN) {
+      stream.getTracks().forEach((track) =&gt; track.stop());
+      return;
+    }
+
+    micStream = stream;
+    sendConfig(socket, &quot;pcm16&quot;);
+    sourceNode = audioCtx.createMediaStreamSource(stream);
+    processor = audioCtx.createScriptProcessor(4096, 1, 1);
+
+    const targetRate = 16000;
+    processor.onaudioprocess = (e) =&gt; {
+      const input = e.inputBuffer.getChannelData(0);
+      const pcm = downsample(input, audioCtx.sampleRate, targetRate);
+      const buf = floatTo16BitPCM(pcm);
+      if (ws === socket &amp;&amp; socket.readyState === WebSocket.OPEN) {
+        socket.send(buf);
+        bytesUp += buf.byteLength;
+        frames++;
+      }
+    };
+
+    // 静音增益保持音频图活跃，避免回声反馈
+    silenceNode = audioCtx.createGain();
+    silenceNode.gain.value = 0;
+    sourceNode.connect(processor);
+    processor.connect(silenceNode);
+    silenceNode.connect(audioCtx.destination);
+
+    sessionStart = Date.now();
+    addMessage(&quot;system&quot;, &quot;🎤 麦克风已开启（PCM16 @16kHz）—— 开始说话吧&quot;);
+  } catch (err) {
+    if (ws === socket) {
+      await stopRecording();
+      addMessage(&quot;error&quot;, &quot;⚠️ 无法获取麦克风: &quot; + err.message);
+    }
+  }
+}
+
+async function startMediaRecorder(socket) {
+  try {
+    const mime = [&quot;audio/webm;codecs=opus&quot;, &quot;audio/ogg;codecs=opus&quot;].find((m) =&gt;
+      MediaRecorder.isTypeSupported(m)
+    );
+    if (!mime) throw new Error(&quot;当前浏览器不支持 WebM/Ogg Opus 录音&quot;);
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    if (ws !== socket || socket.readyState !== WebSocket.OPEN) {
+      stream.getTracks().forEach((track) =&gt; track.stop());
+      return;
+    }
+
+    micStream = stream;
+    mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
+    sendConfig(socket, &quot;opus&quot;, mime.startsWith(&quot;audio/ogg&quot;) ? &quot;ogg&quot; : &quot;webm&quot;);
+
+    mediaRecorder.ondataavailable = (e) =&gt; {
+      if (e.data &amp;&amp; e.data.size &gt; 0 &amp;&amp; socket.readyState === WebSocket.OPEN) {
+        socket.send(e.data);
+        bytesUp += e.data.size;
+        frames++;
+      }
+    };
+
+    mediaRecorder.start(250); // 每 250ms 一个分块
+    sessionStart = Date.now();
+    addMessage(&quot;system&quot;, &quot;🎤 麦克风已开启（Opus / &quot; + mime + &quot; 分块）&quot;);
+  } catch (err) {
+    if (ws === socket) {
+      await stopRecording();
+      addMessage(&quot;error&quot;, &quot;⚠️ 无法获取麦克风: &quot; + err.message);
+    }
+  }
+}</pre>
+      <div class="wt-panel">
+        <div class="wt-card" data-lines="142-156">
+          <div class="wt-hd"><span class="wt-ln">L142–156</span> 分派格式，并把 config 绑定到 socket</div>
+          <div class="wt-bd">
+            <p>按页面选择把同一个 socket 传给 Opus 或 PCM 分支。<code>sendConfig</code> 同时要求它仍是当前 ws 且状态为 OPEN，再声明 PCM 参数或实际 Opus 容器。</p>
+            <p class="why">config 不一定是采集函数的第一步，但必须先于首个音频分块到达 Recorder；显式 socket 参数还防止旧异步流程把配置发到新会话。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="157-175">
+          <div class="wt-hd"><span class="wt-ln">L157–175</span> PCM：两次身份检查夹住权限等待</div>
+          <div class="wt-bd">
+            <p>恢复 AudioContext 后先检查 socket 身份，再等待 <code>getUserMedia</code>。权限结果返回后再次确认身份与 OPEN；若已经过期，立即停止刚拿到的轨道，不让旧请求覆盖新会话资源。</p>
+            <p class="why"><code>await</code> 期间外部状态可以改变。前后复核加上局部 <code>stream</code>，正是处理“用户授权很晚才回来”竞态的关键。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="176-187">
+          <div class="wt-hd"><span class="wt-ln">L176–187</span> PCM 回调：近似降采样后发送</div>
+          <div class="wt-bd">
+            <p>上一段拿到 stream 后创建 <code>MediaStreamSource</code> 与 <code>ScriptProcessor(4096, 1, 1)</code>；本段回调按 <code>audioCtx.sampleRate</code> 降到 16kHz、转 Int16，并且只在 captured socket 仍为当前 OPEN 连接时发送。权限约束里的 <code>sampleRate: 16000</code> 只是请求，浏览器不保证采用。</p>
+            <p class="why">若 AudioContext 是 48kHz，4096 样本约 85ms。<code>ScriptProcessorNode</code> 已被 Web 标准标为弃用，教学代码胜在直观；生产实现应优先 AudioWorklet，并结合 <code>WebSocket.bufferedAmount</code> 或其他协议做背压。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="188-204">
+          <div class="wt-hd"><span class="wt-ln">L188–204</span> 静音节点与当前会话失败清理</div>
+          <div class="wt-bd">
+            <p>处理器经保存下来的零增益节点接到 destination：维持音频图而不回放麦克风。异常只在 socket 仍为当前会话时触发统一清理和错误提示。</p>
+            <p class="why">保存 <code>silenceNode</code> 让 stop 路径能显式断开它；异常 guard 则避免旧会话错误清掉新会话资源。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="205-221">
+          <div class="wt-hd"><span class="wt-ln">L205–221</span> Opus：探测容器并复核权限结果</div>
+          <div class="wt-bd">
+            <p>依次探测 WebM/Opus 与 Ogg/Opus，再请求麦克风；和 PCM 一样，迟到且已过期的 stream 会立即停轨。确认当前后才创建 MediaRecorder，并把实际容器发给服务端。</p>
+            <p class="why">Opus 是编码，WebM/Ogg 是容器；后端不会转码，只按这份配置选择后缀并追加浏览器产出的分块。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="222-239">
+          <div class="wt-hd"><span class="wt-ln">L222–239</span> 250ms 分块与最终 Blob 通道</div>
+          <div class="wt-bd">
+            <p><code>ondataavailable</code> 把非空 Blob 发到捕获的 socket，<code>start(250)</code> 请求约每 250ms 产出一块；失败路径同样只清理当前会话。</p>
+            <p class="why">回调故意使用 captured socket：主动 stop 时 global ws 仍指向它，最终 Blob 可在 close 之前发出。这里只检查 socket OPEN；浏览器分块时机、发送缓冲与网络仍让 250ms 和最终交付都不具备硬实时保证。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wt reveal" data-file="priv/static/app.js">
+    <div class="wt-head">
+      <span class="wt-path">priv/static/app.js · L241–326<span class="wt-size">竞态安全清理 / PCM 转换 / 播放</span></span>
+      <span class="wt-ctl">
+        <button class="wt-step" data-dir="-1">◀</button>
+        <span class="wt-pos">0/0</span>
+        <button class="wt-step" data-dir="1">▶</button>
+        <button class="wt-play primary">▶ 自动播放</button>
+        <button class="wt-reset">重置</button>
+      </span>
+    </div>
+    <div class="wt-body">
+      <pre class="wt-code" data-base="241" data-end="326">async function stopRecording() {
+  const recorder = mediaRecorder;
+  const captureProcessor = processor;
+  const captureSource = sourceNode;
+  const captureSilence = silenceNode;
+  const captureStream = micStream;
+  mediaRecorder = null;
+  processor = null;
+  sourceNode = null;
+  silenceNode = null;
+  micStream = null;
+  sessionStart = 0;
+
+  if (captureProcessor) captureProcessor.onaudioprocess = null;
+
+  if (recorder &amp;&amp; recorder.state !== &quot;inactive&quot;) {
+    await new Promise((resolve) =&gt; {
+      const timeout = setTimeout(resolve, 1_000);
+      recorder.addEventListener(&quot;stop&quot;, () =&gt; { clearTimeout(timeout); resolve(); }, { once: true });
+      try { recorder.stop(); } catch (_) { clearTimeout(timeout); resolve(); }
+    });
+  }
+
+  if (captureProcessor) {
+    try { captureProcessor.disconnect(); } catch (_) {}
+  }
+  if (captureSource) {
+    try { captureSource.disconnect(); } catch (_) {}
+  }
+  if (captureSilence) {
+    try { captureSilence.disconnect(); } catch (_) {}
+  }
+  if (captureStream) {
+    captureStream.getTracks().forEach((track) =&gt; track.stop());
+  }
+  // audioCtx 保留给播放用，不关闭
+}
+
+/* ---------- 音频处理 ---------- */
+
+function downsample(input, fromRate, toRate) {
+  if (fromRate === toRate) return input;
+  const ratio = fromRate / toRate;
+  const newLen = Math.round(input.length / ratio);
+  const out = new Float32Array(newLen);
+  let offset = 0;
+  for (let i = 0; i &lt; newLen; i++) {
+    const end = Math.round((i + 1) * ratio);
+    let sum = 0, count = 0;
+    for (; offset &lt; end &amp;&amp; offset &lt; input.length; offset++) {
+      sum += input[offset];
+      count++;
+    }
+    out[i] = count &gt; 0 ? sum / count : 0;
+  }
+  return out;
+}
+
+function floatTo16BitPCM(float32) {
+  const buffer = new ArrayBuffer(float32.length * 2);
+  const view = new DataView(buffer);
+  for (let i = 0; i &lt; float32.length; i++) {
+    const s = Math.max(-1, Math.min(1, float32[i]));
+    view.setInt16(i * 2, s &lt; 0 ? s * 0x8000 : s * 0x7fff, true);
+  }
+  return buffer;
+}
+
+function ensureAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playAudio(arrayBuffer) {
+  const ctx = ensureAudioCtx();
+  ctx.resume()
+    .then(() =&gt; ctx.decodeAudioData(arrayBuffer.slice(0)))
+    .then((buffer) =&gt; {
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      src.connect(ctx.destination);
+      src.start();
+      addMessage(&quot;out&quot;, &quot;🔊 播放服务端音频&quot;);
+    })
+    .catch((err) =&gt; addMessage(&quot;error&quot;, &quot;⚠️ 音频解码失败: &quot; + err.message));
+}</pre>
+      <div class="wt-panel">
+        <div class="wt-card" data-lines="241-280">
+          <div class="wt-hd"><span class="wt-ln">L241–280</span> stop：先快照并清空，再跨越 await</div>
+          <div class="wt-bd">
+            <p>把 MediaRecorder、三个音频节点和 stream 快照到局部变量，立刻清空全局引用并禁用旧 PCM 回调；随后最多等 1 秒让 MediaRecorder stop，再断开快照节点并停止轨道。AudioContext 留给下行播放复用。</p>
+            <p class="why">关键顺序是“同步夺走所有权，再 await”：等待期间即使新会话开始，旧 stop 也只会清理自己的快照，不会碰到新写入的全局资源。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="281-298">
+          <div class="wt-hd"><span class="wt-ln">L281–298</span> 降采样：48kHz → 16kHz</div>
+          <div class="wt-bd">
+            <p>按 <code>fromRate / toRate</code> 对输入区间求平均，得到目标长度。这是便于阅读的近似抽取，不是完整的抗混叠重采样器。</p>
+            <p class="why">从 48kHz 到 16kHz 时样本数约降到 1/3；未先做严格低通滤波会有混叠风险，因此这里只适合演示/调试，不能声称语音信息无损。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="299-313">
+          <div class="wt-hd"><span class="wt-ln">L299–313</span> Float32 → Int16 小端 + AudioContext</div>
+          <div class="wt-bd">
+            <p><code>DataView.setInt16(i*2, …, true)</code> 把 [-1,1] 浮点钳制为 16 位有符号小端整数；后端不逐样本转码，WAV 头也必须声明同样的位宽和声道约定。<code>ensureAudioCtx</code> 则惰性复用播放/采集上下文。</p>
+            <p class="why">字节序、符号或位宽不一致都会造成失真或噪音；最后一个 <code>true</code> 正是“小端”开关。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="314-326">
+          <div class="wt-hd"><span class="wt-ln">L314–326</span> playAudio：解码并创建一次性 source</div>
+          <div class="wt-bd">
+            <p>恢复 AudioContext、复制后交给 <code>decodeAudioData</code>，为每条提示音创建 <code>AudioBufferSourceNode</code> 并立即播放；失败则写错误日志。</p>
+            <p class="why">独立 source 不会自动排队，上一段尚未结束时会重叠。当前提示短于推送间隔，但产品代码仍应明确选择允许重叠、排队或打断。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wt reveal" data-file="priv/static/app.js">
+    <div class="wt-head">
+      <span class="wt-path">priv/static/app.js · L343–370<span class="wt-size">服务端文本协议与实际 session id</span></span>
+      <span class="wt-ctl">
+        <button class="wt-step" data-dir="-1">◀</button>
+        <span class="wt-pos">0/0</span>
+        <button class="wt-step" data-dir="1">▶</button>
+        <button class="wt-play primary">▶ 自动播放</button>
+        <button class="wt-reset">重置</button>
+      </span>
+    </div>
+    <div class="wt-body">
+      <pre class="wt-code" data-base="343" data-end="370">function handleText(raw) {
+  let msg;
+  try { msg = JSON.parse(raw); } catch (_) { return; }
+
+  switch (msg.type) {
+    case &quot;session&quot;: {
+      const actual = String(msg.session || &quot;&quot;);
+      if (actual) {
+        const renamed = sessionId &amp;&amp; sessionId !== actual;
+        sessionId = actual;
+        els.session.textContent = &quot;会话: &quot; + actual;
+        if (renamed) addMessage(&quot;system&quot;, `ℹ️ 会话名冲突，服务端已改用 ${actual}`);
+      }
+      break;
+    }
+    case &quot;prompt&quot;:
+      addMessage(&quot;in&quot;, `🔊 服务端提示音: “${msg.message || &quot;好的&quot;}”`);
+      break;
+    case &quot;text&quot;:
+      addMessage(&quot;in&quot;, msg.message || msg.text || &quot;&quot;);
+      break;
+    case &quot;error&quot;:
+      addMessage(&quot;error&quot;, &quot;⚠️ &quot; + (msg.message || &quot;服务器错误&quot;));
+      break;
+    default:
+      addMessage(&quot;in&quot;, &quot;← &quot; + raw);
+  }
+}</pre>
+      <div class="wt-panel">
+        <div class="wt-card" data-lines="343-357">
+          <div class="wt-hd"><span class="wt-ln">L343–357</span> session：服务端 id 才是最终值</div>
+          <div class="wt-bd">
+            <p>解析 JSON 后，<code>session</code> 消息会用服务端实际注册的 id 覆盖本地候选值并更新 UI；若发生重名改写，还会显示说明。</p>
+            <p class="why">Registry 的唯一键冲突只能由服务端裁决。初始化首帧把最终 id 回传，避免页面、Registry 与录音文件名各自显示不同值。</p>
+          </div>
+        </div>
+        <div class="wt-card" data-lines="358-370">
+          <div class="wt-hd"><span class="wt-ln">L358–370</span> prompt / text / error：出站类型分派</div>
+          <div class="wt-bd">
+            <p><code>prompt</code>、<code>text</code> 写进消息日志，<code>error</code> 用错误样式，未知类型保留原始 JSON；无法解析的文本帧则忽略。</p>
+            <p class="why">它与服务端处理“客户端入站消息”的 case 是两个方向的互补契约，并非同一组 type 的一一镜像；协议变更要同时审视两端。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <figure class="figwrap reveal">
+    <svg viewBox="0 0 860 150" role="img" aria-label="降采样示意">
+      <defs>
+        <marker id="ah9-a2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent2)"/></marker>
+      </defs>
+      <text x="10" y="14" font-size="12" fill="var(--muted)">48kHz（麦克风原始）</text>
+      <g>
+        <rect x="20" y="52" width="8" height="60" rx="2" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <rect x="34" y="38" width="8" height="74" rx="2" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <rect x="48" y="60" width="8" height="52" rx="2" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <rect x="62" y="30" width="8" height="82" rx="2" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <rect x="76" y="44" width="8" height="68" rx="2" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <rect x="90" y="20" width="8" height="92" rx="2" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <rect x="104" y="56" width="8" height="56" rx="2" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <rect x="118" y="42" width="8" height="70" rx="2" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <rect x="132" y="34" width="8" height="78" rx="2" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <rect x="146" y="58" width="8" height="54" rx="2" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <rect x="160" y="26" width="8" height="86" rx="2" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <rect x="174" y="50" width="8" height="62" rx="2" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <rect x="188" y="36" width="8" height="76" rx="2" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <rect x="202" y="46" width="8" height="66" rx="2" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <rect x="216" y="24" width="8" height="88" rx="2" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <rect x="230" y="54" width="8" height="58" rx="2" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <rect x="244" y="40" width="8" height="72" rx="2" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <rect x="258" y="32" width="8" height="80" rx="2" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <rect x="272" y="48" width="8" height="64" rx="2" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <rect x="286" y="22" width="8" height="90" rx="2" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+      </g>
+      <text x="300" y="45" font-size="16" fill="var(--accent2)">→</text>
+      <path d="M330 48 H500" stroke="var(--accent2)" stroke-width="1.6" fill="none" marker-end="url(#ah9-a2)"/>
+      <text x="390" y="36" font-size="11" fill="var(--accent2)" text-anchor="middle">downsample(…, 48000, 16000)</text>
+      <g>
+        <rect x="520" y="46" width="14" height="66" rx="3" fill="var(--accent2-soft)" stroke="var(--accent2)" stroke-width="1"/>
+        <rect x="546" y="28" width="14" height="84" rx="3" fill="var(--accent2-soft)" stroke="var(--accent2)" stroke-width="1"/>
+        <rect x="572" y="52" width="14" height="60" rx="3" fill="var(--accent2-soft)" stroke="var(--accent2)" stroke-width="1"/>
+        <rect x="598" y="18" width="14" height="94" rx="3" fill="var(--accent2-soft)" stroke="var(--accent2)" stroke-width="1"/>
+        <rect x="624" y="40" width="14" height="72" rx="3" fill="var(--accent2-soft)" stroke="var(--accent2)" stroke-width="1"/>
+        <rect x="650" y="32" width="14" height="80" rx="3" fill="var(--accent2-soft)" stroke="var(--accent2)" stroke-width="1"/>
+        <rect x="676" y="48" width="14" height="64" rx="3" fill="var(--accent2-soft)" stroke="var(--accent2)" stroke-width="1"/>
+      </g>
+      <text x="760" y="85" font-size="12" fill="var(--muted)">16kHz</text>
+      <text x="760" y="103" font-size="10.5" fill="var(--muted)">样本数约 1/3</text>
+    </svg>
+    <figcaption>图 9-1 · 以 48kHz → 16kHz 为例，输出样本数约为 1/3。图只示意区间平均；当前实现没有完整抗混叠滤波，不能据此保证波形或语音信息无损。</figcaption>
+  </figure>
+
+  <div class="callout pitfall reveal">
+    <h5>最容易踩的坑：浏览器安全策略</h5>
+    <p><code>getUserMedia</code> 只暴露在安全上下文中：HTTPS，以及浏览器认定可信的本地来源（通常包括 <code>localhost</code>）。普通 HTTP 的局域网 IP 通常不满足条件；此外用户仍需授权，播放用 AudioContext 还可能受自动播放策略限制。</p>
+  </div>
+</section>
+
+<section class="chapter" id="ch10" data-key="ch10" data-title="串联：Elixir 概念在 voice_chat 里的投影">
+  <div class="chapter-head"><span class="ch-n">第 10 章</span><h2>串联：Elixir 概念在 voice_chat 里的投影</h2></div>
+
+  <div class="chapter-lead reveal">
+    <p class="lead-title">最后一章，把前面十章散落的点连成一张概念网。</p>
+    <p>voice_chat 刻意只选了少量核心机制，并用直接的形式把它们串在一条可运行链路里。本章把六个概念抽出来对照，帮助你建立阅读 Elixir 服务端代码所需的基本坐标；它不是 OTP 全貌，也不是所有项目都应照搬的架构模板。</p>
+  </div>
+
+  <h3 class="reveal">一张图：一次会话的角色与生命周期关系</h3>
+  <figure class="figwrap reveal">
+    <svg viewBox="0 0 900 260" role="img" aria-label="一次会话的角色与生命周期关系图">
+      <defs>
+        <marker id="ah10-own" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--muted)"/></marker>
+        <marker id="ah10-ac" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/></marker>
+        <marker id="ah10-a2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent2)"/></marker>
+      </defs>
+
+      <rect x="20" y="18" width="230" height="52" rx="10" fill="var(--panel2)" stroke="var(--line)"/>
+      <text x="135" y="40" font-size="12.5" fill="var(--fg)" text-anchor="middle" font-weight="700">VoiceChat.Supervisor</text>
+      <text x="135" y="58" font-size="10.5" fill="var(--muted)" text-anchor="middle">直接 child spec：Registry、Bandit</text>
+
+      <rect x="35" y="100" width="160" height="56" rx="10" fill="var(--panel)" stroke="var(--accent)"/>
+      <text x="115" y="124" font-size="12" fill="var(--accent)" text-anchor="middle" font-weight="700">Bandit</text>
+      <text x="115" y="143" font-size="10.5" fill="var(--muted)" text-anchor="middle">管理 HTTP / WS 连接</text>
+
+      <rect x="35" y="188" width="160" height="54" rx="10" fill="var(--panel)" stroke="var(--accent)"/>
+      <text x="115" y="211" font-size="12" fill="var(--accent)" text-anchor="middle" font-weight="700">Registry</text>
+      <text x="115" y="230" font-size="10.5" fill="var(--muted)" text-anchor="middle">session_id → ws pid</text>
+
+      <path d="M90 70 V96" stroke="var(--muted)" stroke-width="1.5" fill="none" marker-end="url(#ah10-own)"/>
+      <path d="M180 70 V174 H115 V184" stroke="var(--muted)" stroke-width="1.5" fill="none" marker-end="url(#ah10-own)"/>
+
+      <rect x="335" y="85" width="200" height="76" rx="11" fill="var(--accent-soft)" stroke="var(--accent)"/>
+      <text x="435" y="112" font-size="12.5" fill="var(--accent)" text-anchor="middle" font-weight="700">每条连接的 ws 进程</text>
+      <text x="435" y="132" font-size="10.5" fill="var(--muted)" text-anchor="middle">在连接进程中执行 WSHandler 回调</text>
+      <text x="435" y="149" font-size="10" fill="var(--muted)" text-anchor="middle">第 5 章</text>
+
+      <path d="M195 128 H331" stroke="var(--muted)" stroke-width="1.6" fill="none" marker-end="url(#ah10-own)"/>
+      <text x="263" y="117" font-size="10" fill="var(--muted)" text-anchor="middle">动态连接生命周期</text>
+      <path d="M195 215 H300 V145 H331" stroke="var(--accent)" stroke-width="1.3" stroke-dasharray="4 3" fill="none" marker-end="url(#ah10-ac)"/>
+      <text x="249" y="231" font-size="10" fill="var(--accent)" text-anchor="middle">注册 / 查询关系</text>
+
+      <rect x="330" y="195" width="102" height="48" rx="9" fill="var(--ok-soft)" stroke="var(--ok)"/>
+      <text x="381" y="216" font-size="11.5" fill="var(--ok)" text-anchor="middle" font-weight="700">Recorder</text>
+      <text x="381" y="233" font-size="10" fill="var(--muted)" text-anchor="middle">落盘</text>
+
+      <rect x="447" y="195" width="112" height="48" rx="9" fill="var(--accent2-soft)" stroke="var(--accent2)"/>
+      <text x="503" y="216" font-size="11.5" fill="var(--accent2)" text-anchor="middle" font-weight="700">Prompter</text>
+      <text x="503" y="233" font-size="10" fill="var(--muted)" text-anchor="middle">约 3 秒一轮</text>
+
+      <path d="M395 161 V191" stroke="var(--accent2)" stroke-width="1.4" stroke-dasharray="4 3" fill="none" marker-end="url(#ah10-a2)"/>
+      <path d="M480 161 V191" stroke="var(--accent2)" stroke-width="1.4" stroke-dasharray="4 3" fill="none" marker-end="url(#ah10-a2)"/>
+      <text x="438" y="181" font-size="10" fill="var(--accent2)" text-anchor="middle">spawn_link ×2</text>
+
+      <rect x="660" y="58" width="215" height="158" rx="12" fill="none" stroke="var(--line2)" stroke-dasharray="6 4"/>
+      <text x="767" y="83" font-size="11.5" fill="var(--muted)" text-anchor="middle">浏览器一侧（不是 BEAM 进程）</text>
+      <text x="767" y="111" font-size="11" fill="var(--muted)" text-anchor="middle">getUserMedia / MediaRecorder</text>
+      <text x="767" y="133" font-size="11" fill="var(--muted)" text-anchor="middle">WebSocket 客户端</text>
+      <text x="767" y="155" font-size="11" fill="var(--muted)" text-anchor="middle">AudioContext / decodeAudioData</text>
+      <text x="767" y="188" font-size="10.5" fill="var(--muted)" text-anchor="middle">第 9 章</text>
+
+      <path d="M656 108 H539" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#ah10-ac)"/>
+      <text x="598" y="99" font-size="10" fill="var(--accent)" text-anchor="middle">config / 音频上行</text>
+      <path d="M539 140 H656" stroke="var(--accent2)" stroke-width="1.5" fill="none" marker-end="url(#ah10-a2)"/>
+      <text x="598" y="156" font-size="10" fill="var(--accent2)" text-anchor="middle">提示文本 / 音频下行</text>
+    </svg>
+    <figcaption>图 10-1 · 这是应用代码所关心的概念角色与生命周期关系，不是精确进程计数：Registry、Bandit、Thousand Island 与运行时的内部进程树均未展开。业务代码没有自行维护 OS 线程池；浏览器也不属于 BEAM 进程树。</figcaption>
+  </figure>
+
+  <h3 class="reveal">六个概念，六次投影</h3>
+  <table class="reveal">
+    <tr><th>Elixir 概念</th><th>在 voice_chat 里的投影</th><th>一句话本质</th></tr>
+    <tr><td><b>进程</b></td><td>ws 进程、Recorder、Prompter、Supervisor…（图 10-1）</td><td>BEAM 调度的轻量执行单元，通常把变化中的业务状态留在进程内部</td></tr>
+    <tr><td><b>消息传递</b></td><td><code>send</code> 的 <code>{:chunk, data}</code> / <code>{:send_binary, audio}</code> / <code>:stop</code></td><td>本项目用异步邮箱解耦三类会话角色；同一发送者到同一接收者保持发送顺序</td></tr>
+    <tr><td><b>link / trap_exit</b></td><td>WSHandler 两次 <code>spawn_link</code>，形成 ws + 两个帮手；Recorder 捕获退出信号</td><td>link 关联生命周期；trap_exit 可把部分退出信号转成消息处理</td></tr>
+    <tr><td><b>Application / Supervisor</b></td><td>application.ex（第 3 章）</td><td>「系统进程」的启动顺序与生死责任</td></tr>
+    <tr><td><b>行为（behaviour）</b></td><td>本模块实现 WebSock 的三个必需回调与可选 <code>terminate/2</code>；可选 <code>handle_control/2</code> 未实现</td><td>框架把连接事件翻译成约定的回调，协议细节由适配层承接</td></tr>
+    <tr><td><b>不可变数据 + 模式匹配</b></td><td>state map 每轮返回新值、receive/case 按形状分派</td><td>各会话进程的堆/业务状态不直接共享；Registry、ETS 等机制可封装共享查找状态</td></tr>
+  </table>
+
+  <div class="callout why reveal">
+    <h5>「轻量进程」到底有多轻</h5>
+    <p>BEAM 进程不是操作系统线程，创建与切换通常都很轻，运行时调度器会安排可运行进程。像 Prompter 这样阻塞在 <code>receive</code> 的进程不会持续占用 CPU 时间片，但仍持有堆、邮箱、link 与定时等待等资源，并非“零开销”。因此每连接增加两个职责单一的进程在这个示例里很自然；真实容量仍要通过负载测试、邮箱监控和背压设计验证。</p>
+  </div>
+
+  <div class="callout analogy reveal">
+    <h5>消息传递的三个直觉</h5>
+    <p><b>隔离</b>：Elixir 数据不可变，接收方不会拿到一块可被发送方随后改写的业务数据；普通项在语义上按值传递，较大的 binary 等可由运行时引用计数共享。　<b>有序</b>：只保证同一发送者发往同一接收者的消息按发送顺序到达，不保证多个发送者之间的全局顺序。　<b>邮箱</b>：消息进入接收者邮箱，<code>receive</code> 可按模式选择匹配项；本项目选择邮箱通信，但进程还可能通过调用、ETS、端口等其他机制协作。</p>
+  </div>
+
+  <div class="callout note reveal">
+    <h5>OTP 工具不是单向的“轻重等级”</h5>
+    <p>Recorder/Prompter 展示了 <code>spawn_link + receive</code>；项目还实际使用了 <code>Supervisor</code> 与 <code>Application</code>。生态中另有 <code>Task</code>（有结果或一次性的工作）和 <code>GenServer</code>（标准化状态服务器与 call/cast 生命周期）等抽象，本项目并未逐一演示。选择哪一种要看重启责任、应答需求、超时、可观测性与测试方式；短代码不一定比标准 OTP 抽象更适合生产。</p>
+  </div>
+
+  <h3 class="reveal">项目还能怎么长</h3>
+  <ul class="reveal">
+    <li><b>上鉴权</b>：upgrade 之前检查 token（第 4 章那个「升级前检查」的位置就是预留的钩子）；</li>
+    <li><b>加静音检测 / 语音活动检测</b>：增加音频分析环节，再定义检测结果如何进入 Recorder 或独立进程；还要处理窗口、阈值和消息背压，不只是多写一个匹配分支；</li>
+    <li><b>把 Recorder 换成 GenServer</b>：当它需要应答（比如查询已录字节数）时再升级；</li>
+    <li><b>接 Phoenix</b>：Channels 同样围绕长连接、主题与进程隔离组织消息，但还提供自己的传输、序列化、PubSub 与生命周期抽象，不能简单等同为本项目的放大版；</li>
+    <li><b>上 Nerves / 嵌入式</b>：消息与进程拆分思路可以复用，但部署、音频设备接入、浏览器前端和资源约束都需要重新适配。</li>
+  </ul>
+
+  <details class="checkpoint reveal">
+    <summary>结业自测：不看代码，你能答出这些吗</summary>
+    <div class="cp-body">
+      <p>① 音频块从浏览器到硬盘，依次经过哪几个进程？<br>
+      ② 为什么 Prompter 每 3 秒发消息不需要「注册回调」？<br>
+      ③ 常规断开或 ws 进程异常退出时，Recorder 如何尽量收尾？它覆盖不了哪些故障？<br>
+      ④ <code>{:push, {:binary, data}, state}</code> 里的 data 最终怎么变成浏览器喇叭里的声音？</p>
+      <div class="ans"><b>答案：</b>① 浏览器 → ws 进程（<code>handle_in</code> 转发）→ Recorder 进程（<code>write_chunk</code>）→ 文件。② Prompter 创建时已拿到 ws pid，直接向其邮箱发送消息即可；Registry 用于按 session id 查连接，不是这条回传路径的必要条件。③ 常规 <code>terminate</code> 会发 <code>:stop</code>；ws 的非正常退出信号也可被 linked Recorder trap 后触发 finalize。直接 <code>:kill</code> Recorder、VM/主机掉电、磁盘错误等不在保证范围。④ data 经 WebSocket 二进制帧到浏览器，<code>decodeAudioData</code> 解码后由 <code>AudioBufferSourceNode.start()</code> 播放（第 9 章）。</div>
+    </div>
+  </details>
+
+  <div class="callout why reveal">
+    <h5>最后一句：这个项目「为什么这么写」的答案</h5>
+    <p>这个项目选择用连接进程、两个 linked 帮手和消息把网络、落盘、周期提示分开，因为这种职责隔离很适合展示 BEAM 的进程模型。它是一个清晰的教学取舍，不是普遍性能结论：生产系统通常还要补上更明确的监督、背压、限流、可观测性与故障恢复，再根据生命周期决定保留裸循环还是采用标准 OTP 抽象。</p>
+  </div>
+</section>
+
+
+
+
+
+
+  </main>
+
+  <nav id="pager"></nav>
+  <footer class="site">拆解 voice_chat · 代码与 <code>voice_chat/</code> 仓库逐字同步 · 视觉与交互参考 dsh.papertok.ai</footer>
+</div>
+
+<script src="engine.js"></script>
+</body>
+</html>

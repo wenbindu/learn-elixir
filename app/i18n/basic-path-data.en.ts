@@ -397,6 +397,7 @@ end
       "In Elixir, `=` does more than assign a value. It checks whether the shapes on both sides can match.",
       "The left side is like a form with empty spaces. The data on the right fills them. If a position, label, or key does not fit, the match fails.",
       "This is often used to unpack data. Write only the parts you need. An underscore `_` can take the rest.",
+      "A plain name in a pattern receives a value. To check against a value that name already holds, add the pin operator `^`. `^expected_tag` means “this position must equal the old value of `expected_tag`.”",
     ],
     concepts: [
       {
@@ -411,16 +412,24 @@ end
         term: "match failure",
         explanation: "When the shapes or fixed values do not line up, Elixir raises a `MatchError`.",
       },
+      {
+        term: "pin operator",
+        explanation: "`^name` uses the value already bound to `name` instead of binding a new value in that position.",
+      },
     ],
     symbols: [
       { token: "=", reading: "Match the two sides. New names on the left bind to the matching values." },
       { token: "_", reading: "The value in this position does not need to be saved." },
       { token: "[head | tail]", reading: "Split a non-empty list into its first item and the remaining items." },
+      { token: "^name", reading: "Check this position against the value already stored in `name`. Read it as pin name." },
     ],
     example: {
       label: "Unpack three kinds of collections",
-      code: `# Match :ok and ignore the third value
-{:ok, score, _} = {:ok, 92, :midterm}
+      code: `# Save the tag we expect
+expected_tag = :ok
+
+# ^ checks the old expected_tag value; _ ignores the third value
+{^expected_tag, score, _} = {:ok, 92, :midterm}
 
 # Split the first item from the rest of a list
 [first | rest] = ["peach", "plum", "apricot"]
@@ -437,21 +446,27 @@ end
       ],
     },
     steps: [
-      "`{:ok, score, _}` needs a three-item tuple whose first item is `:ok`. The third value is ignored.",
+      "`^expected_tag` does not bind the name again. It requires the tuple's first item to equal the existing `:ok`; `_` ignores the third value.",
       "`[first | rest]` matches only a non-empty list. The bar separates the first item from the remaining list.",
       "A map pattern can name only the keys it needs. The extra `age` key does not stop this match.",
     ],
     practice: {
-      task: "Unpack the city and temperature from `{:weather, \"York\", 28}`.",
-      starter: `# Keep the label and name the other two positions
-{____, ____, ____} = {:weather, "York", 28}
+      task: "Bind the expected tag, then check it while unpacking the city and temperature from `{:weather, \"York\", 28}`.",
+      starter: `# Accept only a weather message
+expected_tag = :weather
+
+# Pin the old tag and name the other two positions
+{^____, ____, ____} = {:weather, "York", 28}
 
 # Return the city and temperature
 {city, temperature}`,
       expected: "The result should be `{\"York\", 28}`.",
-      hint: "Put the fixed atom `:weather` first, followed by `city` and `temperature`.",
-      answer: `# :weather must match; two names receive the data
-{:weather, city, temperature} = {:weather, "York", 28}
+      hint: "Put `^expected_tag` first, followed by `city` and `temperature`.",
+      answer: `# Save the tag we plan to check
+expected_tag = :weather
+
+# ^expected_tag must match; two new names receive the data
+{^expected_tag, city, temperature} = {:weather, "York", 28}
 
 # Look at the values we unpacked
 {city, temperature}`,
@@ -463,7 +478,7 @@ end
     takeaways: [
       "`=` checks a shape. It does not only put a value into a name.",
       "Fixed values check the data. New names receive it.",
-      "Use `_` for a value you do not need.",
+      "Use `^name` to check an old value and `_` for a value you do not need.",
     ],
   },
   {
@@ -3163,11 +3178,11 @@ export const basicPathsEn: BasicPath[] = [
       ...elixirProjectLessonsEn,
     ],
     bridge: {
-      title: "Next: let the project face concurrency and failure",
+      title: "Next: understand a BEAM process",
       description:
-        "You have worked with modules, files, tests, and a command-line project. Use the Start Line for one layered diagnostic, then follow the BEAM path into messages, capacity, and recovery.",
-      href: "/learn/start-line",
-      label: "Go to the BEAM Start Line",
+        "You have worked with modules, files, tests, and a command-line project. Skip the repeated setup check and see when a plain function should become a state-owning process with a mailbox.",
+      href: "/learn/beam-mental-model",
+      label: "Enter processes and mailboxes",
     },
     references: [
       {
@@ -3206,11 +3221,11 @@ export const basicPathsEn: BasicPath[] = [
       ...erlangProjectLessonsEn,
     ],
     bridge: {
-      title: "Next: let the project face concurrency and failure",
+      title: "Next: understand a BEAM process",
       description:
-        "You have worked with modules, files, tests, and a command-line project. Use the Start Line for one layered diagnostic, then follow the BEAM path into messages, OTP, and supervision trees.",
-      href: "/learn/start-line",
-      label: "Go to the BEAM Start Line",
+        "You have worked with modules, files, tests, and a command-line project. Skip the repeated setup check and see when a plain function should become a state-owning process with a mailbox.",
+      href: "/learn/beam-mental-model",
+      label: "Enter processes and mailboxes",
     },
     references: [
       {

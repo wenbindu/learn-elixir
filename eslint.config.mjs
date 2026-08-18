@@ -10,6 +10,7 @@ const eslintConfig = defineConfig([
     // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",
+    "public/case-chat/**",
     "next-env.d.ts",
   ]),
 ]);

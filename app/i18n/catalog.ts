@@ -3,7 +3,10 @@ import {
   type BasicPath,
 } from "../basic-path-data";
 import {
+  courseDisplayOrder,
+  courseNavigationOrder,
   courseModules as courseModulesZh,
+  recommendedCourseOrder,
   stages as stagesZh,
   type CourseModule,
 } from "../course-data";
@@ -45,12 +48,21 @@ export function getBasicPathStats(locale: Locale) {
 }
 
 export function getCourseCatalog(locale: Locale) {
-  const courseModules = locale === "zh" ? courseModulesZh : courseModulesEn;
-  const stages = locale === "zh" ? stagesZh : stagesEn;
-  const recommendedCourseModules = courseModules.filter(
-    (courseModule) =>
-      !courseModule.optionalReview && !courseModule.prerequisite,
+  const localizedModules = locale === "zh" ? courseModulesZh : courseModulesEn;
+  const moduleBySlug = new Map(
+    localizedModules.map((courseModule) => [courseModule.slug, courseModule]),
   );
+  const courseModules = courseDisplayOrder.map((slug) => {
+    const courseModule = moduleBySlug.get(slug);
+    if (!courseModule) throw new Error(`Missing localized course module: ${slug}`);
+    return courseModule;
+  });
+  const stages = locale === "zh" ? stagesZh : stagesEn;
+  const recommendedCourseModules = recommendedCourseOrder.map((slug) => {
+    const courseModule = moduleBySlug.get(slug);
+    if (!courseModule) throw new Error(`Missing localized mainline module: ${slug}`);
+    return courseModule;
+  });
   const courseStats = {
     stations: courseModules.length,
     checkpoints: courseModules.reduce(
@@ -63,6 +75,9 @@ export function getCourseCatalog(locale: Locale) {
     ).length,
     optionalReviewStations:
       courseModules.filter((courseModule) => courseModule.optionalReview).length,
+    optionalExtensionStations: courseModules.filter(
+      (courseModule) => courseModule.optionalExtension,
+    ).length,
   };
 
   return { courseModules, stages, recommendedCourseModules, courseStats };
@@ -75,18 +90,41 @@ export function getCourseModule(locale: Locale, slug: string) {
 }
 
 export function getAdjacentCourseModules(locale: Locale, slug: string) {
-  const modules = getCourseCatalog(locale).courseModules;
+  const catalog = getCourseCatalog(locale);
+  const current = catalog.courseModules.find(
+    (courseModule) => courseModule.slug === slug,
+  );
+  if (current?.optionalReview) {
+    return {
+      previous: getCourseModule(locale, "beam-mental-model"),
+      next: getCourseModule(locale, "processes-and-mailboxes"),
+    };
+  }
+  if (current?.slug === "shared-semantics") {
+    return {
+      previous: getCourseModule(locale, "distributed-operations"),
+      next: getCourseModule(locale, "interoperability"),
+    };
+  }
+  if (current?.slug === "interoperability") {
+    return {
+      previous: getCourseModule(locale, "shared-semantics"),
+      next: getCourseModule(locale, "reliable-scheduler"),
+    };
+  }
+
+  const moduleBySlug = new Map(
+    catalog.courseModules.map((courseModule) => [courseModule.slug, courseModule]),
+  );
+  const modules = courseNavigationOrder
+    .map((item) => moduleBySlug.get(item))
+    .filter((item): item is CourseModule => Boolean(item));
   const index = modules.findIndex((courseModule) => courseModule.slug === slug);
   if (index < 0) return { previous: undefined, next: undefined };
 
   return {
-    previous: modules
-      .slice(0, index)
-      .reverse()
-      .find((courseModule) => !courseModule.optionalReview),
-    next: modules
-      .slice(index + 1)
-      .find((courseModule) => !courseModule.optionalReview),
+    previous: index > 0 ? modules[index - 1] : undefined,
+    next: index < modules.length - 1 ? modules[index + 1] : undefined,
   };
 }
 
@@ -95,9 +133,17 @@ export function getKeywordEntries(locale: Locale) {
 }
 
 export function assertCatalogParity() {
-  const slugs = (items: CourseModule[]) => items.map((item) => item.slug);
+  const courseShape = (items: CourseModule[]) =>
+    items.map((item) => ({
+      slug: item.slug,
+      number: item.number,
+      stage: item.stage,
+      prerequisite: Boolean(item.prerequisite),
+      optionalReview: Boolean(item.optionalReview),
+      optionalExtension: Boolean(item.optionalExtension),
+    }));
   const catalogs = {
-    courses: [slugs(courseModulesZh), slugs(courseModulesEn)] as const,
+    courses: [courseShape(courseModulesZh), courseShape(courseModulesEn)] as const,
     stages: [
       stagesZh.map((stage) => stage.id),
       stagesEn.map((stage) => stage.id),
@@ -121,7 +167,7 @@ export function assertCatalogParity() {
   for (const [label, [chinese, english]] of Object.entries(catalogs)) {
     if (JSON.stringify(chinese) !== JSON.stringify(english)) {
       throw new Error(
-        `The Chinese and English ${label} catalogs must keep the same route keys.`,
+        `The Chinese and English ${label} catalogs must keep the same route structure.`,
       );
     }
   }

@@ -18,6 +18,7 @@ export type CourseModule = {
   languages: string[];
   prerequisite?: boolean;
   optionalReview?: boolean;
+  optionalExtension?: boolean;
   why: string;
   question: string;
   incident: {
@@ -101,14 +102,14 @@ export const stages: Array<{
   {
     id: "foundation",
     number: "01",
-    title: "先排除环境问题",
-    description: "确认工具、目录和运行时都正常，再把错误交给代码处理。",
+    title: "准备好，认识 BEAM",
+    description: "先确认工具能跑，再用第一个进程分清函数、状态、PID 与消息。",
   },
   {
     id: "languages",
     number: "02",
-    title: "跨过语言边界",
-    description: "语言复习是跳级检查；主课只追两种写法共用的数据协议。",
+    title: "按需补语言",
+    description: "只在需要时补另一门语言。单语言学习者不必在这里停下。",
   },
   {
     id: "concurrency",
@@ -120,7 +121,7 @@ export const stages: Array<{
     id: "production",
     number: "04",
     title: "守住系统边界",
-    description: "处理断线、双语边界和重试风暴，再完成可靠任务系统。",
+    description: "核心从节点断线直达综合项目。需要双语协作时，再走共享 term 与 adapter 支线。",
   },
 ];
 
@@ -675,7 +676,22 @@ mix run -e 'IO.puts("OTP #{:erlang.system_info(:otp_release)}")'`,
           "BEAM 估算工作量的单位。一个进程做了一段工作后，调度器会让其他进程获得机会。",
       },
     ],
-    elixirCode: `# total 是这个进程当前保管的状态
+    elixirCode: `# 先记住当前 IEx 进程，worker 才知道回信地址
+parent = self()
+
+# spawn 启动一个独立的小进程，并立即交回它的 PID
+worker =
+  spawn(fn ->
+    # 子进程把自己的 PID 装进消息，发回 parent
+    send(parent, {:hello, self()})
+  end)
+
+# parent 从自己的 mailbox 等待；^worker 核对回信者
+receive do
+  {:hello, ^worker} -> :worker_replied
+end
+
+# total 是计数进程当前保管的状态
 counter = fn loop, total ->
   receive do
     # 用新总数进入下一轮，旧值不会被原地修改
@@ -688,7 +704,21 @@ end
 
 # 启动计数器进程，初始值为 0
 pid = spawn(fn -> counter.(counter, 0) end)`,
-    erlangCode: `%% Total 是这个进程当前保管的状态
+    erlangCode: `%% 先记住当前 erl 进程，worker 才知道回信地址
+Parent = self(),
+
+%% spawn 启动一个独立的小进程，并立即交回它的 PID
+Worker = spawn(fun() ->
+  %% 子进程把自己的 PID 装进消息，发回 Parent
+  Parent ! {hello, self()}
+end),
+
+%% Parent 从自己的 mailbox 等待；Worker 已绑定，因此这里会核对
+receive
+  {hello, Worker} -> worker_replied
+end,
+
+%% Total 是计数进程当前保管的状态
 Counter = fun Loop(Total) ->
   receive
     %% 用新总数进入下一轮，旧值不会被原地修改
@@ -702,7 +732,7 @@ end,
 %% 启动计数器进程，初始值为 0
 Pid = spawn(fun() -> Counter(0) end).`,
     codeCaption:
-      "计数器没有擦掉旧数字再写新数字。它每收到一条消息，就带着新的总数进入下一轮等待。",
+      "先跑一封最短信，认清 PID、发送与接收；再看计数进程怎样把新状态带进下一轮，而不是原地改旧值。",
     experiment: {
       title: "给计数器寄三封信",
       intro:
@@ -713,9 +743,25 @@ Pid = spawn(fun() -> Counter(0) end).`,
         "用 `Process.info(pid, :message_queue_len)` 看看它的收件箱里还有几封信",
       ],
       command: `# 连续发送三条加法消息；每次 send 都立即返回
-send(pid, {:add, 1}); send(pid, {:add, 2}); send(pid, {:add, 3})`,
+send(pid, {:add, 1})
+send(pid, {:add, 2})
+send(pid, {:add, 3})
+
+# 带上自己的 PID 请求当前总数
+send(pid, {:read, self()})
+
+# 等计数器回信；超过一秒就返回 timeout
+receive do
+  {:total, total} -> total
+after
+  1_000 -> :timeout
+end
+
+# 确认当前还有多少消息没有处理
+Process.info(pid, :message_queue_len)`,
       expected: [
         "最后会收到 `{:total, 6}`",
+        "读取完成后，`message_queue_len` 通常回到 0",
         "其他进程只能发消息，不能伸手直接改掉计数器保管的数字",
       ],
       breakIt:
@@ -769,7 +815,7 @@ send(pid, {:add, 1}); send(pid, {:add, 2}); send(pid, {:add, 3})`,
     ],
   },
   {
-    number: "03",
+    number: "R1",
     slug: "elixir-foundations",
     stage: "languages",
     stageLabel: "语言",
@@ -942,7 +988,7 @@ mix test --trace`,
     ],
   },
   {
-    number: "04",
+    number: "R2",
     slug: "erlang-foundations",
     stage: "languages",
     stageLabel: "语言",
@@ -1102,10 +1148,11 @@ rebar3 eunit`,
     ],
   },
   {
-    number: "05",
+    number: "X1",
     slug: "shared-semantics",
-    stage: "languages",
+    stage: "production",
     stageLabel: "桥接",
+    optionalExtension: true,
     title: "两种语言对暗号",
     subtitle: "Elixir 和 Erlang 穿着不同的外衣，却常常传递同样的数据。",
     summary: "用两种语言实现同一套订单变化，并用测试核对结果。",
@@ -1266,7 +1313,7 @@ iex -S mix`,
     ],
   },
   {
-    number: "06",
+    number: "03",
     slug: "processes-and-mailboxes",
     stage: "concurrency",
     stageLabel: "并发",
@@ -1341,33 +1388,50 @@ iex -S mix`,
           "单向观察关系。被观察者退出时，观察者收到 `DOWN`，但不会自动退出。",
       },
     ],
-    elixirCode: `# 发出请求前，先生成本次调用专用的 reference
+    elixirCode: `# 发出请求前，分别准备“观察进程”和“配对回复”的 reference
 def call(server, request, timeout \\\\ 1_000) do
-  ref = make_ref()
+  monitor_ref = Process.monitor(server)
+  request_ref = make_ref()
   # 同时告诉服务端回信地址和请求编号
-  send(server, {:call, self(), ref, request})
+  send(server, {:call, self(), request_ref, request})
 
   receive do
-    # 只接收带有同一 reference 的回复
-    {:reply, ^ref, response} -> {:ok, response}
+    # 正常回复要匹配 request reference
+    {:reply, ^request_ref, response} ->
+      # 不再观察，并清掉可能已到达的 DOWN
+      Process.demonitor(monitor_ref, [:flush])
+      {:ok, response}
+
+    # monitor 单向报告服务进程退出
+    {:DOWN, ^monitor_ref, :process, ^server, reason} ->
+      {:error, {:server_down, reason}}
   after
     # timeout 只停止等待，不会撤回 request
-    timeout -> {:error, :timeout}
+    timeout ->
+      Process.demonitor(monitor_ref, [:flush])
+      {:error, :timeout}
   end
 end`,
-    erlangCode: `%% 发出请求前，先生成本次调用专用的 reference
+    erlangCode: `%% 发出请求前，分别准备“观察进程”和“配对回复”的 reference
 call(Server, Request, Timeout) ->
-  Ref = make_ref(),
+  MonitorRef = erlang:monitor(process, Server),
+  RequestRef = make_ref(),
   %% 同时告诉服务端回信地址和请求编号
-  Server ! {call, self(), Ref, Request},
+  Server ! {call, self(), RequestRef, Request},
   receive
-    %% 只接收带有同一 Ref 的回复
-    {reply, Ref, Response} -> {ok, Response}
+    %% 正常回复后移除 monitor，并清掉可能已到达的 DOWN
+    {reply, RequestRef, Response} ->
+      erlang:demonitor(MonitorRef, [flush]),
+      {ok, Response};
+    %% monitor 单向报告服务进程退出
+    {'DOWN', MonitorRef, process, Server, Reason} ->
+      {error, {server_down, Reason}}
   after Timeout ->
     %% timeout 只停止等待，不会撤回 request
+    erlang:demonitor(MonitorRef, [flush]),
     {error, timeout}
   end.`,
-    codeCaption: "reference 负责配对请求与回复；timeout 不会撤回已发送的消息。",
+    codeCaption: "request reference 配对回复，monitor reference 报告退出；timeout 仍不会撤回已发送的消息。",
     experiment: {
       title: "让回信迟到",
       intro:
@@ -1433,7 +1497,7 @@ Process.info(self(), :messages)`,
     ],
   },
   {
-    number: "07",
+    number: "04",
     slug: "otp-behaviours",
     stage: "concurrency",
     stageLabel: "OTP",
@@ -1473,12 +1537,12 @@ Process.info(self(), :messages)`,
       },
     ],
     storyBridge: {
-      label: "唐代驿路",
-      title: "公文分两种",
+      label: "快递服务台",
+      title: "要签收，还是只通知",
       story:
-        "唐代驿路有交接、换马和登记章程。有些公文要等回执，有些送出即可。",
+        "快递员送件，有时必须等签收，有时只发一条到柜通知。两种消息都发出去了，等待方式不同。",
       connection:
-        "behaviour 对应章程，callback 对应职责。call 要等回执，cast 不等待。",
+        "behaviour 规定流程，callback 承担步骤。call 要等回复，cast 只发送，不在原地等。",
       boundary:
         "call 与 cast 都是 BEAM 消息。cast 不保证已处理，也不会限制 mailbox。",
     },
@@ -1611,7 +1675,7 @@ handle_call({put, Key, Value}, _From, State) ->
     ],
   },
   {
-    number: "08",
+    number: "05",
     slug: "supervision-trees",
     stage: "concurrency",
     stageLabel: "OTP",
@@ -1651,10 +1715,10 @@ handle_call({put, Key, Value}, _From, State) ->
       },
     ],
     storyBridge: {
-      label: "《三国演义》行军营寨",
-      title: "粮草营出了问题",
+      label: "学校社团活动",
+      title: "谁依赖谁，就一起重来",
       story:
-        "借行军营寨想象依赖关系：有的小营独立，有的要等粮草与道路。前方供应出错，后方依赖者也要重整。",
+        "社团办活动，签到台、器材组和比赛组有先后依赖。器材登记重置后，拿着旧名单的比赛组也该重新准备；独立的摄影组不必跟着忙。",
       connection:
         "`one_for_one` 只重启故障 child；`one_for_all` 全部重启；`rest_for_one` 还会重启后面的依赖者。",
       boundary:
@@ -1789,7 +1853,7 @@ Supervisor.which_children(Jobs.Supervisor)`,
     ],
   },
   {
-    number: "09",
+    number: "06",
     slug: "state-and-backpressure",
     stage: "concurrency",
     stageLabel: "容量",
@@ -1955,7 +2019,7 @@ collect(Running, Pending, Limit) ->
     ],
   },
   {
-    number: "10",
+    number: "07",
     slug: "distributed-operations",
     stage: "production",
     stageLabel: "联网",
@@ -2126,10 +2190,11 @@ Node.ping(:"b@127.0.0.1")`,
     ],
   },
   {
-    number: "11",
+    number: "X2",
     slug: "interoperability",
     stage: "production",
     stageLabel: "桥接",
+    optionalExtension: true,
     title: "双语搭档",
     subtitle: "住在同一台 BEAM 里，互相调用很方便；交换的数据仍要先约好。",
     summary: "让 Elixir API 与 Erlang worker 合作，并处理数据格式与错误边界。",
@@ -2296,13 +2361,13 @@ mix test test/interoperability_test.exs`,
     ],
   },
   {
-    number: "12",
+    number: "08",
     slug: "reliable-scheduler",
     stage: "production",
     stageLabel: "作品",
-    title: "可靠任务小队",
-    subtitle: "让函数、进程、监督树、两门语言和容量规则一起完成一件自己的作品。",
-    summary: "用 Elixir 做入口、Erlang 做调度，完成一个有界、可重试的任务系统。",
+    title: "可靠任务调度器",
+    subtitle: "先用一门语言守住容量与失败，再把双语协作当作扩展。",
+    summary: "先完成有界、可确认、有限重试的核心版；学过双语边界后，再接上另一门语言。",
     duration: "约 10 小时 · 建议分 6 次",
     lessons: 4,
     level: "综合创作",
@@ -2310,7 +2375,7 @@ mix test test/interoperability_test.exs`,
     why:
       "终点作品把前面的工具连起来。我们会制造队列满、任务失败、消息迟到和节点断开，再检查状态、重试、恢复与拒绝规则。",
     question:
-      "怎样构建有界、至少一次执行的任务系统，在队列满、worker 崩溃、timeout 与节点断线时仍守住容量、幂等和重试上限？",
+      "怎样构建有界任务系统，在队列满、worker 崩溃、timeout 与节点断线时守住容量和重试上限，并诚实说明跨重启还缺哪种保证？",
     incident: {
       title: "一个持续失败的任务触发重试风暴",
       description:
@@ -2336,29 +2401,29 @@ mix test test/interoperability_test.exs`,
       },
     ],
     storyBridge: {
-      label: "《三国演义》粮草调度",
-      title: "粮车有限",
+      label: "食堂取餐窗口",
+      title: "窗口和等候区都有上限",
       story:
-        "借粮草调度想象任务系统：批次要登记，车辆有限，催运令太多时要排队。重复发令还可能重复送达。",
+        "午饭时窗口一次只能做几份，等候区也站不下所有人。取餐号重复叫到时，还得确认这份餐有没有交过。",
       connection:
-        "粮车对应 worker，待运粮草对应 bounded queue，重新发令对应 retry，批次记号对应幂等键。runbook 是值守簿。",
+        "窗口对应 worker，等候区对应 bounded queue，再叫一次对应 retry，取餐号对应幂等键。runbook 是值班说明。",
       boundary:
-        "软件处理消息与外部服务，不是真实行军。幂等键也不能自动保证跨节点恰好一次。",
+        "软件故障比排队复杂。幂等键不能自动提供持久化，也不能单独保证跨节点恰好一次。",
     },
     outcomes: [
       "能先写下必须始终成立的规则，再据此安排进程、队列和监督树",
-      "能让 Erlang 与 Elixir 在同一个 release 中各自承担清楚的真实职责",
+      "能先交付一门语言的核心版，再选择是否增加 Erlang/Elixir adapter",
       "能主动制造小故障（故障注入），检查系统怎样恢复、拒绝或留下线索",
     ],
     prerequisites: [
-      "完成 00–11 模块，并保留前面做过的队列和监督树练习",
-      "能在参考资料帮助下编写 GenServer、gen_server 和 Supervisor",
+      "完成前面的 BEAM 主线，并保留队列和监督树练习",
+      "核心版只要求会一门语言；双语扩展再要求完成共享 term 与互操作两站",
     ],
     concepts: [
       {
         term: "at-least-once",
         definition:
-          "任务至少尝试一次，也可能执行多次。要用幂等键或去重记录控制重复影响。",
+          "任务至少尝试一次，也可能执行多次。要跨整台 VM 重启守住这项保证，还需要持久队列或日志、ack 与幂等记录；只有内存队列时不能这样承诺。",
       },
       {
         term: "bounded queue",
@@ -2436,19 +2501,19 @@ mix test --only fault_injection --trace`,
         "retry 可能重复外部操作。先决定幂等键、退避、次数上限和最终失败去向。",
     },
     challenge: {
-      title: "讲清任务小队",
+      title: "交付核心版，再选双语扩展",
       brief:
-        "整理源码、监督树、消息约定、容量计划、故障记录、release 和一页 runbook，再讲清三个关键选择。",
+        "先用 Elixir 或 Erlang 任一门完成核心调度器，整理监督树、容量计划、故障记录、release 和一页 runbook。若已学互操作，再增加另一门语言的 adapter/worker。",
       hints: [
         "主动说出至少一个这版作品还没有保证的事情，这不是扣分，而是诚实的工程判断。",
         "除了成功提交，也演示 `queue_full`，让观众看到系统怎样承认自己忙不过来。",
         "写 runbook 时先想用户会看到什么，再反推值守者需要哪些信号。",
       ],
       acceptance: [
-        "Elixir 与 Erlang 各自承担一项真实且说得清理由的职责",
         "并发、队列、timeout 和 retry 都有明确上限",
-        "ExUnit 与 EUnit 都真正穿过两门语言的交界处",
+        "能区分内存队列的运行中重试，与依赖持久化和 ack 的跨重启保证",
         "另一位同学能启动 release，并按 runbook 完成一次安全检查",
+        "可选扩展：两门语言各自承担真实职责，并用双向测试穿过 adapter",
       ],
     },
     takeaways: [
@@ -2473,10 +2538,52 @@ mix test --only fault_injection --trace`,
   },
 ];
 
-export const recommendedCourseModules = courseModules.filter(
-  (courseModule) =>
-    !courseModule.optionalReview && !courseModule.prerequisite,
+export const recommendedCourseOrder = [
+  "beam-mental-model",
+  "processes-and-mailboxes",
+  "otp-behaviours",
+  "supervision-trees",
+  "state-and-backpressure",
+  "distributed-operations",
+  "reliable-scheduler",
+] as const;
+
+export const bilingualExtensionOrder = [
+  "shared-semantics",
+  "interoperability",
+] as const;
+
+export const courseNavigationOrder = [
+  "install-toolchain",
+  "start-line",
+  ...recommendedCourseOrder,
+] as const;
+
+export const courseDisplayOrder = [
+  "install-toolchain",
+  "start-line",
+  "beam-mental-model",
+  "elixir-foundations",
+  "erlang-foundations",
+  "processes-and-mailboxes",
+  "otp-behaviours",
+  "supervision-trees",
+  "state-and-backpressure",
+  "distributed-operations",
+  "shared-semantics",
+  "interoperability",
+  "reliable-scheduler",
+] as const;
+
+const courseModuleBySlug = new Map(
+  courseModules.map((courseModule) => [courseModule.slug, courseModule]),
 );
+
+export const recommendedCourseModules = recommendedCourseOrder.map((slug) => {
+  const courseModule = courseModuleBySlug.get(slug);
+  if (!courseModule) throw new Error(`Missing recommended course module: ${slug}`);
+  return courseModule;
+});
 
 export const courseStats = {
   stations: courseModules.length,
@@ -2491,6 +2598,9 @@ export const courseStats = {
   optionalReviewStations: courseModules.filter(
     (courseModule) => courseModule.optionalReview,
   ).length,
+  optionalExtensionStations: courseModules.filter(
+    (courseModule) => courseModule.optionalExtension,
+  ).length,
 };
 
 export function getModule(slug: string) {
@@ -2498,18 +2608,37 @@ export function getModule(slug: string) {
 }
 
 export function getAdjacentModules(slug: string) {
-  const index = courseModules.findIndex((module) => module.slug === slug);
+  const current = getModule(slug);
+  if (current?.optionalReview) {
+    return {
+      previous: getModule("beam-mental-model"),
+      next: getModule("processes-and-mailboxes"),
+    };
+  }
+
+  if (current?.slug === "shared-semantics") {
+    return {
+      previous: getModule("distributed-operations"),
+      next: getModule("interoperability"),
+    };
+  }
+  if (current?.slug === "interoperability") {
+    return {
+      previous: getModule("shared-semantics"),
+      next: getModule("reliable-scheduler"),
+    };
+  }
+
+  const modules = courseNavigationOrder.map((item) => getModule(item)).filter(
+    (item): item is CourseModule => Boolean(item),
+  );
+  const index = modules.findIndex((module) => module.slug === slug);
   if (index < 0) {
     return { previous: undefined, next: undefined };
   }
 
   return {
-    previous: courseModules
-      .slice(0, index)
-      .reverse()
-      .find((courseModule) => !courseModule.optionalReview),
-    next: courseModules
-      .slice(index + 1)
-      .find((courseModule) => !courseModule.optionalReview),
+    previous: index > 0 ? modules[index - 1] : undefined,
+    next: index < modules.length - 1 ? modules[index + 1] : undefined,
   };
 }

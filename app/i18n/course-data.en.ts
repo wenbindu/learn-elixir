@@ -9,14 +9,14 @@ export const stagesEn: Array<{
   {
     id: "foundation",
     number: "01",
-    title: "Rule out environment failures",
-    description: "Check the tools, project directory, and runtime before blaming the code.",
+    title: "Get ready and meet the BEAM",
+    description: "Check the tools, then use a first process to separate functions, state ownership, PIDs, and messages.",
   },
   {
     id: "languages",
     number: "02",
-    title: "Cross the language boundary",
-    description: "Use language reviews as placement checks, then focus on the shared data contract.",
+    title: "Add a language when needed",
+    description: "Review the other language only when you need it. A single-language learner can keep moving.",
   },
   {
     id: "concurrency",
@@ -28,7 +28,7 @@ export const stagesEn: Array<{
     id: "production",
     number: "04",
     title: "Protect system boundaries",
-    description: "Handle disconnects, language boundaries, and retry storms, then build a reliable task system.",
+    description: "The core runs from node loss to the capstone. Take the shared-term and adapter branch only when two languages must work together.",
   },
 ];
 
@@ -494,7 +494,22 @@ mix run -e 'IO.puts("OTP #{:erlang.system_info(:otp_release)}")'`,
         definition: "A unit BEAM uses to estimate work. After one process has done some work, the scheduler gives other processes a chance.",
       },
     ],
-    elixirCode: `# total is the state currently owned by this process
+    elixirCode: `# Remember the current IEx process so the worker has a return address
+parent = self()
+
+# spawn starts an isolated process and immediately returns its PID
+worker =
+  spawn(fn ->
+    # The child puts its own PID in a message and sends it to parent
+    send(parent, {:hello, self()})
+  end)
+
+# The parent waits in its mailbox; ^worker checks who replied
+receive do
+  {:hello, ^worker} -> :worker_replied
+end
+
+# total is the state currently owned by the counter process
 counter = fn loop, total ->
   receive do
     # Enter the next round with a new total; the old value is not changed in place
@@ -507,7 +522,21 @@ end
 
 # Start the counter process with 0 as its first value
 pid = spawn(fn -> counter.(counter, 0) end)`,
-    erlangCode: `%% Total is the state currently owned by this process
+    erlangCode: `%% Remember the current erl process so the worker has a return address
+Parent = self(),
+
+%% spawn starts an isolated process and immediately returns its PID
+Worker = spawn(fun() ->
+  %% The child puts its own PID in a message and sends it to Parent
+  Parent ! {hello, self()}
+end),
+
+%% Parent waits in its mailbox; Worker is already bound, so this checks it
+receive
+  {hello, Worker} -> worker_replied
+end,
+
+%% Total is the state currently owned by the counter process
 Counter = fun Loop(Total) ->
   receive
     %% Enter the next round with a new total; the old value is not changed in place
@@ -520,7 +549,7 @@ end,
 
 %% Start the counter process with 0 as its first value
 Pid = spawn(fun() -> Counter(0) end).`,
-    codeCaption: "The counter does not erase an old number and write over it. After each message, it carries a new total into the next round of waiting.",
+    codeCaption: "Send one tiny message first to identify PIDs, send, and receive. Then see how the counter carries new state into another round instead of changing an old value in place.",
     experiment: {
       title: "Send the counter three letters",
       intro: "Send “add 1,” “add 2,” and “add 3,” then read the total. Besides finding 6, identify who owns the state.",
@@ -530,9 +559,25 @@ Pid = spawn(fun() -> Counter(0) end).`,
         "Use `Process.info(pid, :message_queue_len)` to see how many messages remain in its inbox",
       ],
       command: `# Send three addition messages; each call to send returns at once
-send(pid, {:add, 1}); send(pid, {:add, 2}); send(pid, {:add, 3})`,
+send(pid, {:add, 1})
+send(pid, {:add, 2})
+send(pid, {:add, 3})
+
+# Include your PID when asking for the current total
+send(pid, {:read, self()})
+
+# Wait for the reply; return timeout after one second
+receive do
+  {:total, total} -> total
+after
+  1_000 -> :timeout
+end
+
+# Check how many messages remain unhandled
+Process.info(pid, :message_queue_len)`,
       expected: [
         "You eventually receive `{:total, 6}`",
+        "After the read completes, `message_queue_len` usually returns to 0",
         "Other processes can send messages, but cannot reach in and directly change the number owned by the counter",
       ],
       breakIt: "Remove the `{:read, caller}` branch, then send a read message. The process will not crash. That message will remain in the mailbox.",
@@ -575,7 +620,7 @@ send(pid, {:add, 1}); send(pid, {:add, 2}); send(pid, {:add, 3})`,
     ],
   },
   {
-    number: "03",
+    number: "R1",
     slug: "elixir-foundations",
     stage: "languages",
     stageLabel: "Language",
@@ -724,7 +769,7 @@ mix test --trace`,
     ],
   },
   {
-    number: "04",
+    number: "R2",
     slug: "erlang-foundations",
     stage: "languages",
     stageLabel: "Language",
@@ -859,12 +904,13 @@ rebar3 eunit`,
     ],
   },
   {
-    number: "05",
+    number: "X1",
     slug: "shared-semantics",
-    stage: "languages",
+    stage: "production",
     stageLabel: "Bridge",
-    title: "The two languages share a code",
-    subtitle: "Elixir and Erlang wear different clothes, but often carry the same data.",
+    optionalExtension: true,
+    title: "Agree on shared BEAM terms",
+    subtitle: "Elixir and Erlang spell things differently. Stable terms let them keep one contract.",
     summary: "Implement the same order changes in both languages and compare the results with tests.",
     duration: "About 5 hours · Try 4 sessions",
     lessons: 4,
@@ -1003,7 +1049,7 @@ iex -S mix`,
     ],
   },
   {
-    number: "06",
+    number: "03",
     slug: "processes-and-mailboxes",
     stage: "concurrency",
     stageLabel: "Concurrency",
@@ -1069,33 +1115,50 @@ iex -S mix`,
         definition: "A one-way watching relationship. When the watched process exits, the watcher receives `DOWN` but does not automatically exit.",
       },
     ],
-    elixirCode: `# Make a reference just for this call before sending the request
+    elixirCode: `# Prepare one reference for process exit and another for the reply
 def call(server, request, timeout \\ 1_000) do
-  ref = make_ref()
+  monitor_ref = Process.monitor(server)
+  request_ref = make_ref()
   # Tell the server both the return address and request number
-  send(server, {:call, self(), ref, request})
+  send(server, {:call, self(), request_ref, request})
 
   receive do
-    # Accept only a reply with the same reference
-    {:reply, ^ref, response} -> {:ok, response}
+    # A normal reply must match the request reference
+    {:reply, ^request_ref, response} ->
+      # Stop watching and remove a DOWN message that may already be waiting
+      Process.demonitor(monitor_ref, [:flush])
+      {:ok, response}
+
+    # A monitor reports exit in one direction; the caller chooses the result
+    {:DOWN, ^monitor_ref, :process, ^server, reason} ->
+      {:error, {:server_down, reason}}
   after
     # A timeout stops waiting; it does not pull back the request
-    timeout -> {:error, :timeout}
+    timeout ->
+      Process.demonitor(monitor_ref, [:flush])
+      {:error, :timeout}
   end
 end`,
-    erlangCode: `%% Make a reference just for this call before sending the request
+    erlangCode: `%% Prepare one reference for process exit and another for the reply
 call(Server, Request, Timeout) ->
-  Ref = make_ref(),
+  MonitorRef = erlang:monitor(process, Server),
+  RequestRef = make_ref(),
   %% Tell the server both the return address and request number
-  Server ! {call, self(), Ref, Request},
+  Server ! {call, self(), RequestRef, Request},
   receive
-    %% Accept only a reply with the same Ref
-    {reply, Ref, Response} -> {ok, Response}
+    %% Stop watching and remove a DOWN message that may already be waiting
+    {reply, RequestRef, Response} ->
+      erlang:demonitor(MonitorRef, [flush]),
+      {ok, Response};
+    %% A monitor reports exit in one direction
+    {'DOWN', MonitorRef, process, Server, Reason} ->
+      {error, {server_down, Reason}}
   after Timeout ->
     %% A timeout stops waiting; it does not pull back the request
+    erlang:demonitor(MonitorRef, [flush]),
     {error, timeout}
   end.`,
-    codeCaption: "A reference pairs each request with its reply. A timeout does not recall a sent message.",
+    codeCaption: "A request reference pairs the reply, a monitor reference reports exit, and a timeout still does not recall a sent message.",
     experiment: {
       title: "Make a reply arrive late",
       intro: "Let the server reply after 1.5 seconds while the client waits only 0.5 seconds. See where the reply goes after the timeout.",
@@ -1150,7 +1213,7 @@ Process.info(self(), :messages)`,
     ],
   },
   {
-    number: "07",
+    number: "04",
     slug: "otp-behaviours",
     stage: "concurrency",
     stageLabel: "OTP",
@@ -1187,10 +1250,10 @@ Process.info(self(), :messages)`,
       },
     ],
     storyBridge: {
-      label: "A relay-road rulebook",
-      title: "Two kinds of official letter",
-      story: "A relay road has rules for handoffs, fresh horses, and records. Some letters need a receipt. Others can be sent without waiting.",
-      connection: "A behaviour is the rulebook and callbacks are its duties. A call waits for a receipt; a cast does not.",
+      label: "A parcel counter",
+      title: "Requests that wait, messages that do not",
+      story: "Some parcel handoffs require a signature. A locker notification can be sent without waiting for the customer to collect anything.",
+      connection: "A behaviour defines the process and callbacks perform its steps. A call waits for a reply; a cast sends and moves on.",
       boundary: "Calls and casts are both BEAM messages. A cast does not prove that work is finished, and it does not limit the mailbox.",
     },
     outcomes: [
@@ -1309,7 +1372,7 @@ handle_call({put, Key, Value}, _From, State) ->
     ],
   },
   {
-    number: "08",
+    number: "05",
     slug: "supervision-trees",
     stage: "concurrency",
     stageLabel: "OTP",
@@ -1346,9 +1409,9 @@ handle_call({put, Key, Value}, _From, State) ->
       },
     ],
     storyBridge: {
-      label: "A chain of camps",
-      title: "The supply camp has a problem",
-      story: "Imagine a line of camps. Some can work alone. Others depend on supplies and an open road. If an early supply camp fails, the camps behind it may need to regroup too.",
+      label: "A service dependency map",
+      title: "Restart only what depends on the failure",
+      story: "A registry, worker manager, and dispatcher may depend on one another in that order. A separate reporting service can keep running when those three recover.",
       connection: "`one_for_one` restarts only the failed child. `one_for_all` restarts every child. `rest_for_one` also restarts later dependents.",
       boundary: "A supervision tree sees processes and exit signals. A restart does not restore lost data or undo an outside action.",
     },
@@ -1466,7 +1529,7 @@ Supervisor.which_children(Jobs.Supervisor)`,
     ],
   },
   {
-    number: "09",
+    number: "06",
     slug: "state-and-backpressure",
     stage: "concurrency",
     stageLabel: "Capacity",
@@ -1611,7 +1674,7 @@ collect(Running, Pending, Limit) ->
     ],
   },
   {
-    number: "10",
+    number: "07",
     slug: "distributed-operations",
     stage: "production",
     stageLabel: "Networks",
@@ -1750,10 +1813,11 @@ Node.ping(:"b@127.0.0.1")`,
     ],
   },
   {
-    number: "11",
+    number: "X2",
     slug: "interoperability",
     stage: "production",
     stageLabel: "Bridge",
+    optionalExtension: true,
     title: "Two-language partners",
     subtitle: "Calling each other inside one BEAM is easy. Agree on the exchanged data first.",
     summary: "Let an Elixir API and Erlang worker cooperate while handling data formats and error boundaries.",
@@ -1890,19 +1954,19 @@ mix test test/interoperability_test.exs`,
     ],
   },
   {
-    number: "12",
+    number: "08",
     slug: "reliable-scheduler",
     stage: "production",
     stageLabel: "Project",
-    title: "A reliable task team",
-    subtitle: "Bring functions, processes, supervision trees, two languages, and capacity rules together in your own project.",
-    summary: "Use Elixir at the entrance and Erlang for scheduling to build a bounded task system with retries.",
+    title: "A reliable job runner",
+    subtitle: "Protect capacity and failure behavior in one language first. Add a second-language boundary as an extension.",
+    summary: "Build a bounded core with acknowledgements and finite retries, then add the other BEAM language after the interoperability lessons.",
     duration: "About 10 hours · Try 6 sessions",
     lessons: 4,
     level: "Capstone project",
     languages: ["Elixir", "Erlang", "OTP"],
     why: "The final project joins the earlier tools. We will fill the queue, fail a task, delay a message, and disconnect a node, then check state, retries, recovery, and rejection rules.",
-    question: "How do we build a bounded, at-least-once task system that preserves capacity, idempotency, and retry limits when the queue fills, a worker crashes, a timeout fires, or a node disconnects?",
+    question: "How do we keep capacity and retries bounded through queue-full, worker exit, timeout, and node loss—and state honestly what is still missing across a full VM restart?",
     incident: {
       title: "One persistently failing job caused a retry storm",
       description: "A failing job has no retry limit and no idempotency key. It returns to the queue again and again, capacity counters drift, and an external action may happen more than once.",
@@ -1927,23 +1991,23 @@ mix test test/interoperability_test.exs`,
       },
     ],
     storyBridge: {
-      label: "A supply convoy",
-      title: "There are only so many wagons",
-      story: "Imagine a task system as a supply convoy. Each batch is recorded, wagons are limited, and extra orders must wait. Sending the same order twice may also deliver the same batch twice.",
-      connection: "Wagons are workers. Waiting supplies form a bounded queue. A repeated order is a retry. A batch mark is an idempotency key. The duty log is a runbook.",
-      boundary: "Software handles messages and outside services, not a real convoy. An idempotency key also cannot promise exactly-once behavior across nodes by itself.",
+      label: "A dispatch queue",
+      title: "Workers and waiting space are both finite",
+      story: "A delivery desk has a fixed number of drivers and a fixed waiting area. If the same ticket returns, the desk must know whether its delivery already happened.",
+      connection: "Drivers are workers, the waiting area is a bounded queue, another attempt is a retry, and the ticket number is an idempotency key.",
+      boundary: "A queueing picture cannot supply persistence. An idempotency key alone cannot promise exactly-once behavior across nodes.",
     },
     outcomes: [
       "Write down rules that must always hold before arranging processes, queues, and supervision trees",
-      "Give Erlang and Elixir clear, real responsibilities inside one release",
+      "Ship a one-language core first, then decide whether an Erlang/Elixir adapter adds real value",
       "Create small failures on purpose and check how the system recovers, rejects work, or leaves clues",
     ],
     prerequisites: [
-      "Finish modules 00–11 and keep the queue and supervision exercises from earlier stations",
-      "Use reference material to write a GenServer, gen_server, and Supervisor",
+      "Finish the preceding BEAM mainline and keep the queue and supervision exercises",
+      "The core needs one language; the bilingual extension also needs the shared-terms and interoperability stations",
     ],
     concepts: [
-      { term: "at-least-once", definition: "A task is tried at least once and may run more than once. Use an idempotency key or deduplication record to control repeated effects." },
+      { term: "at-least-once", definition: "A task is tried at least once and may run more than once. Keeping that promise across a full VM restart requires durable storage or a log, acknowledgements, and idempotency records. An in-memory queue cannot claim it." },
       { term: "bounded queue", definition: "A waiting queue with fixed capacity. When it is full, the system must wait, reject, or degrade." },
       { term: "runbook", definition: "Operating instructions: which logs and metrics to inspect, how to judge a problem, and which safe actions to take." },
     ],
@@ -2007,18 +2071,18 @@ mix test --only fault_injection --trace`,
       explanation: "A retry can repeat an outside action. Decide the idempotency key, backoff, attempt limit, and final failure destination together.",
     },
     challenge: {
-      title: "Explain the task team",
-      brief: "Gather the source, supervision tree, message agreement, capacity plan, failure record, release, and a one-page runbook. Then explain three important choices.",
+      title: "Ship the core, then choose the bilingual extension",
+      brief: "Build the core runner in either Elixir or Erlang. Gather its supervision tree, capacity plan, failure record, release, and one-page runbook. If you completed interoperability, add an adapter or worker in the other language.",
       hints: [
         "Name at least one thing this version does not guarantee. That is honest engineering, not lost points.",
         "Besides a successful submit, demonstrate `queue_full` so the audience sees the system admit that it is too busy.",
         "When writing the runbook, begin with what a user would notice and work backward to the signals an operator needs.",
       ],
       acceptance: [
-        "Elixir and Erlang each have one real responsibility with a clear reason",
         "Concurrency, queue size, timeout, and retry all have explicit limits",
-        "ExUnit and EUnit both truly cross the language boundary",
+        "The project distinguishes in-memory retries while running from a cross-restart guarantee that needs persistence and acknowledgements",
         "Another student can start the release and perform one safe check from the runbook",
+        "Optional extension: both languages have real responsibilities and tests cross the adapter in both directions",
       ],
     },
     takeaways: [

@@ -22,6 +22,17 @@ const pageCopy = {
     checkShell: (shell: string) => "先确认能打开 " + shell,
     shellIntro: "在终端输入命令。看到交互提示符就够了。暂时不用建项目。",
     installAction: "还没安装？看安装步骤",
+    spineKicker: "知识主线",
+    spineTitle: "每一段都给下一段铺路",
+    spineBody:
+      "语言线先把顺序代码写稳。进程、监督与分布式留到 BEAM 主线。Java、Python、JavaScript 对照只在容易带错直觉的地方出现。",
+    spineItems: [
+      ["01 · 值与形状", "认出类型、集合、匹配和控制流。"],
+      ["02 · 函数与模块", "把一段代码拆成有名字、能测试的小步骤。"],
+      ["03 · 边界与工具", "处理错误、文件、类型约定和项目命令。"],
+      ["04 · 单语言作品", "从任务书走到测试、打包和验收。"],
+      ["05 · 交给 BEAM", "再问：何时需要进程、消息、监督和容量。"],
+    ],
     roadmapKicker: "四段路",
     roadmapTitle: "从第一次运行，走到完整作品",
     roadmapBody: (shell: string) =>
@@ -71,6 +82,17 @@ const pageCopy = {
     shellIntro:
       "Enter the command in your terminal. Seeing the interactive prompt is enough. You do not need to create a project yet.",
     installAction: "Not installed yet? Follow the installation steps",
+    spineKicker: "KNOWLEDGE SPINE",
+    spineTitle: "Each stage earns the next one",
+    spineBody:
+      "The language path makes sequential code solid first. Processes, supervision, and distribution belong to the BEAM mainline. Java, Python, and JavaScript comparisons appear only where an old mental model can mislead you.",
+    spineItems: [
+      ["01 · Values and shapes", "Read types, collections, patterns, and control flow."],
+      ["02 · Functions and modules", "Split work into named, testable steps."],
+      ["03 · Boundaries and tools", "Handle errors, files, type contracts, and project commands."],
+      ["04 · One-language project", "Move from a brief to tests, packaging, and acceptance."],
+      ["05 · Hand off to BEAM", "Then ask when work needs processes, messages, supervision, and capacity."],
+    ],
     roadmapKicker: "Four stages",
     roadmapTitle: "From the first run to a finished project",
     roadmapBody: (shell: string) =>
@@ -218,6 +240,22 @@ export default async function BasicPathPage({
                 ))}
               </ul>
             </div>
+
+            <section className={styles.knowledgeSpine}>
+              <header>
+                <div className="section-kicker">{copy.spineKicker}</div>
+                <h2>{copy.spineTitle}</h2>
+                <p>{copy.spineBody}</p>
+              </header>
+              <ol>
+                {copy.spineItems.map(([title, description]) => (
+                  <li key={title}>
+                    <strong>{title}</strong>
+                    <span>{description}</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
 
             <div className={styles.sectionIntro}>
               <div>
