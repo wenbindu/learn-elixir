@@ -1,0 +1,40 @@
+.container { container-type: inline-size; }
+.canvas { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 1.3fr) minmax(0, 1fr); gap: 38px 40px; align-items: center; padding: 30px 6px 34px; }
+.codeSheet { position: relative; z-index: 1; grid-column: 2; grid-row: 1 / span var(--note-rows); min-width: 0; padding: 18px 12px; background: var(--note-code); border: 1.6px solid var(--ink-soft); border-radius: 5px 10px 4px 8px / 9px 4px 10px 5px; box-shadow: 3px 4px 0 var(--note-line); transform: rotate(-0.6deg); }
+.codeLine { display: flex; align-items: baseline; gap: 14px; width: 100%; padding: 8px 4px; border: 0; border-radius: 40% 8% 35% 6%; color: var(--ink); background: transparent; text-align: left; font: var(--text-code) / 1.65 var(--font-mono); cursor: pointer; }
+.codeLine code { min-width: 0; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; text-decoration: underline; text-decoration-color: var(--annotation-color); text-decoration-thickness: 1.5px; text-underline-offset: 6px; }
+.codeLine[data-selected="true"] { background: var(--note-highlight); }
+.codeLine[data-selected="true"] code { text-decoration-thickness: 2.5px; }
+.annotation { position: relative; z-index: 1; grid-column: var(--note-column); grid-row: var(--note-row); min-width: 0; padding: 6px 2px; color: var(--annotation-color); transform: rotate(-1.4deg); }
+.annotation:nth-of-type(2) { align-self: end; margin-bottom: 22px; transform: rotate(1deg); }
+.annotation:nth-of-type(3) { align-self: start; margin-top: 30px; transform: rotate(1.2deg); }
+.annotation:nth-of-type(4) { transform: rotate(-0.8deg); }
+.lineLabel { display: inline-block; padding: 0 6px; border: 1px solid transparent; border-radius: 48% 44% 43% 42%; font: var(--text-caption) / 1.7 var(--font-mono); }
+.annotation[data-selected="true"] .lineLabel { border-color: currentColor; }
+.annotation h2 { margin: 8px 0 0; font: 600 var(--text-subheading) / 1.5 var(--hand); }
+.annotation button { display: inline-block; max-width: 100%; overflow-wrap: anywhere; padding: 0 0 4px; border: 0; border-bottom: 2px solid currentColor; border-radius: 0 0 45% 18%; background: var(--note-paper); color: inherit; text-align: left; font: inherit; cursor: pointer; }
+.annotation p { margin: 10px 0 0; background: var(--note-paper); color: var(--ink-soft); font: var(--text-body) / 1.8 var(--font-sans); }
+.arrows { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; overflow: visible; }
+.arrows > path { fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.arrows > path[data-selected="true"] { stroke-width: 2.2; }
+.wide { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 34px 60px; padding-inline: 12px; }
+.wide .codeSheet { grid-column: 1 / -1; grid-row: 2; width: calc(100% - 54px); justify-self: center; }
+.wide .annotation:nth-of-type(n) { align-self: center; margin: 0; }
+
+@container (max-width: 680px) {
+  .canvas { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 32px; padding: 16px 4px; }
+  .codeSheet { grid-column: 1 / -1; grid-row: auto; width: min(100%, 420px); justify-self: center; }
+  .wide .codeSheet { grid-row: auto; width: 100%; }
+  .annotation { grid-column: auto; grid-row: auto; }
+  .annotation:nth-of-type(n) { align-self: start; margin: 0; }
+  .arrows { display: none; }
+}
+
+@container (max-width: 400px) {
+  .canvas { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-inline: 2px; }
+  .codeSheet { padding: 16px 10px; transform: none; }
+  .annotation { padding: 0 12px; border-left: 2px solid currentColor; }
+  .annotation:nth-of-type(n) { transform: none; }
+  .annotation h2 { margin-top: 4px; }
+  .annotation p { margin-top: 6px; }
+}

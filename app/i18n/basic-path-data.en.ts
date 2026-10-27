@@ -1,4 +1,7 @@
 import type { BasicLesson, BasicPath } from "../basic-path-data";
+import { withNotebookMetadata } from "../../content/lessons/notebook-catalog";
+import { startIexLessonEn } from "../../content/lessons/start-iex.en";
+import { meetIexMetadataEn } from "../../content/lessons/meet-iex.en";
 
 type ExtendedLessonSeed = {
   number: string;
@@ -3163,7 +3166,7 @@ export const basicPathsEn: BasicPath[] = [
     shortTitle: "Elixir basics",
     subtitle: "Four stages: run code, write modules, handle real input, ship a project",
     description:
-      "Thirty-one short lessons move through Scratch, Foundation, Intermediate, and Project. Run a complete example first, then unpack the syntax, change an input, and practice. Foundation is enough to enter the BEAM path; the rest builds a single-language project.",
+      "Thirty-two short lessons move through Scratch, Foundation, Intermediate, and Project. Start with the code and its handwritten annotations, predict the result, then change one thing. Foundation is enough to enter the BEAM path; the rest builds a single-language project.",
     shell: "IEx",
     shellCommand: "iex",
     prerequisites: [
@@ -3171,12 +3174,13 @@ export const basicPathsEn: BasicPath[] = [
       "You do not need experience with another programming language.",
       "Set aside 15–35 minutes and study only one lesson at a time.",
     ],
-    lessons: [
+    lessons: withNotebookMetadata([
+      startIexLessonEn,
       ...elixirLessonsEn,
       ...elixirFoundationLessonsEn,
       ...elixirIntermediateLessonsEn,
       ...elixirProjectLessonsEn,
-    ],
+    ].map((lesson) => lesson.slug === "meet-iex" ? { ...lesson, metadata: { ...meetIexMetadataEn, title: lesson.title } } : lesson), "en", "elixir"),
     bridge: {
       title: "Next: understand a BEAM process",
       description:
@@ -3206,7 +3210,7 @@ export const basicPathsEn: BasicPath[] = [
     shortTitle: "Erlang basics",
     subtitle: "Four stages: run code, write modules, handle real input, ship a project",
     description:
-      "Thirty-one short lessons move through Scratch, Foundation, Intermediate, and Project. Run a complete example first, then unpack terms and syntax, change an input, and practice. Foundation is enough to enter the BEAM path; the rest builds a single-language project.",
+      "Thirty-one short lessons move through Scratch, Foundation, Intermediate, and Project. Read the annotated Erlang code, predict its result, then change one thing. Shell commands and module examples include their own run instructions. Foundation is enough to enter the BEAM path; the rest builds a single-language project.",
     shell: "erl",
     shellCommand: "erl",
     prerequisites: [
@@ -3214,12 +3218,12 @@ export const basicPathsEn: BasicPath[] = [
       "You do not need to learn Elixir first or know another programming language.",
       "Set aside 15–40 minutes and study only one lesson at a time.",
     ],
-    lessons: [
+    lessons: withNotebookMetadata([
       ...erlangLessonsEn,
       ...erlangFoundationLessonsEn,
       ...erlangIntermediateLessonsEn,
       ...erlangProjectLessonsEn,
-    ],
+    ], "en", "erlang"),
     bridge: {
       title: "Next: understand a BEAM process",
       description:

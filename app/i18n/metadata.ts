@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { localizeHref, type Locale } from "./locales";
+import { isPathAvailable, localizeHref, type Locale } from "./locales";
 
 export const siteCopy = {
   zh: {
@@ -45,8 +45,10 @@ export function localeAlternates(locale: Locale, pathname = "/") {
     canonical: localizeHref(locale, pathname),
     languages: {
       "zh-CN": localizeHref("zh", pathname),
-      en: localizeHref("en", pathname),
-      "x-default": pathname,
+      ...(isPathAvailable("en", pathname) ? {
+        en: localizeHref("en", pathname),
+        "x-default": pathname,
+      } : {}),
     },
   } satisfies Metadata["alternates"];
 }

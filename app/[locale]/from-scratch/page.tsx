@@ -23,7 +23,7 @@ const pageCopy = {
     heroTitle: "先跑一个小例子",
     heroAccent: "再读懂它",
     heroDescription:
-      "Elixir 和 Erlang 任选一条。每条 31 节，分成试跑、基础、进阶和作品。每课先跑例子，再拆符号、改输入。完成 Foundation 就能转入 BEAM，也能继续把单语言项目做完。",
+      "Elixir 和 Erlang 任选一条。Elixir 32 节，Erlang 31 节，都分成试跑、基础、进阶和作品。先学会进入和退出交互窗口，再跑例子、拆符号、改输入。完成 Foundation 就能转入 BEAM，也能继续把单语言项目做完。",
     pathStat: "条独立路线",
     lessonStat: "节语言短课",
     prerequisiteStat: "编程前置",

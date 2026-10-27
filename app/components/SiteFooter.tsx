@@ -3,7 +3,7 @@ import type { Locale } from "../i18n/locales";
 import { sharedUi } from "../i18n/ui";
 import { LocalizedLink } from "./LocalizedLink";
 
-export function SiteFooter({ locale }: { locale: Locale }) {
+export function SiteFooter({ locale, showClosing = true }: { locale: Locale; showClosing?: boolean }) {
   const copy = sharedUi[locale].footer;
 
   return (
@@ -64,7 +64,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         </div>
       </div>
       <div className="footer-bottom">
-        <p>{copy.closing}</p>
+        {showClosing ? <p>{copy.closing}</p> : null}
         <a
           href="https://github.com/ViffyGwaanl/kimi-k3-learn"
           target="_blank"

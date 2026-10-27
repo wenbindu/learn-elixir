@@ -9,6 +9,10 @@ import {
   DesignComparisonPanel,
 } from "../../../../components/LearningGuidancePanel";
 import { LocalizedLink } from "../../../../components/LocalizedLink";
+import { MeetIexLesson } from "../../../../components/MeetIexLesson";
+import { StartIexLesson } from "../../../../components/StartIexLesson";
+import { LessonNotebook } from "../../../../components/LessonNotebook";
+import { getNotebook } from "../../../../../content/lessons/notebook-catalog";
 import { SiteFooter } from "../../../../components/SiteFooter";
 import { SiteHeader } from "../../../../components/SiteHeader";
 import {
@@ -186,6 +190,10 @@ export default async function BasicLessonPage({
   const copy = pageCopy[locale];
   const { previous, next } = getAdjacentBasicLessons(path, lesson.slug);
   const guidance = getBasicLessonGuidance(locale, path.id, lesson);
+  const notebook = getNotebook(locale, path.id, lesson.slug);
+  const isIexPilot = Boolean(notebook) || path.id === "elixir" && ["start-iex", "meet-iex"].includes(lesson.slug);
+  const prerequisiteLessons = notebook ? path.lessons.filter((item) => item.metadata?.core_concept.some((concept) => notebook.prerequisites.includes(concept))) : [];
+  const reviewLesson = notebook?.review ? path.lessons.find((item) => item.slug === notebook.review?.slug) : undefined;
 
   return (
     <>
@@ -271,7 +279,7 @@ export default async function BasicLessonPage({
               <strong>{copy.lessonNumber(lesson.number)}</strong>
             </div>
 
-            <header
+            {!isIexPilot ? <header
               className={
                 styles.lessonHeader +
                 (path.id === "erlang"
@@ -289,9 +297,9 @@ export default async function BasicLessonPage({
               </div>
               <h1>{lesson.title}</h1>
               <p>{lesson.summary}</p>
-            </header>
+            </header> : null}
 
-            <nav
+            {!isIexPilot ? <nav
               className={styles.lessonContinuity}
               aria-label={copy.continuityLabel}
             >
@@ -333,9 +341,9 @@ export default async function BasicLessonPage({
                   </LocalizedLink>
                 )}
               </div>
-            </nav>
+            </nav> : null}
 
-            <aside
+            {!isIexPilot ? <aside
               className={styles.goalCard}
               data-learning-step="task"
               aria-labelledby="lesson-task-title"
@@ -344,8 +352,9 @@ export default async function BasicLessonPage({
               <p>
                 <InlineCodeText text={lesson.goal} />
               </p>
-            </aside>
+            </aside> : null}
 
+            {notebook ? <LessonNotebook key={`${locale}-${path.id}-${lesson.slug}`} notebook={notebook} locale={locale} language={path.id} lesson={{ slug: lesson.slug, number: lesson.number, title: lesson.title }} review={reviewLesson ? { slug: reviewLesson.slug, number: reviewLesson.number, title: reviewLesson.title } : undefined} prerequisites={prerequisiteLessons.map((item) => ({ slug: item.slug, number: item.number, title: item.title }))} /> : isIexPilot ? (lesson.slug === "start-iex" ? <StartIexLesson locale={locale} /> : <MeetIexLesson locale={locale} />) : <>
             <section
               className={styles.lessonSection}
               data-learning-step="code"
@@ -542,6 +551,7 @@ export default async function BasicLessonPage({
                 locale={locale}
               />
             </section>
+            </>}
 
             <nav
               className={styles.lessonPagination}
@@ -588,7 +598,7 @@ export default async function BasicLessonPage({
           </article>
         </div>
       </main>
-      <SiteFooter locale={locale} />
+      <SiteFooter locale={locale} showClosing={!isIexPilot} />
     </>
   );
 }

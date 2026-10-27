@@ -1,0 +1,36 @@
+.body { padding: var(--notebook-padding, 26px); min-width: 0; }
+.setup { margin: 20px 24px 0; font-size: var(--text-body); line-height: 1.8; overflow-wrap: anywhere; }
+.readGrid { display: grid; grid-template-columns: minmax(0, 1fr) 245px; gap: 24px; align-items: start; }
+.readGrid > div, .traceGrid > div { min-width: 0; }
+.code { padding: 14px 10px; background: var(--note-code); border: 1.5px solid var(--ink-soft); border-radius: 5px 10px 4px 8px; box-shadow: 3px 3px 0 var(--note-line); }
+.codeLine { display: flex; align-items: baseline; gap: 12px; width: 100%; margin: 0; padding: 7px 6px; border: 0; border-left: 3px solid transparent; text-align: left; color: var(--ink); background: transparent; font: var(--text-code) / 1.65 var(--font-mono); }
+button.codeLine { cursor: pointer; }
+.codeLine code { min-width: 0; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
+.codeLine[data-selected="true"] { border-left-color: var(--note-purple); background: var(--note-highlight); }
+.notes { min-width: 0; }
+.noteChoices { display: flex; flex-direction: column; gap: 8px; }
+.noteChoices button { padding: 7px 10px; text-align: left; font: var(--text-control) / 1.5 var(--font-sans); color: var(--ink-soft); background: var(--note-paper); border: 1px dashed var(--note-line); border-radius: 4px 8px 3px 6px; cursor: pointer; }
+.noteChoices button[aria-pressed="true"] { color: var(--note-purple); border-style: solid; border-color: var(--note-purple); }
+.annotation { padding: 18px 12px; margin-top: 18px; border-top: 2px solid var(--note-purple); border-radius: 8%; transform: rotate(-0.5deg); }
+.annotation h2 { margin: 0; font: 600 var(--text-subheading) / 1.5 var(--hand); color: var(--note-purple); }
+.annotation p { margin: 10px 0 0; font-size: var(--text-body); line-height: 1.8; }
+.prompt { margin-top: 26px; padding-top: 16px; border-top: 1px dashed var(--note-line); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+.prompt p { margin: 0; flex: 1 1 240px; }
+.traceGrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 0.7fr); gap: 24px; align-items: start; margin-top: 24px; }
+.result pre, .wrappedCode { white-space: pre-wrap; overflow-wrap: anywhere; font: var(--text-code) / 1.65 var(--font-mono); }
+.result pre code { font: inherit; }
+.options label { display: flex; margin: 12px 0; align-items: baseline; }
+.options input { flex-shrink: 0; }
+.runtime { margin: 0; padding: 0 26px 18px; }
+.reuse { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: var(--text-caption); color: var(--muted); margin: 18px 0; }
+.reuse a { color: var(--link); }
+@media (max-width: 1150px) {
+  .readGrid, .traceGrid { grid-template-columns: minmax(0, 1fr); }
+  .noteChoices { flex-direction: row; flex-wrap: wrap; }
+}
+@media (max-width: 600px) {
+  .body { padding: var(--notebook-padding, 20px 14px); }
+  .code { padding: 10px 4px; }
+  .codeLine { gap: 8px; padding-inline: 4px; }
+  .runtime { padding-inline: 14px; }
+}

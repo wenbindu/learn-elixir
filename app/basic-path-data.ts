@@ -1,3 +1,10 @@
+import { validateLessonMetadata, type LessonMetadata } from "./lesson-metadata";
+import { meetIexLesson } from "../content/lessons/meet-iex";
+import { startIexLesson } from "../content/lessons/start-iex";
+import { elixirNotebooks, notebookMetadata } from "../content/lessons/notebooks";
+import { validateNotebooks } from "./notebook-lesson";
+import { withNotebookMetadata } from "../content/lessons/notebook-catalog";
+
 export type BasicPathId = "elixir" | "erlang";
 
 export type BasicReference = {
@@ -6,6 +13,7 @@ export type BasicReference = {
 };
 
 export type BasicLesson = {
+  metadata?: LessonMetadata;
   number: string;
   slug: string;
   stage: "scratch" | "foundation" | "intermediate" | "project";
@@ -64,81 +72,8 @@ export type BasicPath = {
 };
 
 const elixirLessons: BasicLesson[] = [
-  {
-    number: "01",
-    slug: "meet-iex",
-    stage: "scratch",
-    title: "先让代码说话",
-    summary: "打开 IEx，输入表达式，分清代码、结果和报错。",
-    duration: "15 分钟",
-    goal: "本课先打开 IEx，逐行运行加法、字符串函数和打印函数；三段代码都有结果就算完成。",
-    plain: [
-      "IEx 是 Elixir 的交互窗口。你输入一小段代码，它马上给出结果。刚开始不用建项目，也不用背命令。",
-      "表达式是一段会产生结果的代码。`2 + 3` 的结果是 `5`。`String.upcase(\"cat\")` 的结果是 `\"CAT\"`。",
-      "看到报错先停一下。读最后几行，找出电脑不认识的名字或不合适的数据。报错不是扣分，它只是结果的一种。",
-    ],
-    concepts: [
-      {
-        term: "IEx",
-        explanation: "Interactive Elixir 的缩写。它像草稿纸，适合试一两行代码。",
-      },
-      {
-        term: "表达式",
-        explanation: "运行后会得到一个值的代码。数字、运算、函数调用都可以是表达式。",
-      },
-      {
-        term: "返回值",
-        explanation: "一段表达式算完后交回来的结果。它不一定会打印成一句话。",
-      },
-    ],
-    symbols: [
-      { token: "iex", reading: "在终端输入它，打开 IEx。" },
-      { token: "iex>", reading: "这是提示符。只输入它后面的代码，不要复制提示符。" },
-      { token: "#", reading: "这一行是注释。Elixir 不会执行它。" },
-    ],
-    example: {
-      label: "复制到 IEx，逐行回车",
-      code: `# 加法表达式会返回一个数字
-2 + 3
-
-# 函数调用会返回一段新文字
-String.upcase("cat")
-
-# IO.puts 会把一句话打印到屏幕
-IO.puts("你好，BEAM")`,
-      caption: "每次只运行一行。先猜结果，再按回车。",
-      output: ["`2 + 3` 返回 `5`。", "`String.upcase(\"cat\")` 返回 `\"CAT\"`。", "`IO.puts(\"你好，BEAM\")` 先打印文字，随后显示 `:ok`；先把它当作“做完了”标签。"],
-    },
-    steps: [
-      "`2 + 3` 中，`+` 把左右两个数字相加。",
-      "`String.upcase(\"cat\")` 把字符串交给 `String` 模块里的 `upcase` 函数。",
-      "`IO.puts(\"你好，BEAM\")` 会产生两个可见结果：屏幕上的文字，以及 IEx 显示的返回值 `:ok`。",
-    ],
-    practice: {
-      task: "让 IEx 算出 7 乘 6，再把 `beam` 变成大写。",
-      starter: `# 把问号换成一个运算符
-7 ? 6
-
-# 把函数名补完整
-String.____("beam")`,
-      expected: "先看到 `42`，再看到 `\"BEAM\"`。",
-      hint: "乘法用 `*`。刚才把文字变成大写的函数叫 `upcase`。",
-      answer: `# 星号表示乘法
-7 * 6
-
-# upcase 返回大写后的新字符串
-String.upcase("beam")`,
-    },
-    check: {
-      question: "`iex>` 是代码的一部分吗？",
-      answer: "不是。它是 IEx 等你输入代码时显示的提示符。",
-    },
-    takeaways: [
-      "IEx 适合试很短的 Elixir 代码。",
-      "表达式运行后会得到一个值。",
-      "先看报错写了什么，再只改一个地方。",
-    ],
-  },
+  startIexLesson,
+  meetIexLesson,
   {
     number: "02",
     slug: "values-and-types",
@@ -2474,7 +2409,7 @@ mix escript.build`,
     duration: "45 分钟",
     goal: "让成功、空文件、缺失文件和格式检查全部得到预期结果。",
     plain: [
-      "最后一课不再添功能。把第 26 课的任务书拿回来，一项一项验证。",
+      "最后一课不再添功能。把第 27 课的任务书拿回来，一项一项验证。",
       "验收从使用者入口运行，不绕过 CLI 偷看内部函数。失败消息要短，退出状态要对。",
       "记录版本、构建命令和已知限制。一个范围清楚的小项目，比半截宏图更值得保存。",
     ],
@@ -2511,7 +2446,7 @@ echo $?`,
     },
     steps: [
       "从全新终端按 README 命令构建，避免依赖记忆中的隐藏步骤。",
-      "逐条保存实际输出，与第 26 课预期对照。",
+      "逐条保存实际输出，与第 27 课预期对照。",
       "只修验收失败，不在交卷前临时增加需求。",
     ],
     practice: {
@@ -4598,7 +4533,7 @@ parse_utf8(Text) ->
     Chars when is_list(Chars) ->
       Raw = re:split(Text, "\\\\R", [{return, binary}, unicode]),
       Lines = [Clean || Line <- Raw,
-                        Clean <- [string:trim(Line)],
+                        Clean <- [re:replace(Line, "^[\\\\p{Z}\\\\x{9}-\\\\x{D}\\\\x{85}]+|[\\\\p{Z}\\\\x{9}-\\\\x{D}\\\\x{85}]+$", "", [global, unicode, {return, binary}])],
                         Clean =/= <<>>],
       {ok, Lines};
     _ ->
@@ -4610,18 +4545,22 @@ parse_utf8(Text) ->
     steps: [
       "文件读取先处理磁盘边界。",
       "Unicode 转换成功时返回 list，错误时返回特殊 tuple。",
-      "换行切分后去两端空白并丢掉空行。",
+      "\\R 切分换行；^ 和 $ 限定两端，global 清理首尾。字符类匹配 Unicode 分隔符、ASCII 9–13 和 NEL；unicode 解码，过滤空 binary。全角空白行移除，U+180E 保留。",
     ],
     practice: {
-      task: "为两行临时文件写 EUnit 断言。",
+      task: "为两行临时文件写 EUnit 断言，再检查 Unicode 边缘空白和空白行。",
       starter: `Path = filename:join("/tmp", "trail_stats_test.txt"),
 ok = file:write_file(Path, <<"A\nB\n">>),
-?assertEqual(____, trail_parser:read(Path)).`,
+?assertEqual(____, trail_parser:read(Path)),
+ok = file:write_file(Path, <<16#3000/utf8, "A", 16#A0/utf8, "\\r\\n", 16#3000/utf8, "\\r\\nB\\n">>),
+?assertEqual({ok, [<<"A">>, <<"B">>]}, trail_parser:read(Path)).`,
       expected: "期待 `{ok,[<<\"A\">>,<<\"B\">>]}`。",
       hint: "成功 tuple 第二项是两个 binary。",
       answer: `Path = filename:join("/tmp", "trail_stats_test.txt"),
 ok = file:write_file(Path, <<"A\nB\n">>),
 %% Parser 返回清洗后的行
+?assertEqual({ok, [<<"A">>, <<"B">>]}, trail_parser:read(Path)),
+ok = file:write_file(Path, <<16#3000/utf8, "A", 16#A0/utf8, "\\r\\n", 16#3000/utf8, "\\r\\nB\\n">>),
 ?assertEqual({ok, [<<"A">>, <<"B">>]}, trail_parser:read(Path)).`,
     },
     check: {
@@ -4660,7 +4599,7 @@ ok = file:write_file(Path, <<"A\nB\n">>),
     symbols: [
       { token: "-export([count/1]).", reading: "只公开一个统计入口。" },
       { token: "maps:get/2", reading: "CLI 可按键读取统计结果。" },
-      { token: "string:lexemes/2", reading: "按给定分隔字符把 Unicode 文字拆成词。" },
+      { token: "re:split/3", reading: "unicode 解码 UTF-8；字符类匹配 Unicode 分隔符、ASCII 9–13 和 NEL，过滤空 binary。" },
     ],
     example: {
       label: "保存为 trail_stats.erl",
@@ -4676,12 +4615,12 @@ count(Lines) ->
   }.
 
 word_count(Line) ->
-  length(string:lexemes(Line, " \t")).
+  length([Word || Word <- re:split(Line, "[\\\\p{Z}\\\\x{9}-\\\\x{D}\\\\x{85}]+", [unicode, {return, binary}]), Word =/= <<>>]).
 
 char_count(Lines) ->
   Text = iolist_to_binary(Lines),
   length(unicode:characters_to_list(Text)).`,
-      caption: "本项目约定字符数不包含换行，词由 Unicode 空白分隔。",
+      caption: "词由 Unicode 空白分隔，过滤空 binary；hello　beam（U+3000 全角空格）计 2 词，不做中文词法分词。字符按码点计数，不包含换行。",
       output: ["`trail_stats:count([<<\"hello beam\">>, <<\"again\">>]).` 返回行 2、词 3、字符 15。"],
     },
     steps: [
@@ -4690,18 +4629,22 @@ char_count(Lines) ->
       "先合并 binary 再按 Unicode 字符计数。",
     ],
     practice: {
-      task: "写出空输入的期待 map。",
+      task: "写出空输入的期待 map，再运行 U+3000 分隔词的断言。",
       starter: `?assertEqual(
   #{lines => ____, words => ____, chars => ____},
   trail_stats:count([])
-).`,
+),
+?assertEqual(#{lines => 1, words => 2, chars => 10},
+  trail_stats:count([<<"hello", 16#3000/utf8, "beam">>])).`,
       expected: "三个计数都为 0。",
       hint: "空 list 没有行、词和字符。",
       answer: `%% 空输入是公开 API 的重要边界
 ?assertEqual(
   #{lines => 0, words => 0, chars => 0},
   trail_stats:count([])
-).`,
+),
+?assertEqual(#{lines => 1, words => 2, chars => 10},
+  trail_stats:count([<<"hello", 16#3000/utf8, "beam">>])).`,
     },
     check: {
       question: "为什么 `word_count/1` 不放进 export 列表？",
@@ -4761,7 +4704,7 @@ count(Lines) ->
   #{
     lines => length(Lines),
     words => lists:sum([
-      length(string:lexemes(Line, " \t")) || Line <- Lines
+      length([Word || Word <- re:split(Line, "[\\\\p{Z}\\\\x{9}-\\\\x{D}\\\\x{85}]+", [unicode, {return, binary}]), Word =/= <<>>]) || Line <- Lines
     ]),
     chars => length(unicode:characters_to_list(iolist_to_binary(Lines)))
   }.`,
@@ -4954,7 +4897,7 @@ export const basicPaths: BasicPath[] = [
     shortTitle: "Elixir 从零",
     subtitle: "四段路：敢运行、能写模块、接住真实输入、交付作品",
     description:
-      "31 节短课分成 Scratch、Foundation、Intermediate 和 Project。每课先跑一个完整例子，再拆语法、改输入、做练习。Foundation 完成后即可进入 BEAM；也可以继续做完单语言项目。",
+      "32 节短课分成 Scratch、Foundation、Intermediate 和 Project。先学会进入和退出 IEx，再运行代码、改输入、做练习。Foundation 完成后即可进入 BEAM；也可以继续做完单语言项目。",
     shell: "IEx",
     shellCommand: "iex",
     prerequisites: [
@@ -4962,7 +4905,11 @@ export const basicPaths: BasicPath[] = [
       "不要求学过其他编程语言。",
       "每次准备 15–35 分钟，只学一课。",
     ],
-    lessons: elixirLessons,
+    lessons: elixirLessons.map((lesson, index) => ({
+      ...lesson,
+      number: String(index + 1).padStart(2, "0"),
+      metadata: notebookMetadata(lesson.slug, lesson.title) ?? lesson.metadata,
+    })),
     bridge: {
       title: "下一步：先看懂 BEAM 进程",
       description:
@@ -5000,7 +4947,7 @@ export const basicPaths: BasicPath[] = [
       "不要求先学 Elixir，也不要求学过其他语言。",
       "每次准备 15–40 分钟，只学一课。",
     ],
-    lessons: erlangLessons,
+    lessons: withNotebookMetadata(erlangLessons, "zh", "erlang"),
     bridge: {
       title: "下一步：先看懂 BEAM 进程",
       description:
@@ -5024,6 +4971,9 @@ export const basicPaths: BasicPath[] = [
     ],
   },
 ];
+
+validateNotebooks(elixirNotebooks, elixirLessons.map((lesson) => lesson.slug));
+for (const path of basicPaths) validateLessonMetadata(path.lessons);
 
 export const basicPathStats = {
   paths: basicPaths.length,

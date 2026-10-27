@@ -5,6 +5,7 @@ import { createServer } from "node:http";
 import { after, before, test } from "node:test";
 import { fileURLToPath } from "node:url";
 import next from "next";
+import { loadTypeScript } from "./load-typescript.mjs";
 
 const projectRoot = new URL("../", import.meta.url);
 const projectDirectory = fileURLToPath(projectRoot);
@@ -71,6 +72,32 @@ function assertEnglishMain(html, pathname) {
   );
 }
 
+function visibleText(html) {
+  return html.replace(/<[^>]*>/g, "").replace(/&#(?:x([\da-f]+)|(\d+));/gi, (_, hex, decimal) => String.fromCodePoint(parseInt(hex ?? decimal, hex ? 16 : 10)))
+    .replace(/&quot;/g, '"').replace(/&#x27;|&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&")
+    .replace(/\s+/g, " ").trim();
+}
+
+function assertText(html, text, message) {
+  const expected = text.replace(/`([^`\n]+)`/g, "$1").replace(/\s+/g, " ").trim();
+  const literal = text.replace(/\s+/g, " ").trim();
+  const rendered = visibleText(html);
+  assert.ok(rendered.includes(expected) || rendered.includes(literal), `${message}: ${expected}`);
+}
+
+function assertLessonLocale(html, locale, pathname, { depth = false } = {}) {
+  assert.match(html, new RegExp(`<html[^>]*lang="${locale === "en" ? "en" : "zh-CN"}"`), pathname);
+  if (locale === "en") assertEnglishMain(depth ? html.replace(/<code\b[^>]*>[\s\S]*?<\/code>/g, "") : html, pathname);
+  for (const [, href] of mainMarkup(html).matchAll(/\bhref="(\/[^"#]*)/g)) {
+    if (/^\/(?:zh|en)\//.test(href) || /^\/(?:from-scratch|learn|resources|keywords|playground)(?:\/|$)/.test(href)) {
+      assert.ok(href.startsWith(`/${locale}/`), `${pathname}: unlocalized link ${href}`);
+    }
+  }
+  const canonical = [...html.matchAll(/<link\b[^>]*>/g)].find(([tag]) => /rel="canonical"/.test(tag))?.[0];
+  assert.ok(canonical, `${pathname}: canonical link`);
+  assert.equal(new URL(canonical.match(/href="([^"]+)"/)[1], origin).pathname, pathname);
+}
+
 function assertRedirectLocation(response, expectedPath, message) {
   const location = response.headers.get("location");
   assert.ok(location, `${message ?? expectedPath} has a Location header`);
@@ -99,6 +126,7 @@ const lessonSlugs = [
 
 const basicLessonSlugs = {
   elixir: [
+    "start-iex",
     "meet-iex",
     "values-and-types",
     "collections",
@@ -170,7 +198,7 @@ test("keeps both From Scratch paths complete and independent", () => {
   assert.equal(Object.keys(basicLessonSlugs).length, 2);
 
   for (const [language, slugs] of Object.entries(basicLessonSlugs)) {
-    assert.equal(slugs.length, 31, language);
+    assert.equal(slugs.length, language === "elixir" ? 32 : 31, language);
     assert.equal(new Set(slugs).size, slugs.length, language);
   }
 });
@@ -255,6 +283,28 @@ test("serves the bundled Case Chat study without a local filesystem link", async
   }
 });
 
+test("serves self-hosted lesson fonts without locale redirects", async () => {
+  for (const name of ["excalifont-latin.woff2", "xiaolai-subset.woff2", "comic-shanns-latin.woff2"]) {
+    for (const country of ["CN", "US"]) {
+      const response = await render(`/fonts/lesson-sketch/${name}`, { headers: { "x-vercel-ip-country": country } });
+      assert.equal(response.status, 200, name);
+      assert.equal(response.headers.get("location"), null, name);
+      const bytes = Buffer.from(await response.arrayBuffer());
+      assert.equal(bytes.subarray(0, 4).toString(), "wOF2", name);
+    }
+  }
+  for (const name of ["OFL.txt", "Comic-Shanns-LICENSE.txt"]) {
+    assert.equal((await render(`/fonts/lesson-sketch/${name}`)).status, 200, name);
+  }
+});
+
+test("keeps handwriting scoped to lesson pages", async () => {
+  for (const pathname of ["/zh", "/en", "/zh/from-scratch", "/en/from-scratch"]) {
+    const html = mainMarkup(await (await render(pathname)).text());
+    assert.doesNotMatch(html, /data-sketch-lesson=/, pathname);
+  }
+});
+
 test("server-renders the complete Chinese tutorial homepage", async () => {
   const response = await render("/zh");
   assert.equal(response.status, 200);
@@ -267,7 +317,7 @@ test("server-renders the complete Chinese tutorial homepage", async () => {
   assert.match(html, /Erlang/);
   assert.match(html, /Elixir/);
   assert.match(html, /2<\/strong><span>条从零路线/);
-  assert.match(html, /62<\/strong><span>节语言短课/);
+  assert.match(html, /63<\/strong><span>节语言短课/);
   assert.match(html, /7<\/strong><span>站 BEAM 核心/);
   assert.match(html, /2(?:<!-- -->)? \/ (?:<!-- -->)?2<\/strong><span>复习 \/ 双语扩展/);
   assert.match(html, /FROM SCRATCH/);
@@ -345,20 +395,20 @@ test("renders representative English learning and reference pages", async () => 
     {
       pathname: "/en/from-scratch/elixir/values-and-types",
       phrases: [
-        /Meet six kinds of values/,
-        /What you will make/,
-        /Start with the whole example/,
-        /Remember these three lines/,
+        /Read code/,
+        /Trace results/,
+        /Change one thing/,
+        /Remember three things/,
       ],
       href: /href="\/en\/from-scratch\/elixir\/collections"/,
     },
     {
       pathname: "/en/from-scratch/elixir/project-acceptance",
       phrases: [
-        /Prove the project is done/,
-        /PROJECT[\s\S]*LESSON[\s\S]*31/,
-        /acceptance matrix/,
-        /Remember these three lines/,
+        /Read code/,
+        /Trace results/,
+        /Project contribution/,
+        /Remember three things/,
       ],
       href: /href="\/en\/learn\/beam-mental-model"/,
     },
@@ -539,7 +589,7 @@ test("renders two independent From Scratch path overviews", async () => {
   assert.match(overview, /再读懂它/);
   assert.match(overview, /不必两条都学完/);
   assert.match(overview, /2<\/strong><span>条独立路线/);
-  assert.match(overview, /62<\/strong><span>节语言短课/);
+  assert.match(overview, /63<\/strong><span>节语言短课/);
   assert.match(overview, /第 0 步：安装 Erlang \/ Elixir \/ Mix/);
   assert.match(overview, /href="\/zh\/learn\/install-toolchain"/);
   assert.match(overview, /href="\/zh\/from-scratch\/elixir"/);
@@ -572,56 +622,225 @@ test("renders two independent From Scratch path overviews", async () => {
   }
 });
 
-test("renders all 62 language lessons with the example-first template", async () => {
-  for (const [language, slugs] of Object.entries(basicLessonSlugs)) {
-    for (const slug of slugs) {
-      const response = await render(`/zh/from-scratch/${language}/${slug}`);
-      assert.equal(response.status, 200, `${language}/${slug}`);
-      const html = await response.text();
-
-      assert.match(html, /今天先做什么/, `${language}/${slug}`);
-      assert.match(html, /课程衔接/, `${language}/${slug}`);
-      assert.match(html, /别急着按回车/, `${language}/${slug}`);
-      assert.match(html, /先猜/, `${language}/${slug}`);
-      assert.match(html, /最后只改一处/, `${language}/${slug}`);
-      assert.match(html, /01 · 先看完整例子/, `${language}/${slug}`);
-      assert.match(html, /02 · 回头拆代码/, `${language}/${slug}`);
-      assert.match(html, /03 · 认清新符号/, `${language}/${slug}`);
-      assert.match(html, /04 · 代码里的概念/, `${language}/${slug}`);
-      assert.match(html, /05 · 再说清楚/, `${language}/${slug}`);
-      assert.match(html, /06 · 自己改一次/, `${language}/${slug}`);
-      assert.match(html, /目标结果/, `${language}/${slug}`);
-      assert.match(html, /想一想/, `${language}/${slug}`);
-      assert.match(html, /记住三句/, `${language}/${slug}`);
-      assert.match(html, /aria-current="page"/, `${language}/${slug}`);
-      assert.match(html, /aria-pressed="false"/, `${language}/${slug}`);
-      assert.match(html, /标记学完/, `${language}/${slug}`);
-      assert.ok(
-        html.indexOf("标记学完") > html.indexOf("这条路线参考"),
-        `${language}/${slug} keeps the completion mark at the lesson end`,
-      );
-      const learningSteps = [
-        ...html.matchAll(
-          /data-learning-step="(task|code|syntax|practice)"/g,
-        ),
-      ].map((match) => match[1]);
-      assert.deepEqual(
-        learningSteps,
-        ["task", "code", "syntax", "practice"],
-        `${language}/${slug} keeps task, code, syntax, practice in order`,
-      );
-      assert.ok(
-        html.indexOf("01 · 先看完整例子") <
-          html.indexOf("04 · 代码里的概念"),
-        `${language}/${slug} shows runnable code before concepts`,
-      );
+test("rejects unknown languages and lessons in both locales", async () => {
+  for (const locale of ["zh", "en"]) {
+    for (const suffix of ["ruby", "elixir/not-a-lesson", "erlang/not-a-lesson", "elixir/not-a-lesson/deeper", "erlang/not-a-lesson/deeper", "elixir/start-iex/deeper"]) {
+      const pathname = `/${locale}/from-scratch/${suffix}`;
+      assert.equal((await render(pathname)).status, 404, pathname);
     }
   }
+});
 
-  const badLanguage = await render("/zh/from-scratch/ruby");
-  assert.equal(badLanguage.status, 404);
-  const badLesson = await render("/zh/from-scratch/elixir/not-a-lesson");
-  assert.equal(badLesson.status, 404);
+test("teaches entering IEx before code and preserves lesson navigation", async () => {
+  const response = await render("/zh/from-scratch/elixir/start-iex");
+  assert.equal(response.status, 200);
+  const fullHtml = await response.text();
+  const html = mainMarkup(fullHtml);
+  assert.match(html, /data-code-notebook="start-iex"/);
+  assert.match(html, /打开 IEx，再退出来/);
+  assert.match(html, /iex\(1\)&gt;/);
+  assert.match(html, /Windows PowerShell/);
+  assert.match(html, /iex\.bat/);
+  assert.match(html, /Ctrl\+C/);
+  assert.match(html, /command not found/);
+  assert.match(html, /02<!-- --> · <!-- -->先让代码说话/);
+  assert.match(html, /\.\/trail_stats poem\.txt/);
+  assert.doesNotMatch(html, /课程信息|今天先做什么|返回值|IO\.puts/);
+  assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
+  assert.match(fullHtml, /hrefLang="en"|hreflang="en"/);
+  for (const locale of ["zh", "en"]) {
+    const pathname = `/${locale}/from-scratch/elixir/start-iex`;
+    const response = await render(pathname);
+    assert.equal(response.status, 200, pathname);
+    const localized = await response.text();
+    assertLessonLocale(localized, locale, pathname);
+    for (const command of ["iex.bat", "Ctrl+C", "iex(1)>"]) assertText(mainMarkup(localized), command, pathname);
+    const directory = mainMarkup(await (await render(`/${locale}/from-scratch/elixir`)).text());
+    assert.ok(directory.indexOf('/start-iex"') >= 0, locale);
+    assert.ok(directory.indexOf('/start-iex"') < directory.indexOf('/meet-iex"'), locale);
+  }
+  const third = mainMarkup(await (await render("/zh/from-scratch/elixir/values-and-types")).text());
+  assert.match(third, /第 03 课手绘代码讲解/);
+  const last = mainMarkup(await (await render("/zh/from-scratch/elixir/project-acceptance")).text());
+  assert.match(last, /第 32 课手绘代码讲解/);
+  const sitemap = await (await render("/sitemap.xml")).text();
+  assert.match(sitemap, /\/zh\/from-scratch\/elixir\/start-iex/);
+  assert.match(sitemap, /\/en\/from-scratch\/elixir\/start-iex/);
+  const locations = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
+  assert.equal(new Set(locations).size, locations.length);
+  const paths = new Set(locations.map((location) => new URL(location).pathname));
+  for (const locale of ["zh", "en"]) {
+    for (const [language, slugs] of Object.entries(basicLessonSlugs)) {
+      for (const slug of slugs) assert.ok(paths.has(`/${locale}/from-scratch/${language}/${slug}`), `${locale}/${language}/${slug}`);
+    }
+  }
+});
+
+test("keeps the code notebook as lesson two without course metadata or task boilerplate", async () => {
+  const response = await render("/zh/from-scratch/elixir/meet-iex");
+  assert.equal(response.status, 200);
+  const fullHtml = await response.text();
+  assert.doesNotMatch(fullHtml, /每次运行，都记下一个新发现/);
+  const html = mainMarkup(fullHtml);
+  assert.match(html, /data-code-notebook="meet-iex"/);
+  assert.match(html, /第 02 课手绘代码讲解/);
+  assert.match(html, /href="\/zh\/from-scratch\/elixir\/start-iex"/);
+  assert.match(html, /data-notebook-view="read"/);
+  assert.doesNotMatch(html, /data-notebook-view="trace"|data-notebook-view="change"/);
+  assert.match(html, /读代码/);
+  assert.match(html, /看每行结果/);
+  assert.match(html, /只改一处/);
+  assert.match(html, /用哪组工具/);
+  assert.match(html, /打印什么/);
+  assert.match(html, /第 2 行 · 只留下文字/);
+  assert.match(html, /第 1 行会让屏幕显示一行，还是两行/);
+  assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
+  assert.doesNotMatch(html, /data-learning-step="task"|今天先做什么|完成标准/);
+  assert.match(html, /这课给项目添什么/);
+  assert.match(html, /\.\/trail_stats poem\.txt/);
+  assert.doesNotMatch(html, /UndefinedFunctionError|String\.upcas/);
+  assert.doesNotMatch(html, /课程信息|data-lesson-metadata|core_concept:|prerequisites:/);
+  assert.doesNotMatch(html, /<details[^>]*\bopen(?:[\s=>])/);
+  assert.doesNotMatch(html, /不是.{0,50}而是|不只是.{0,50}更是|符号不是暗号|先停十秒|每遇到一个分支|回头拆代码|代码里的概念|再说清楚|让我们一起|接下来|不妨|值得一提|事实上|本质上|赋能|打通|抓手|旅程|探索之旅|其实|显然|简单来说/);
+
+  for (const pathname of [
+    "/zh/from-scratch/elixir/meet-iex/deeper",
+    "/zh/learn/install-toolchain",
+    "/zh/from-scratch/elixir/values-and-types",
+    "/zh/from-scratch/elixir/functions-and-arity",
+  ]) {
+    assert.equal((await render(pathname)).status, 200, pathname);
+  }
+
+  const depth = mainMarkup(await (await render("/zh/from-scratch/elixir/meet-iex/deeper")).text());
+  assert.match(depth, /7 \* 6/);
+  assert.match(depth, /String\.upcase/);
+  assert.match(depth, /UndefinedFunctionError/);
+  assert.match(depth, /undefined or private/);
+  assert.match(depth, /表达式是一段会产生结果的代码/);
+  assert.match(depth, /这一行是注释/);
+  assert.match(depth, /原课程参考链接/);
+  assert.match(depth, /返回第 02 课/);
+
+  const english = mainMarkup(await (await render("/en/from-scratch/elixir/meet-iex")).text());
+  for (const label of ["Read code", "Trace results", "Change one thing", "Remember three things", "Project contribution", "Predict"]) assertText(english, label, "English meet-iex");
+  assert.doesNotMatch(english, /data-lesson-metadata/);
+});
+
+test("renders all 126 bilingual handwritten lesson routes with complete annotations", async (context) => {
+  const { getNotebook } = await loadTypeScript(new URL("../content/lessons/notebook-catalog.ts", import.meta.url));
+  let routes = 0;
+  for (const locale of ["zh", "en"]) {
+    for (const [language, slugs] of Object.entries(basicLessonSlugs)) {
+      for (const slug of slugs) {
+        routes += 1;
+        const pathname = `/${locale}/from-scratch/${language}/${slug}`;
+        await context.test(pathname, async () => {
+          const response = await render(pathname);
+          assert.equal(response.status, 200, pathname);
+          const fullHtml = await response.text();
+          assertLessonLocale(fullHtml, locale, pathname);
+          const html = mainMarkup(fullHtml);
+          assert.equal((html.match(/<h1\b/g) ?? []).length, 1, pathname);
+          assert.match(html, new RegExp(`data-sketch-lesson="${slug}"`));
+          assert.match(html, new RegExp(`data-code-notebook="${slug}"`));
+          assert.doesNotMatch(html, /<details[^>]*\bopen(?:[\s=>])/);
+          assert.doesNotMatch(html, /data-lesson-metadata|data-learning-step="task"|core_concept:|prerequisites:/);
+          const special = language === "elixir" && ["start-iex", "meet-iex"].includes(slug);
+          assert.match(html, new RegExp(`href="/${locale}/${slug === "start-iex" && language === "elixir" ? "learn/install-toolchain" : `from-scratch/${language}/${slug}/deeper`}"`));
+          if (special) {
+            assert.doesNotMatch(html, /data-read-layout="canvas"/);
+            if (locale === "en") {
+              const summaries = [...html.matchAll(/<summary\b[^>]*>([\s\S]*?)<\/summary>/g)].map((match) => visibleText(match[1]));
+              for (const label of ["Remember three things", "Project contribution"]) assert.ok(summaries.includes(label), `${pathname}: ${label}`);
+            }
+            return;
+          }
+          const notebook = getNotebook(locale, language, slug);
+          assert.ok(notebook, pathname);
+          assert.match(html, /data-notebook-view="read"/);
+          assert.doesNotMatch(html, /data-notebook-view="trace"|data-notebook-view="change"/);
+          assert.match(html, /data-read-layout="canvas"/);
+          assert.doesNotMatch(html, /aria-label="(?:选择代码批注|Choose (?:a )?code annotation)"/i);
+          const annotations = [...html.matchAll(/<aside\b[^>]*data-code-annotation="(\d+)"[^>]*>[\s\S]*?<\/aside>/g)];
+          assert.equal(annotations.length, notebook.notes.length, pathname);
+          assert.equal((html.match(/<marker\b/g) ?? []).length, notebook.notes.length);
+          for (const [index, note] of notebook.notes.entries()) {
+            const annotation = annotations.find((match) => Number(match[1]) === index)?.[0];
+            assert.ok(annotation, `${pathname}: note ${index}`);
+            assertText(annotation, note.label, pathname);
+            assertText(annotation, note.text, pathname);
+            assert.doesNotMatch(annotation, /\shidden(?:[\s=>])|aria-hidden="true"/);
+          }
+          const identifiers = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
+          assert.equal(new Set(identifiers).size, identifiers.length, `${pathname}: unique element IDs`);
+          const descriptions = [...html.matchAll(/aria-describedby="([^"]+)"/g)];
+          assert.ok(descriptions.length >= notebook.code.split("\n").filter((line) => line.trim()).length, pathname);
+          for (const [, references] of descriptions) {
+            for (const reference of references.split(/\s+/)) assert.ok(identifiers.includes(reference), `${pathname}: ${reference}`);
+          }
+          for (const line of notebook.code.split("\n").filter((line) => line.trim())) assertText(html, line, pathname);
+          assertText(html, notebook.problem, pathname);
+          assertText(html, notebook.prediction, pathname);
+          const summaries = [...html.matchAll(/<details\b[^>]*>[\s\S]*?<summary\b[^>]*>([\s\S]*?)<\/summary>/g)].map((match) => visibleText(match[1]));
+          assert.ok(summaries.length >= 2, pathname);
+          for (const takeaway of notebook.takeaways) assertText(html, takeaway, pathname);
+          assertText(html, notebook.contribution, pathname);
+          if (locale === "en") {
+            for (const label of ["Read code", "Trace results", "Change one thing", "Predict"]) assertText(html, label, pathname);
+            for (const label of ["Remember three things", "Project contribution"]) assert.ok(summaries.includes(label), `${pathname}: ${label}`);
+          }
+        });
+      }
+    }
+  }
+  assert.equal(routes, 126);
+});
+
+test("preserves original material on all 124 bilingual depth routes", async (context) => {
+  const { getBasicPaths } = await loadTypeScript(new URL("../app/i18n/catalog.ts", import.meta.url));
+  let routes = 0;
+  for (const locale of ["zh", "en"]) {
+    for (const path of getBasicPaths(locale)) {
+      for (const lesson of path.lessons) {
+        if (path.id === "elixir" && lesson.slug === "start-iex") continue;
+        routes += 1;
+        const pathname = `/${locale}/from-scratch/${path.id}/${lesson.slug}/deeper`;
+        await context.test(pathname, async () => {
+          const response = await render(pathname);
+          assert.equal(response.status, 200, pathname);
+          const fullHtml = await response.text();
+          assertLessonLocale(fullHtml, locale, pathname, { depth: true });
+          const html = mainMarkup(fullHtml);
+          assert.equal((html.match(/<h1\b/g) ?? []).length, 1, pathname);
+          assert.match(html, new RegExp(`href="/${locale}/from-scratch/${path.id}/${lesson.slug}"`));
+          assert.doesNotMatch(html, /<details[^>]*\bopen(?:[\s=>])/);
+          if (locale === "zh" && path.id === "elixir" && lesson.slug === "meet-iex") {
+            for (const text of ["7 * 6", "String.upcase", "UndefinedFunctionError", "undefined or private"]) assertText(html, text, pathname);
+            for (const step of lesson.steps) assertText(html, step, pathname);
+            for (const symbol of lesson.symbols) assertText(html, symbol.reading, pathname);
+          } else {
+            assert.match(html, new RegExp(`data-notebook-depth="${lesson.slug}"`));
+            const original = [
+              lesson.summary, lesson.goal, ...lesson.plain, ...lesson.steps, ...lesson.takeaways,
+              lesson.example.label, lesson.example.caption, ...lesson.example.output,
+              ...lesson.symbols.flatMap((item) => [item.token, item.reading]),
+              ...lesson.concepts.flatMap((item) => [item.term, item.explanation]),
+              lesson.practice.task, lesson.practice.expected, lesson.practice.hint,
+              lesson.check.question, lesson.check.answer,
+            ];
+            for (const text of original) assertText(html, text, pathname);
+            const codeBlocks = [...html.matchAll(/<pre\b[^>]*>[\s\S]*?<\/pre>/g)].map((match) => visibleText(match[0]));
+            for (const code of [lesson.example.code, lesson.practice.starter, lesson.practice.answer]) {
+              assert.ok(codeBlocks.includes(code.replace(/\s+/g, " ").trim()), `${pathname}: preserves original code ${code}`);
+            }
+          }
+          for (const reference of path.references) assertText(html, reference.label, pathname);
+        });
+      }
+    }
+  }
+  assert.equal(routes, 124);
 });
 
 test("keeps the active From Scratch lesson visible in the desktop sidebar", async () => {
@@ -649,8 +868,8 @@ test("keeps the active From Scratch lesson visible in the desktop sidebar", asyn
   assert.doesNotMatch(source, /scrollIntoView/);
 });
 
-test("keeps Elixir lesson two readable as six distinct value groups", async () => {
-  const response = await render("/zh/from-scratch/elixir/values-and-types");
+test("preserves all six original value groups in the depth lesson", async () => {
+  const response = await render("/zh/from-scratch/elixir/values-and-types/deeper");
   assert.equal(response.status, 200);
   const html = await response.text();
 
@@ -666,19 +885,19 @@ test("keeps Elixir lesson two readable as six distinct value groups", async () =
   }
 
   assert.match(html, /一行只认一种值/);
-  assert.match(html, /conceptGridExpanded/);
-  assert.ok(html.indexOf("标记学完") > html.indexOf("本课结束"));
+  assert.match(html, /data-notebook-depth="values-and-types"/);
+  assert.match(html, /返回第/);
 });
 
 test("introduces beginner syntax through complete runnable examples", async () => {
   const elixirValues = await (
-    await render("/zh/from-scratch/elixir/values-and-types")
+    await render("/zh/from-scratch/elixir/values-and-types/deeper")
   ).text();
   assert.match(elixirValues, /Elixir 字符串本身就是 UTF-8 binary/);
   assert.match(elixirValues, /&lt;&lt;.*长安.*&gt;&gt;/s);
 
   const elixirFor = await (
-    await render("/zh/from-scratch/elixir/names-and-operators")
+    await render("/zh/from-scratch/elixir/names-and-operators/deeper")
   ).text();
   assert.match(elixirFor, /for comprehension/);
   assert.match(elixirFor, /comprehension 产生的结果/);
@@ -689,13 +908,13 @@ test("introduces beginner syntax through complete runnable examples", async () =
   assert.match(elixirFor, /空行或只有/);
 
   const elixirChoices = await (
-    await render("/zh/from-scratch/elixir/choices-and-guards")
+    await render("/zh/from-scratch/elixir/choices-and-guards/deeper")
   ).text();
   assert.match(elixirChoices, /打开分支块/);
   assert.match(elixirChoices, /结束整个 <code[^>]*>case<\/code>/);
 
   const elixirFunctions = await (
-    await render("/zh/from-scratch/elixir/functions-and-arity")
+    await render("/zh/from-scratch/elixir/functions-and-arity/deeper")
   ).text();
   assert.match(elixirFunctions, /String\.trim\/1/);
   assert.match(elixirFunctions, /String\.trim\(text\)/);
@@ -708,7 +927,7 @@ test("introduces beginner syntax through complete runnable examples", async () =
   assert.match(elixirFunctions, /\{:ok, 42\}/);
 
   const elixirMatching = await (
-    await render("/zh/from-scratch/elixir/pattern-matching")
+    await render("/zh/from-scratch/elixir/pattern-matching/deeper")
   ).text();
   assert.match(elixirMatching, /pin 运算符/);
   assert.match(elixirMatching, /\^expected_tag/);
@@ -716,7 +935,7 @@ test("introduces beginner syntax through complete runnable examples", async () =
   assert.match(elixirMatching, /从 Java、Python、JavaScript 看过来/);
 
   const elixirCapture = await (
-    await render("/zh/from-scratch/elixir/capture-enum-pipe")
+    await render("/zh/from-scratch/elixir/capture-enum-pipe/deeper")
   ).text();
   assert.match(elixirCapture, /不是一个独立变量/);
   assert.match(elixirCapture, /fn number -&gt; number \* 2 end/);
@@ -725,7 +944,7 @@ test("introduces beginner syntax through complete runnable examples", async () =
   assert.match(elixirCapture, /管道把左边结果放到右边的第一个参数/);
 
   const erlangFunctions = await (
-    await render("/zh/from-scratch/erlang/functions-and-arity")
+    await render("/zh/from-scratch/erlang/functions-and-arity/deeper")
   ).text();
   assert.match(erlangFunctions, /string:trim\/1/);
   assert.match(erlangFunctions, /string:trim\(Text\)/);
@@ -735,35 +954,35 @@ test("introduces beginner syntax through complete runnable examples", async () =
   assert.match(erlangFunctions, /error:badarg/);
 
   const erlangLists = await (
-    await render("/zh/from-scratch/erlang/lists-and-patterns")
+    await render("/zh/from-scratch/erlang/lists-and-patterns/deeper")
   ).text();
   assert.match(erlangLists, />list comprehension</);
   assert.match(erlangLists, /及格分数/);
 
   const erlangText = await (
-    await render("/zh/from-scratch/erlang/text-and-binaries")
+    await render("/zh/from-scratch/erlang/text-and-binaries/deeper")
   ).text();
   assert.match(erlangText, /得到 <code[^>]*>6<\/code>/);
   assert.match(erlangText, /6 个字节，不是 2 个汉字/);
 
   const erlangRecursion = await (
-    await render("/zh/from-scratch/erlang/recursion")
+    await render("/zh/from-scratch/erlang/recursion/deeper")
   ).text();
   assert.match(erlangRecursion, /fun Loop\(\[\]\) -&gt;/);
   assert.match(erlangRecursion, /Double\(\[1, 2, 3\]\)/);
   assert.match(erlangRecursion, /function_clause/);
 
   const englishExamples = await Promise.all([
-    render("/en/from-scratch/elixir/names-and-operators").then((response) =>
+    render("/en/from-scratch/elixir/names-and-operators/deeper").then((response) =>
       response.text(),
     ),
-    render("/en/from-scratch/elixir/functions-and-arity").then((response) =>
+    render("/en/from-scratch/elixir/functions-and-arity/deeper").then((response) =>
       response.text(),
     ),
-    render("/en/from-scratch/erlang/lists-and-patterns").then((response) =>
+    render("/en/from-scratch/erlang/lists-and-patterns/deeper").then((response) =>
       response.text(),
     ),
-    render("/en/from-scratch/erlang/functions-and-arity").then((response) =>
+    render("/en/from-scratch/erlang/functions-and-arity/deeper").then((response) =>
       response.text(),
     ),
   ]);
@@ -1214,7 +1433,10 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
         new URL("../app/components/ElixirPlayground.tsx", import.meta.url),
         "utf8",
       ),
-      readFile(new URL("../app/basic-path-data.ts", import.meta.url), "utf8"),
+      Promise.all([
+        readFile(new URL("../app/basic-path-data.ts", import.meta.url), "utf8"),
+        readFile(new URL("../content/lessons/meet-iex.ts", import.meta.url), "utf8"),
+      ]).then((sources) => sources.join("\n")),
       readFile(
         new URL("../app/components/BasicProgress.tsx", import.meta.url),
         "utf8",
@@ -1318,11 +1540,11 @@ test("ships branded assets and keeps a native Next.js-only project", async () =>
   assert.match(contentStyleGuide, /比喻只用于引出概念，不能代替技术定义/);
   assert.match(contentStyleGuide, /把报错写成可以观察和处理的结果/);
   assert.match(contentStyleGuide, /注释只解释意图、数据流、消息去向和失败边界/);
-  assert.equal((basicPathData.match(/\n    number: "\d\d",/g) ?? []).length, 62);
-  assert.equal((basicPathData.match(/\n    stage: "scratch"/g) ?? []).length, 18);
-  assert.equal((basicPathData.match(/\n    stage: "foundation"/g) ?? []).length, 16);
-  assert.equal((basicPathData.match(/\n    stage: "intermediate"/g) ?? []).length, 16);
-  assert.equal((basicPathData.match(/\n    stage: "project"/g) ?? []).length, 12);
+  assert.equal((basicPathData.match(/\n\s+number: "\d\d",/g) ?? []).length, 62);
+  assert.equal((basicPathData.match(/\n\s+stage: "scratch",/g) ?? []).length, 18);
+  assert.equal((basicPathData.match(/\n\s+stage: "foundation",/g) ?? []).length, 16);
+  assert.equal((basicPathData.match(/\n\s+stage: "intermediate",/g) ?? []).length, 16);
+  assert.equal((basicPathData.match(/\n\s+stage: "project",/g) ?? []).length, 12);
   assert.match(basicPathData, /String\.trim\/1/);
   assert.match(basicPathData, /`&1` 不是一个独立变量/);
   assert.match(basicPathData, /string:trim\/1/);

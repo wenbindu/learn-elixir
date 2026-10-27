@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getBasicPaths, getCourseCatalog } from "./i18n/catalog";
-import { locales, localizeHref, type Locale } from "./i18n/locales";
+import { isPathAvailable, locales, localizeHref, type Locale } from "./i18n/locales";
 
 const deploymentHost =
   process.env.NEXT_PUBLIC_SITE_URL ??
@@ -21,8 +21,10 @@ function absoluteUrl(pathname: string) {
 function alternateUrls(pathname: string) {
   return {
     "zh-CN": absoluteUrl(localizeHref("zh", pathname)),
-    en: absoluteUrl(localizeHref("en", pathname)),
-    "x-default": absoluteUrl(pathname),
+    ...(isPathAvailable("en", pathname) ? {
+      en: absoluteUrl(localizeHref("en", pathname)),
+      "x-default": absoluteUrl(pathname),
+    } : {}),
   };
 }
 
@@ -40,7 +42,6 @@ function entry(
 }
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const basicPaths = getBasicPaths("en");
   const courseModules = getCourseCatalog("en").courseModules;
   const corePaths = [
     "/",
@@ -51,20 +52,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/playground",
     "/resources",
   ];
-  const basicLessonPaths = basicPaths.flatMap((path) =>
-    path.lessons.map(
-      (lesson) => `/from-scratch/${path.id}/${lesson.slug}`,
-    ),
-  );
   const courseModulePaths = courseModules.map(
     (courseModule) => `/learn/${courseModule.slug}`,
   );
 
-  return locales.flatMap((locale) => [
-    ...corePaths.map((pathname) =>
-      entry(locale, pathname, pathname === "/" ? 1 : 0.8),
-    ),
-    ...basicLessonPaths.map((pathname) => entry(locale, pathname, 0.7)),
-    ...courseModulePaths.map((pathname) => entry(locale, pathname, 0.7)),
-  ]);
+  return [
+    ...locales.flatMap((locale) => [
+      ...corePaths.map((pathname) =>
+        entry(locale, pathname, pathname === "/" ? 1 : 0.8),
+      ),
+      ...getBasicPaths(locale).flatMap((path) => path.lessons.map((lesson) =>
+        entry(locale, `/from-scratch/${path.id}/${lesson.slug}`, 0.7),
+      )),
+      ...courseModulePaths.map((pathname) => entry(locale, pathname, 0.7)),
+      ...[...new Set(getBasicPaths(locale).flatMap((path) =>
+        path.lessons.flatMap((lesson) => lesson.metadata?.depth_pages ?? []),
+      ))].filter((pathname) => pathname.endsWith("/deeper"))
+        .map((pathname) => entry(locale, pathname, 0.5)),
+    ]),
+  ];
 }

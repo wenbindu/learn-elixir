@@ -1,0 +1,53 @@
+@font-face {
+  font-family: "Lesson Excalifont";
+  src: url("/fonts/lesson-sketch/excalifont-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Lesson Xiaolai";
+  src: url("/fonts/lesson-sketch/xiaolai-subset.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  unicode-range: U+3000-9FFF, U+F900-FAFF, U+FE00-FFFF;
+}
+
+@font-face {
+  font-family: "Lesson Comic Shanns";
+  src: url("/fonts/lesson-sketch/comic-shanns-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+.lesson.lesson {
+  --font-sans: "Lesson Excalifont", "Lesson Xiaolai", "Kaiti SC", "KaiTi", sans-serif;
+  --font-mono: "Lesson Comic Shanns", "Lesson Xiaolai", "SFMono-Regular", Consolas, monospace;
+  --hand: var(--font-sans);
+  --text-heading: 24px;
+  --text-subheading: 20px;
+  --text-body: 18px;
+  --text-control: 16px;
+  --text-caption: 14px;
+  --notebook-padding: 24px;
+  font-family: var(--hand);
+  font-synthesis: none;
+  line-height: 1.75;
+}
+
+.lesson > header { margin: 24px 0; }
+.lesson > header h1 { margin: 8px 0 12px; font: 400 34px / 1.4 var(--hand); letter-spacing: 0; }
+.lesson > header p { max-width: 48em; line-height: 1.75; }
+.lesson > section { container-type: inline-size; }
+.lesson :is(h2, strong, legend) { font-weight: 400; }
+.lesson :is(code, pre, kbd) { font-family: var(--font-mono); }
+.lesson :is(p, summary, label) { overflow-wrap: anywhere; }
+
+@media (max-width: 600px) {
+  .lesson.lesson { --text-heading: 22px; --notebook-padding: 20px 18px; }
+  .lesson > header { margin: 18px 0 24px; }
+  .lesson > header h1 { font-size: 28px; }
+}

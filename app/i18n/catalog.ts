@@ -14,7 +14,7 @@ import { keywordEntries as keywordEntriesZh } from "../keywords/keyword-data";
 import { basicPathsEn } from "./basic-path-data.en";
 import { courseModulesEn, stagesEn } from "./course-data.en";
 import { keywordEntriesEn } from "./keyword-data.en";
-import type { Locale } from "./locales";
+import { isPathAvailable, type Locale } from "./locales";
 
 export function getBasicPaths(locale: Locale) {
   return locale === "zh" ? basicPathsZh : basicPathsEn;
@@ -151,7 +151,9 @@ export function assertCatalogParity() {
     basics: [
       basicPathsZh.map((path) => ({
         id: path.id,
-        lessons: path.lessons.map((lesson) => lesson.slug),
+        lessons: path.lessons
+          .filter((lesson) => isPathAvailable("en", `/from-scratch/${path.id}/${lesson.slug}`))
+          .map((lesson) => lesson.slug),
       })),
       basicPathsEn.map((path) => ({
         id: path.id,

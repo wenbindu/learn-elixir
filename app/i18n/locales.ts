@@ -5,6 +5,12 @@ export type Locale = (typeof locales)[number];
 export const defaultLocale: Locale = "en";
 export const localeCookieName = "beam-path-locale";
 
+export const chineseOnlyBasicPaths: string[] = [];
+
+export function isPathAvailable(locale: Locale, pathname: string) {
+  return locale === "zh" || !chineseOnlyBasicPaths.includes(pathname.replace(/\/$/, ""));
+}
+
 const chineseRegionCodes = new Set(["CN", "HK", "MO", "TW"]);
 
 export function isLocale(value: string | null | undefined): value is Locale {
@@ -38,5 +44,9 @@ export function localePathname(pathname: string, locale: Locale) {
   if (isLocale(segments[1])) segments[1] = locale;
   else segments.splice(1, 0, locale);
 
+  const unprefixed = `/${segments.slice(2).join("/")}`;
+  if (!isPathAvailable(locale, unprefixed)) {
+    return localizeHref(locale, "/from-scratch/elixir");
+  }
   return segments.join("/") || `/${locale}`;
 }

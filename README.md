@@ -28,6 +28,90 @@
 [kimi-k3-learn](https://github.com/ViffyGwaanl/kimi-k3-learn)，实现采用章节路由，
 没有复制其单 HTML 架构或 Kimi 主题内容。
 
+## 当前系统架构
+
+BEAM Path 是一个基于 Next.js App Router 的中英双语学习站。当前使用 Next.js
+`16.2.12`、React `19.2.6` 和 TypeScript，运行环境约定为 Node.js `22.x`
+（本地脚本最低要求 `22.13.0`）。课程内容随代码仓库维护，页面以服务端组件为主，
+课程路由通过 `generateStaticParams` 枚举并在构建时预生成，交互功能由客户端组件承接。
+
+```mermaid
+flowchart TD
+    Browser[浏览器] --> Proxy[proxy.ts：语言路由]
+    Proxy --> Pages[Next.js App Router：中英文页面]
+    Catalog[TypeScript 课程与词典数据] --> I18n[i18n/catalog.ts：语言选择与结构校验]
+    I18n --> Pages
+    Markdown[content/resources*.md] --> Parser[resource-data.ts：服务端解析与校验]
+    Parser --> Pages
+    Pages --> Client[React 客户端交互组件]
+    Client <--> Storage[浏览器 localStorage]
+    Client --> Cookie[语言偏好 Cookie]
+    Cookie --> Proxy
+    Client --> Codapi[Codapi iframe：Elixir 在线执行]
+    Browser --> Static[public/case-chat：静态教程]
+    Pages --> Metrics[Vercel Analytics / Speed Insights]
+```
+
+### 模块与职责
+
+| 层次 | 主要位置 | 职责 |
+| --- | --- | --- |
+| 请求入口 | `proxy.ts` | 已带 `/zh`、`/en` 的请求直接放行；其他页面按语言 Cookie、Vercel 国家请求头、默认英文的顺序选择语言，并以 307 跳转 |
+| 页面与布局 | `app/[locale]/` | 组合首页、语言课程、BEAM 主线、词典、Playground 和资源目录；布局统一挂载导航、主题初始化与统计组件 |
+| 课程与国际化 | `app/basic-path-data.ts`、`app/course-data.ts`、`app/keywords/keyword-data.ts`、`app/i18n/` | 保存中英文内容；`catalog.ts` 提供统一查询入口，并校验两种语言的课程路由和词典结构一致性 |
+| 资源内容 | `content/resources.md`、`content/resources.en.md`、`app/resource-data.ts` | 服务端读取 Markdown，解析分类和卡片元数据，校验 URL、重复资源与配置格式 |
+| 浏览器交互 | `app/components/`、`app/keywords/KeywordDictionary.tsx`、`app/resources/ResourceDirectoryBrowser.tsx` | 搜索筛选、进度、测验、代码复制、语言与主题切换、消息模拟及在线练习 |
+| 静态资产 | `public/` | 品牌图片、图标及 Case Chat 教程；Case Chat 由同步脚本复制后随站点发布 |
+| 搜索与观测 | `app/i18n/metadata.ts`、`app/sitemap.ts`、`app/robots.ts`、`app/manifest.ts` | 页面 metadata、语言替代链接、站点地图、爬虫配置与 Web App manifest；访问和性能统计接入 Vercel |
+
+主要页面路由如下，`:locale` 为 `zh` 或 `en`：
+
+| 路由 | 页面 |
+| --- | --- |
+| `/:locale` | 首页与课程地图 |
+| `/:locale/from-scratch` | 零基础语言路线入口 |
+| `/:locale/from-scratch/:language` | Elixir / Erlang 课程目录 |
+| `/:locale/from-scratch/:language/:lesson` | 单节语言课 |
+| `/:locale/learn/:slug` | BEAM / OTP 主题课 |
+| `/:locale/keywords` | 关键字词典 |
+| `/:locale/playground` | Elixir 在线练习 |
+| `/:locale/resources` | 关联资源目录 |
+| `/case-chat/index.html` | 独立静态案例教程，不经过语言前缀跳转 |
+
+### 数据流与运行边界
+
+访问课程时，语言路由先确定 URL，页面通过 `i18n/catalog.ts` 获取对应语言的课程数据，
+生成 HTML；浏览器加载客户端组件后提供搜索、测验和进度操作。资源目录使用独立的
+Markdown 解析链路，内容更新后随下一次构建发布。
+
+学习进度、主题和代码展示偏好保存在浏览器 `localStorage`，语言偏好保存在
+`beam-path-locale` Cookie。课程地图支持带 schema 版本的进度 JSON 导入与导出。
+当前没有账号系统、数据库、自建业务 API 或服务端进度同步，浏览器数据不会自动跨设备同步。
+
+站点本身运行在 Node.js / Next.js 上，Elixir 和 Erlang 是教学内容。在线 Playground
+通过 iframe 加载 Codapi，由第三方沙箱执行 Elixir；消息实验是浏览器中的语义模拟。
+Case Chat 发布的是静态教程文件，不会启动相邻项目的语音或 WebSocket 服务。
+
+### 本地运行与部署
+
+本地由 `scripts/start-local.sh` 读取 `config/local.env`，使用 `nohup` 在后台启动
+`next dev --webpack`，默认监听 `127.0.0.1:3000`。脚本记录 Next.js 启动进程的 PID
+到 `.run/beam-path.pid`，输出日志到 `.run/beam-path.log`，并通过 HTTP 请求检查启动就绪。
+`stop` 向记录的 PID 发送 `SIGTERM`，最多等待 5 秒；`restart` 顺序执行停止和启动。
+
+**当前进程管理的已知缺口：** PID 文件丢失但开发服务仍存活时，脚本不会自动识别或接管
+本项目的残留进程。此时 `status` 会报告端口被占用且服务未受管理，`stop` 会报告未运行，
+`start` 和 `restart` 会因端口占用失败。恢复时需先核实监听进程与本项目的归属，停止旧的
+`next dev` 进程；若其 `next-server` 子进程仍占用端口，再清理子进程，随后使用脚本启动。
+PID 必须以当时的进程检查结果为准。
+
+生产部署使用 Vercel 原生 Next.js 构建，入口是 `package.json` 中的 `next build`，
+不调用本地启动脚本。GitHub 接入后，`main` 对应生产部署，其他分支和 Pull Request
+对应预览部署。课程数据、Markdown 和静态案例均随仓库版本发布。
+
+验证入口为 `npm test`（先构建，再启动临时端口上的生产模式 Next.js 服务检查页面 HTML、
+路由和静态资产）及 `npm run lint`。具体启动命令与部署步骤见下文。
+
 ## 本地运行
 
 需要 Node.js `22.x`。开发服务器默认在后台运行：

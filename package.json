@@ -8,7 +8,8 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs",
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "test:examples": "node scripts/verify-notebook-examples.mjs",
     "lint": "eslint . --ignore-pattern .next"
   },
   "dependencies": {

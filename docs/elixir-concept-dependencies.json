@@ -1,0 +1,1120 @@
+{
+  "scope": "Chinese Elixir 01–32; draft for confirmation, not a published graph",
+  "nodes": [
+    {
+      "id": "iex-session",
+      "firstLesson": "start-iex",
+      "number": "01",
+      "title": "打开 IEx，再退出来"
+    },
+    {
+      "id": "prompt",
+      "firstLesson": "start-iex",
+      "number": "01",
+      "title": "打开 IEx，再退出来"
+    },
+    {
+      "id": "return-value",
+      "firstLesson": "meet-iex",
+      "number": "02",
+      "title": "先让代码说话"
+    },
+    {
+      "id": "value-type",
+      "firstLesson": "values-and-types",
+      "number": "03",
+      "title": "先认六种值"
+    },
+    {
+      "id": "collection",
+      "firstLesson": "collections",
+      "number": "04",
+      "title": "把值装起来"
+    },
+    {
+      "id": "binding",
+      "firstLesson": "names-and-operators",
+      "number": "05",
+      "title": "从旧 list 生成新 list"
+    },
+    {
+      "id": "comprehension",
+      "firstLesson": "names-and-operators",
+      "number": "05",
+      "title": "从旧 list 生成新 list"
+    },
+    {
+      "id": "pattern-matching",
+      "firstLesson": "pattern-matching",
+      "number": "06",
+      "title": "让形状对上"
+    },
+    {
+      "id": "pin",
+      "firstLesson": "pattern-matching",
+      "number": "06",
+      "title": "让形状对上"
+    },
+    {
+      "id": "case",
+      "firstLesson": "choices-and-guards",
+      "number": "07",
+      "title": "用 case 做选择"
+    },
+    {
+      "id": "guard",
+      "firstLesson": "choices-and-guards",
+      "number": "07",
+      "title": "用 case 做选择"
+    },
+    {
+      "id": "function-call",
+      "firstLesson": "functions-and-arity",
+      "number": "08",
+      "title": "把文字安全变成整数"
+    },
+    {
+      "id": "arity",
+      "firstLesson": "functions-and-arity",
+      "number": "08",
+      "title": "把文字安全变成整数"
+    },
+    {
+      "id": "anonymous-function",
+      "firstLesson": "capture-enum-pipe",
+      "number": "09",
+      "title": "拆开 &1 和管道"
+    },
+    {
+      "id": "pipe",
+      "firstLesson": "capture-enum-pipe",
+      "number": "09",
+      "title": "拆开 &1 和管道"
+    },
+    {
+      "id": "module",
+      "firstLesson": "modules-and-mix",
+      "number": "10",
+      "title": "把代码放进项目"
+    },
+    {
+      "id": "mix",
+      "firstLesson": "modules-and-mix",
+      "number": "10",
+      "title": "把代码放进项目"
+    },
+    {
+      "id": "truthiness",
+      "firstLesson": "operators-and-truthiness",
+      "number": "11",
+      "title": "真假不只靠 true"
+    },
+    {
+      "id": "equality",
+      "firstLesson": "operators-and-truthiness",
+      "number": "11",
+      "title": "真假不只靠 true"
+    },
+    {
+      "id": "nested-access",
+      "firstLesson": "nested-collections",
+      "number": "12",
+      "title": "走进嵌套数据"
+    },
+    {
+      "id": "unicode",
+      "firstLesson": "unicode-and-text",
+      "number": "13",
+      "title": "一字不一定一字节"
+    },
+    {
+      "id": "function-clause",
+      "firstLesson": "named-functions-and-clauses",
+      "number": "14",
+      "title": "让函数按形状接活"
+    },
+    {
+      "id": "recursion",
+      "firstLesson": "recursion-and-folds",
+      "number": "15",
+      "title": "把一列数收成一个值"
+    },
+    {
+      "id": "reduce",
+      "firstLesson": "recursion-and-folds",
+      "number": "15",
+      "title": "把一列数收成一个值"
+    },
+    {
+      "id": "with",
+      "firstLesson": "control-flow",
+      "number": "16",
+      "title": "给不同问题选不同路"
+    },
+    {
+      "id": "struct",
+      "firstLesson": "structs-and-module-metadata",
+      "number": "17",
+      "title": "给 map 一张名片"
+    },
+    {
+      "id": "module-attribute",
+      "firstLesson": "structs-and-module-metadata",
+      "number": "17",
+      "title": "给 map 一张名片"
+    },
+    {
+      "id": "assertion",
+      "firstLesson": "project-and-first-tests",
+      "number": "18",
+      "title": "让项目自己验答案"
+    },
+    {
+      "id": "exunit",
+      "firstLesson": "project-and-first-tests",
+      "number": "18",
+      "title": "让项目自己验答案"
+    },
+    {
+      "id": "result-tuple",
+      "firstLesson": "result-contracts",
+      "number": "19",
+      "title": "让成功和失败长得一样"
+    },
+    {
+      "id": "file-io",
+      "firstLesson": "files-and-paths",
+      "number": "20",
+      "title": "读写文件先管好路"
+    },
+    {
+      "id": "path",
+      "firstLesson": "files-and-paths",
+      "number": "20",
+      "title": "读写文件先管好路"
+    },
+    {
+      "id": "lazy-enumeration",
+      "firstLesson": "lazy-data-pipelines",
+      "number": "21",
+      "title": "只算眼前需要的"
+    },
+    {
+      "id": "protocol",
+      "firstLesson": "protocols",
+      "number": "22",
+      "title": "同一句话，不同做法"
+    },
+    {
+      "id": "behaviour",
+      "firstLesson": "behaviours-and-callbacks",
+      "number": "23",
+      "title": "先约好模块会做什么"
+    },
+    {
+      "id": "callback",
+      "firstLesson": "behaviours-and-callbacks",
+      "number": "23",
+      "title": "先约好模块会做什么"
+    },
+    {
+      "id": "typespec",
+      "firstLesson": "typespecs-and-dialyzer",
+      "number": "24",
+      "title": "把数据形状写在门口"
+    },
+    {
+      "id": "boundary-test",
+      "firstLesson": "testing-workflows",
+      "number": "25",
+      "title": "测试不只看一条好路"
+    },
+    {
+      "id": "cli-entry",
+      "firstLesson": "tooling-and-escripts",
+      "number": "26",
+      "title": "把项目磨成一个命令"
+    },
+    {
+      "id": "escript",
+      "firstLesson": "tooling-and-escripts",
+      "number": "26",
+      "title": "把项目磨成一个命令"
+    },
+    {
+      "id": "project-contract",
+      "firstLesson": "project-brief",
+      "number": "27",
+      "title": "定下小项目边界"
+    },
+    {
+      "id": "input-normalization",
+      "firstLesson": "parse-real-input",
+      "number": "28",
+      "title": "把真实文字洗干净"
+    },
+    {
+      "id": "api-boundary",
+      "firstLesson": "design-module-api",
+      "number": "29",
+      "title": "只开三扇门"
+    },
+    {
+      "id": "integration-test",
+      "firstLesson": "types-docs-and-tests",
+      "number": "30",
+      "title": "把约定钉在代码旁"
+    },
+    {
+      "id": "exit-status",
+      "firstLesson": "package-and-observe",
+      "number": "31",
+      "title": "打包，也留下脚印"
+    },
+    {
+      "id": "observability",
+      "firstLesson": "package-and-observe",
+      "number": "31",
+      "title": "打包，也留下脚印"
+    },
+    {
+      "id": "acceptance-test",
+      "firstLesson": "project-acceptance",
+      "number": "32",
+      "title": "照任务书交卷"
+    }
+  ],
+  "edges": [
+    {
+      "type": "prerequisite",
+      "from": "iex-session",
+      "to": "return-value",
+      "lesson": "meet-iex"
+    },
+    {
+      "type": "prerequisite",
+      "from": "prompt",
+      "to": "return-value",
+      "lesson": "meet-iex"
+    },
+    {
+      "type": "prerequisite",
+      "from": "return-value",
+      "to": "value-type",
+      "lesson": "values-and-types"
+    },
+    {
+      "type": "prerequisite",
+      "from": "value-type",
+      "to": "collection",
+      "lesson": "collections"
+    },
+    {
+      "type": "prerequisite",
+      "from": "collection",
+      "to": "binding",
+      "lesson": "names-and-operators"
+    },
+    {
+      "type": "prerequisite",
+      "from": "collection",
+      "to": "comprehension",
+      "lesson": "names-and-operators"
+    },
+    {
+      "type": "prerequisite",
+      "from": "binding",
+      "to": "pattern-matching",
+      "lesson": "pattern-matching"
+    },
+    {
+      "type": "prerequisite",
+      "from": "binding",
+      "to": "pin",
+      "lesson": "pattern-matching"
+    },
+    {
+      "type": "prerequisite",
+      "from": "collection",
+      "to": "pattern-matching",
+      "lesson": "pattern-matching"
+    },
+    {
+      "type": "prerequisite",
+      "from": "collection",
+      "to": "pin",
+      "lesson": "pattern-matching"
+    },
+    {
+      "type": "prerequisite",
+      "from": "pattern-matching",
+      "to": "case",
+      "lesson": "choices-and-guards"
+    },
+    {
+      "type": "prerequisite",
+      "from": "pattern-matching",
+      "to": "guard",
+      "lesson": "choices-and-guards"
+    },
+    {
+      "type": "prerequisite",
+      "from": "value-type",
+      "to": "function-call",
+      "lesson": "functions-and-arity"
+    },
+    {
+      "type": "prerequisite",
+      "from": "value-type",
+      "to": "arity",
+      "lesson": "functions-and-arity"
+    },
+    {
+      "type": "prerequisite",
+      "from": "binding",
+      "to": "function-call",
+      "lesson": "functions-and-arity"
+    },
+    {
+      "type": "prerequisite",
+      "from": "binding",
+      "to": "arity",
+      "lesson": "functions-and-arity"
+    },
+    {
+      "type": "prerequisite",
+      "from": "function-call",
+      "to": "anonymous-function",
+      "lesson": "capture-enum-pipe"
+    },
+    {
+      "type": "prerequisite",
+      "from": "function-call",
+      "to": "pipe",
+      "lesson": "capture-enum-pipe"
+    },
+    {
+      "type": "prerequisite",
+      "from": "collection",
+      "to": "anonymous-function",
+      "lesson": "capture-enum-pipe"
+    },
+    {
+      "type": "prerequisite",
+      "from": "collection",
+      "to": "pipe",
+      "lesson": "capture-enum-pipe"
+    },
+    {
+      "type": "prerequisite",
+      "from": "function-call",
+      "to": "module",
+      "lesson": "modules-and-mix"
+    },
+    {
+      "type": "prerequisite",
+      "from": "function-call",
+      "to": "mix",
+      "lesson": "modules-and-mix"
+    },
+    {
+      "type": "prerequisite",
+      "from": "arity",
+      "to": "module",
+      "lesson": "modules-and-mix"
+    },
+    {
+      "type": "prerequisite",
+      "from": "arity",
+      "to": "mix",
+      "lesson": "modules-and-mix"
+    },
+    {
+      "type": "prerequisite",
+      "from": "value-type",
+      "to": "truthiness",
+      "lesson": "operators-and-truthiness"
+    },
+    {
+      "type": "prerequisite",
+      "from": "value-type",
+      "to": "equality",
+      "lesson": "operators-and-truthiness"
+    },
+    {
+      "type": "prerequisite",
+      "from": "collection",
+      "to": "nested-access",
+      "lesson": "nested-collections"
+    },
+    {
+      "type": "prerequisite",
+      "from": "anonymous-function",
+      "to": "nested-access",
+      "lesson": "nested-collections"
+    },
+    {
+      "type": "prerequisite",
+      "from": "value-type",
+      "to": "unicode",
+      "lesson": "unicode-and-text"
+    },
+    {
+      "type": "prerequisite",
+      "from": "function-call",
+      "to": "unicode",
+      "lesson": "unicode-and-text"
+    },
+    {
+      "type": "prerequisite",
+      "from": "module",
+      "to": "function-clause",
+      "lesson": "named-functions-and-clauses"
+    },
+    {
+      "type": "prerequisite",
+      "from": "guard",
+      "to": "function-clause",
+      "lesson": "named-functions-and-clauses"
+    },
+    {
+      "type": "prerequisite",
+      "from": "pattern-matching",
+      "to": "function-clause",
+      "lesson": "named-functions-and-clauses"
+    },
+    {
+      "type": "prerequisite",
+      "from": "function-clause",
+      "to": "recursion",
+      "lesson": "recursion-and-folds"
+    },
+    {
+      "type": "prerequisite",
+      "from": "function-clause",
+      "to": "reduce",
+      "lesson": "recursion-and-folds"
+    },
+    {
+      "type": "prerequisite",
+      "from": "anonymous-function",
+      "to": "recursion",
+      "lesson": "recursion-and-folds"
+    },
+    {
+      "type": "prerequisite",
+      "from": "anonymous-function",
+      "to": "reduce",
+      "lesson": "recursion-and-folds"
+    },
+    {
+      "type": "prerequisite",
+      "from": "pattern-matching",
+      "to": "with",
+      "lesson": "control-flow"
+    },
+    {
+      "type": "prerequisite",
+      "from": "case",
+      "to": "with",
+      "lesson": "control-flow"
+    },
+    {
+      "type": "prerequisite",
+      "from": "function-call",
+      "to": "with",
+      "lesson": "control-flow"
+    },
+    {
+      "type": "prerequisite",
+      "from": "module",
+      "to": "struct",
+      "lesson": "structs-and-module-metadata"
+    },
+    {
+      "type": "prerequisite",
+      "from": "module",
+      "to": "module-attribute",
+      "lesson": "structs-and-module-metadata"
+    },
+    {
+      "type": "prerequisite",
+      "from": "collection",
+      "to": "struct",
+      "lesson": "structs-and-module-metadata"
+    },
+    {
+      "type": "prerequisite",
+      "from": "collection",
+      "to": "module-attribute",
+      "lesson": "structs-and-module-metadata"
+    },
+    {
+      "type": "prerequisite",
+      "from": "module",
+      "to": "assertion",
+      "lesson": "project-and-first-tests"
+    },
+    {
+      "type": "prerequisite",
+      "from": "module",
+      "to": "exunit",
+      "lesson": "project-and-first-tests"
+    },
+    {
+      "type": "prerequisite",
+      "from": "unicode",
+      "to": "assertion",
+      "lesson": "project-and-first-tests"
+    },
+    {
+      "type": "prerequisite",
+      "from": "unicode",
+      "to": "exunit",
+      "lesson": "project-and-first-tests"
+    },
+    {
+      "type": "prerequisite",
+      "from": "function-clause",
+      "to": "result-tuple",
+      "lesson": "result-contracts"
+    },
+    {
+      "type": "prerequisite",
+      "from": "collection",
+      "to": "result-tuple",
+      "lesson": "result-contracts"
+    },
+    {
+      "type": "prerequisite",
+      "from": "result-tuple",
+      "to": "file-io",
+      "lesson": "files-and-paths"
+    },
+    {
+      "type": "prerequisite",
+      "from": "result-tuple",
+      "to": "path",
+      "lesson": "files-and-paths"
+    },
+    {
+      "type": "prerequisite",
+      "from": "binding",
+      "to": "file-io",
+      "lesson": "files-and-paths"
+    },
+    {
+      "type": "prerequisite",
+      "from": "binding",
+      "to": "path",
+      "lesson": "files-and-paths"
+    },
+    {
+      "type": "prerequisite",
+      "from": "anonymous-function",
+      "to": "lazy-enumeration",
+      "lesson": "lazy-data-pipelines"
+    },
+    {
+      "type": "prerequisite",
+      "from": "pipe",
+      "to": "lazy-enumeration",
+      "lesson": "lazy-data-pipelines"
+    },
+    {
+      "type": "prerequisite",
+      "from": "module",
+      "to": "protocol",
+      "lesson": "protocols"
+    },
+    {
+      "type": "prerequisite",
+      "from": "value-type",
+      "to": "protocol",
+      "lesson": "protocols"
+    },
+    {
+      "type": "prerequisite",
+      "from": "module",
+      "to": "behaviour",
+      "lesson": "behaviours-and-callbacks"
+    },
+    {
+      "type": "prerequisite",
+      "from": "module",
+      "to": "callback",
+      "lesson": "behaviours-and-callbacks"
+    },
+    {
+      "type": "prerequisite",
+      "from": "function-call",
+      "to": "behaviour",
+      "lesson": "behaviours-and-callbacks"
+    },
+    {
+      "type": "prerequisite",
+      "from": "function-call",
+      "to": "callback",
+      "lesson": "behaviours-and-callbacks"
+    },
+    {
+      "type": "prerequisite",
+      "from": "module",
+      "to": "typespec",
+      "lesson": "typespecs-and-dialyzer"
+    },
+    {
+      "type": "prerequisite",
+      "from": "value-type",
+      "to": "typespec",
+      "lesson": "typespecs-and-dialyzer"
+    },
+    {
+      "type": "prerequisite",
+      "from": "exunit",
+      "to": "boundary-test",
+      "lesson": "testing-workflows"
+    },
+    {
+      "type": "prerequisite",
+      "from": "anonymous-function",
+      "to": "boundary-test",
+      "lesson": "testing-workflows"
+    },
+    {
+      "type": "prerequisite",
+      "from": "truthiness",
+      "to": "boundary-test",
+      "lesson": "testing-workflows"
+    },
+    {
+      "type": "prerequisite",
+      "from": "function-clause",
+      "to": "cli-entry",
+      "lesson": "tooling-and-escripts"
+    },
+    {
+      "type": "prerequisite",
+      "from": "function-clause",
+      "to": "escript",
+      "lesson": "tooling-and-escripts"
+    },
+    {
+      "type": "prerequisite",
+      "from": "mix",
+      "to": "cli-entry",
+      "lesson": "tooling-and-escripts"
+    },
+    {
+      "type": "prerequisite",
+      "from": "mix",
+      "to": "escript",
+      "lesson": "tooling-and-escripts"
+    },
+    {
+      "type": "prerequisite",
+      "from": "collection",
+      "to": "project-contract",
+      "lesson": "project-brief"
+    },
+    {
+      "type": "prerequisite",
+      "from": "unicode",
+      "to": "project-contract",
+      "lesson": "project-brief"
+    },
+    {
+      "type": "prerequisite",
+      "from": "cli-entry",
+      "to": "project-contract",
+      "lesson": "project-brief"
+    },
+    {
+      "type": "prerequisite",
+      "from": "unicode",
+      "to": "input-normalization",
+      "lesson": "parse-real-input"
+    },
+    {
+      "type": "prerequisite",
+      "from": "result-tuple",
+      "to": "input-normalization",
+      "lesson": "parse-real-input"
+    },
+    {
+      "type": "prerequisite",
+      "from": "file-io",
+      "to": "input-normalization",
+      "lesson": "parse-real-input"
+    },
+    {
+      "type": "prerequisite",
+      "from": "module",
+      "to": "api-boundary",
+      "lesson": "design-module-api"
+    },
+    {
+      "type": "prerequisite",
+      "from": "reduce",
+      "to": "api-boundary",
+      "lesson": "design-module-api"
+    },
+    {
+      "type": "prerequisite",
+      "from": "input-normalization",
+      "to": "api-boundary",
+      "lesson": "design-module-api"
+    },
+    {
+      "type": "prerequisite",
+      "from": "assertion",
+      "to": "integration-test",
+      "lesson": "types-docs-and-tests"
+    },
+    {
+      "type": "prerequisite",
+      "from": "api-boundary",
+      "to": "integration-test",
+      "lesson": "types-docs-and-tests"
+    },
+    {
+      "type": "prerequisite",
+      "from": "input-normalization",
+      "to": "integration-test",
+      "lesson": "types-docs-and-tests"
+    },
+    {
+      "type": "prerequisite",
+      "from": "typespec",
+      "to": "integration-test",
+      "lesson": "types-docs-and-tests"
+    },
+    {
+      "type": "prerequisite",
+      "from": "cli-entry",
+      "to": "exit-status",
+      "lesson": "package-and-observe"
+    },
+    {
+      "type": "prerequisite",
+      "from": "cli-entry",
+      "to": "observability",
+      "lesson": "package-and-observe"
+    },
+    {
+      "type": "prerequisite",
+      "from": "result-tuple",
+      "to": "exit-status",
+      "lesson": "package-and-observe"
+    },
+    {
+      "type": "prerequisite",
+      "from": "result-tuple",
+      "to": "observability",
+      "lesson": "package-and-observe"
+    },
+    {
+      "type": "prerequisite",
+      "from": "case",
+      "to": "exit-status",
+      "lesson": "package-and-observe"
+    },
+    {
+      "type": "prerequisite",
+      "from": "case",
+      "to": "observability",
+      "lesson": "package-and-observe"
+    },
+    {
+      "type": "prerequisite",
+      "from": "project-contract",
+      "to": "acceptance-test",
+      "lesson": "project-acceptance"
+    },
+    {
+      "type": "prerequisite",
+      "from": "exit-status",
+      "to": "acceptance-test",
+      "lesson": "project-acceptance"
+    },
+    {
+      "type": "prerequisite",
+      "from": "integration-test",
+      "to": "acceptance-test",
+      "lesson": "project-acceptance"
+    }
+  ],
+  "contributions": [
+    {
+      "lesson": "start-iex",
+      "concepts": [
+        "iex-session",
+        "prompt"
+      ],
+      "project": "trail-stats",
+      "contribution": "准备好试跑代码的窗口，后面用它检查“行迹”的统计结果。"
+    },
+    {
+      "lesson": "meet-iex",
+      "concepts": [
+        "return-value"
+      ],
+      "project": "trail-stats",
+      "contribution": "给“行迹”文字统计工具打印第一行结果。"
+    },
+    {
+      "lesson": "values-and-types",
+      "concepts": [
+        "value-type"
+      ],
+      "project": "trail-stats",
+      "contribution": "区分统计数字、输入文字和成功标签。"
+    },
+    {
+      "lesson": "collections",
+      "concepts": [
+        "collection"
+      ],
+      "project": "trail-stats",
+      "contribution": "用 list 保存文本行，用 map 保存统计项。"
+    },
+    {
+      "lesson": "names-and-operators",
+      "concepts": [
+        "binding",
+        "comprehension"
+      ],
+      "project": "trail-stats",
+      "contribution": "逐行清洗输入，同时保留原始数据。"
+    },
+    {
+      "lesson": "pattern-matching",
+      "concepts": [
+        "pattern-matching",
+        "pin"
+      ],
+      "project": "trail-stats",
+      "contribution": "从成功结果中取出文件内容。"
+    },
+    {
+      "lesson": "choices-and-guards",
+      "concepts": [
+        "case",
+        "guard"
+      ],
+      "project": "trail-stats",
+      "contribution": "分别处理文件读取成功与失败。"
+    },
+    {
+      "lesson": "functions-and-arity",
+      "concepts": [
+        "function-call",
+        "arity"
+      ],
+      "project": "trail-stats",
+      "contribution": "把输入文字变成可计算的数字。"
+    },
+    {
+      "lesson": "capture-enum-pipe",
+      "concepts": [
+        "anonymous-function",
+        "pipe"
+      ],
+      "project": "trail-stats",
+      "contribution": "把清洗、分词和统计按顺序连接。"
+    },
+    {
+      "lesson": "modules-and-mix",
+      "concepts": [
+        "module",
+        "mix"
+      ],
+      "project": "trail-stats",
+      "contribution": "给文字统计函数建立模块入口。"
+    },
+    {
+      "lesson": "operators-and-truthiness",
+      "concepts": [
+        "truthiness",
+        "equality"
+      ],
+      "project": "trail-stats",
+      "contribution": "为输入检查写出准确的条件。"
+    },
+    {
+      "lesson": "nested-collections",
+      "concepts": [
+        "nested-access"
+      ],
+      "project": "trail-stats",
+      "contribution": "修改统计配置中的一项，同时保留旧配置。"
+    },
+    {
+      "lesson": "unicode-and-text",
+      "concepts": [
+        "unicode"
+      ],
+      "project": "trail-stats",
+      "contribution": "让 chars 统计中文字符，避免把字节数当作字数。"
+    },
+    {
+      "lesson": "named-functions-and-clauses",
+      "concepts": [
+        "function-clause"
+      ],
+      "project": "trail-stats",
+      "contribution": "给统计入口分别处理有效输入与错误输入。"
+    },
+    {
+      "lesson": "recursion-and-folds",
+      "concepts": [
+        "recursion",
+        "reduce"
+      ],
+      "project": "trail-stats",
+      "contribution": "把多行的词数收成一个总数。"
+    },
+    {
+      "lesson": "control-flow",
+      "concepts": [
+        "with"
+      ],
+      "project": "trail-stats",
+      "contribution": "先验证输入，成功后才进入统计。"
+    },
+    {
+      "lesson": "structs-and-module-metadata",
+      "concepts": [
+        "struct",
+        "module-attribute"
+      ],
+      "project": "trail-stats",
+      "contribution": "给统计结果固定 lines、words、chars 字段。"
+    },
+    {
+      "lesson": "project-and-first-tests",
+      "concepts": [
+        "assertion",
+        "exunit"
+      ],
+      "project": "trail-stats",
+      "contribution": "把文字计数的预期结果保存成可重复检查的测试。"
+    },
+    {
+      "lesson": "result-contracts",
+      "concepts": [
+        "result-tuple"
+      ],
+      "project": "trail-stats",
+      "contribution": "让文件与解析错误沿调用链交给显示层。"
+    },
+    {
+      "lesson": "files-and-paths",
+      "concepts": [
+        "file-io",
+        "path"
+      ],
+      "project": "trail-stats",
+      "contribution": "把用户提供的文件读成原始文字。"
+    },
+    {
+      "lesson": "lazy-data-pipelines",
+      "concepts": [
+        "lazy-enumeration"
+      ],
+      "project": "trail-stats",
+      "contribution": "处理大文件时只按需要读取和计算。"
+    },
+    {
+      "lesson": "protocols",
+      "concepts": [
+        "protocol"
+      ],
+      "project": "trail-stats",
+      "contribution": "理解按数据类型扩展行为的方式，避免在调用者里堆类型判断。"
+    },
+    {
+      "lesson": "behaviours-and-callbacks",
+      "concepts": [
+        "behaviour",
+        "callback"
+      ],
+      "project": "trail-stats",
+      "contribution": "为可替换的文件读取模块约定入口。"
+    },
+    {
+      "lesson": "typespecs-and-dialyzer",
+      "concepts": [
+        "typespec"
+      ],
+      "project": "trail-stats",
+      "contribution": "准确记录统计函数的输入输出，让分析工具检查矛盾。"
+    },
+    {
+      "lesson": "testing-workflows",
+      "concepts": [
+        "boundary-test"
+      ],
+      "project": "trail-stats",
+      "contribution": "覆盖空文件、有效文件和失败输入。"
+    },
+    {
+      "lesson": "tooling-and-escripts",
+      "concepts": [
+        "cli-entry",
+        "escript"
+      ],
+      "project": "trail-stats",
+      "contribution": "建立接收文件路径的命令入口。"
+    },
+    {
+      "lesson": "project-brief",
+      "concepts": [
+        "project-contract"
+      ],
+      "project": "trail-stats",
+      "contribution": "确定“行迹”只统计非空行，且不修改输入文件。"
+    },
+    {
+      "lesson": "parse-real-input",
+      "concepts": [
+        "input-normalization"
+      ],
+      "project": "trail-stats",
+      "contribution": "把文件原始文字整理成统计模块接受的行 list。"
+    },
+    {
+      "lesson": "design-module-api",
+      "concepts": [
+        "api-boundary"
+      ],
+      "project": "trail-stats",
+      "contribution": "让 count 接收干净的行，并返回稳定统计结果。"
+    },
+    {
+      "lesson": "types-docs-and-tests",
+      "concepts": [
+        "integration-test"
+      ],
+      "project": "trail-stats",
+      "contribution": "检查 Parser 交给 count 的行 list 符合任务书。"
+    },
+    {
+      "lesson": "package-and-observe",
+      "concepts": [
+        "exit-status",
+        "observability"
+      ],
+      "project": "trail-stats",
+      "contribution": "让 CLI 在失败时记录原因并返回非零状态。"
+    },
+    {
+      "lesson": "project-acceptance",
+      "concepts": [
+        "acceptance-test"
+      ],
+      "project": "trail-stats",
+      "contribution": "按任务书验收最终命令，留下可重复执行的记录。"
+    }
+  ]
+}
