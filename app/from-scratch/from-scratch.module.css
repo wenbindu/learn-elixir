@@ -2107,3 +2107,15 @@
     radial-gradient(circle at 8% 15%, rgb(49 133 245 / 0.1), transparent 25%),
     var(--scratch-canvas);
 }
+
+@media (min-width: 1301px) {
+  .discussionLayout { grid-template-columns: 240px minmax(0, 900px) 310px; gap: 24px; width: min(1500px, calc(100% - 48px)); }
+}
+@media (max-width: 1300px) {
+  .discussionLayout { grid-template-columns: minmax(0, 1fr); width: min(900px, calc(100% - 40px)); }
+  .discussionLayout .lessonSidebar { display: none; }
+  .discussionLayout .mobilePathNav { display: block; }
+}
+@media (max-width: 600px) {
+  .discussionLayout { width: min(100% - 28px, 900px); }
+}

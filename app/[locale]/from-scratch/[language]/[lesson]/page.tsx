@@ -12,6 +12,7 @@ import { LocalizedLink } from "../../../../components/LocalizedLink";
 import { MeetIexLesson } from "../../../../components/MeetIexLesson";
 import { StartIexLesson } from "../../../../components/StartIexLesson";
 import { LessonNotebook } from "../../../../components/LessonNotebook";
+import { LessonDiscussion } from "../../../../components/LessonDiscussion";
 import { getNotebook } from "../../../../../content/lessons/notebook-catalog";
 import { SiteFooter } from "../../../../components/SiteFooter";
 import { SiteHeader } from "../../../../components/SiteHeader";
@@ -199,7 +200,7 @@ export default async function BasicLessonPage({
     <>
       <SiteHeader compact locale={locale} />
       <main className={styles.lessonPage}>
-        <div className={styles.lessonLayout}>
+        <div className={styles.lessonLayout + (language === "elixir" ? " " + styles.discussionLayout : "")}>
           <aside
             className={styles.lessonSidebar}
             aria-label={copy.sidebarLabel(path.language)}
@@ -596,6 +597,7 @@ export default async function BasicLessonPage({
               )}
             </nav>
           </article>
+          {language === "elixir" ? <LessonDiscussion slug={slug} locale={locale} /> : null}
         </div>
       </main>
       <SiteFooter locale={locale} showClosing={!isIexPilot} />

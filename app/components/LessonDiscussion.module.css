@@ -1,0 +1,38 @@
+.chat { align-self: start; position: sticky; top: 104px; height: min(720px, calc(100vh - 124px)); min-height: 420px; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); overflow: hidden; }
+.header { padding: 17px 18px 14px; border-bottom: 1px solid var(--line); }
+.header h2 { font-size: 16px; margin: 0; }
+.header p { color: var(--muted); font-size: 12px; margin: 5px 0 0; }
+.messages { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; }
+.empty { color: var(--muted); font-size: 13px; line-height: 1.8; text-align: center; padding: 35px 0; }
+.message { display: flex; gap: 10px; margin-bottom: 20px; }
+.avatar { flex: 0 0 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; background: #6850a1; color: white; font-size: 13px; }
+.content { min-width: 0; flex: 1; }
+.meta { display: flex; align-items: baseline; gap: 8px; }
+.meta strong { font-size: 13px; }
+.meta time { font-size: 11px; color: var(--muted); }
+.content > p { margin: 4px 0; font-size: 14px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.quote { margin: 8px 0; padding: 7px 10px; border-left: 3px solid #8d77ba; background: var(--paper); color: var(--ink-soft); font-size: 12px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.quote span { display: block; font-weight: 700; color: var(--muted); }
+.reply { padding: 2px 0; border: 0; background: none; color: var(--link); font: inherit; font-size: 12px; cursor: pointer; }
+.composer { margin: 0 12px 12px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.composer textarea { display: block; width: 100%; min-height: 76px; resize: vertical; padding: 12px; border: 0; outline-offset: -2px; background: transparent; color: var(--ink); font: inherit; font-size: 14px; }
+.composerBottom { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 0 8px 8px 12px; }
+.composerBottom span { color: var(--muted); font-size: 10px; }
+.composerBottom button { padding: 6px 12px; border: 0; border-radius: 6px; background: #6850a1; color: white; cursor: pointer; }
+.composerBottom button:disabled { opacity: .5; cursor: not-allowed; }
+.replying { display: flex; justify-content: space-between; gap: 8px; margin: 8px 8px 0; padding: 6px 8px; border-left: 3px solid #8d77ba; background: var(--paper); font-size: 12px; }
+.replying div { min-width: 0; }
+.replying strong, .replying span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.replying span { color: var(--muted); }
+.replying button { border: 0; background: none; color: var(--muted); font-size: 20px; cursor: pointer; }
+.composer > p { margin: 0 12px 8px; font-size: 12px; }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+@media (max-width: 1300px) { .chat { position: static; height: 520px; } }
+.messages { padding: 10px; }
+.empty { padding: 18px 0; }
+.message { display: block; margin: 0 0 8px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); }
+.meta { justify-content: flex-end; }
+.content > p { margin: 2px 0; }
+.quote { margin: 4px 0 8px; background: var(--surface); }
+.composer { margin: 0 10px 10px; }
+.composer textarea { min-height: 60px; }
